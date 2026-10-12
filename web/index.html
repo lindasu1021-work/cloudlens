@@ -14,7 +14,7 @@
 <body>
 <nav class="nav" aria-label="主要導覽">
   <div class="nav-inner">
-    <span class="brand">CloudLens</span>
+    <span class="brand">Cloud<span>Lens</span></span>
     <a href="index.html" aria-current="page">總覽</a>
     <a href="methodology.html">方法論</a>
     <a href="status.html">資料狀態</a>
@@ -25,7 +25,7 @@
 
   <section class="kpis" aria-label="關鍵指標">
     <div class="kpi"><div class="kpi-label">帳戶池</div><div class="kpi-value" id="k-accounts">—</div><div class="kpi-sub">三產業・實收資本額 ≥ 10 億</div></div>
-    <div class="kpi"><div class="kpi-label">Tier 1 立即開發</div><div class="kpi-value" id="k-tier1">—</div><div class="kpi-sub" id="k-tier1-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Tier 1 立即開發</div><div class="kpi-value accent" id="k-tier1">—</div><div class="kpi-sub" id="k-tier1-sub"></div></div>
     <div class="kpi"><div class="kpi-label">近 30 天觸發事件</div><div class="kpi-value" id="k-events">—</div><div class="kpi-sub">重大訊息：併購、擴廠、資安事件…</div></div>
     <div class="kpi"><div class="kpi-label">Greenfield 比例</div><div class="kpi-value" id="k-green">—</div><div class="kpi-sub">雲端現況未知（新導入機會）</div></div>
   </section>
@@ -122,7 +122,7 @@
   document.getElementById('movers').innerHTML = !d.prev_run_id
     ? '<li class="muted">目前是第一次計分，下週起顯示與上週的比較。</li>'
     : movers.length ? movers.map(r => `<li><a href="account.html?code=${r.code}">${esc(r.name)}</a>
-        <span class="${r.delta > 0 ? 'up' : 'down'}">${r.delta > 0 ? '▲' : '▼'} ${Math.abs(r.delta)}</span>
+        <span class="${r.delta > 0 ? 'up' : 'down'}"><span class="arr" aria-hidden="true">${r.delta > 0 ? '▲' : '▼'}</span> ${r.delta > 0 ? '上升' : '下降'} ${Math.abs(r.delta)}</span>
         ${r.tier !== r.tierFrom ? `<span class="muted">${LABELS.tier[r.tierFrom]} → </span>${tierBadge(r.tier)}` : ''}</li>`).join('')
     : '<li class="muted">與上週相比沒有變化。</li>';
 

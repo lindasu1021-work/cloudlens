@@ -34,7 +34,7 @@ const Charts = (() => {
     host.querySelector('.chart').appendChild(svg);
 
     // Tier 1 象限淡底
-    el('rect', { x: x(opt.timingCut), y: m.t, width: x(100) - x(opt.timingCut), height: y(opt.needCut) - m.t, fill: 'var(--orange-100)', opacity: 0.35 }, svg);
+    el('rect', { x: x(opt.timingCut), y: m.t, width: x(100) - x(opt.timingCut), height: y(opt.needCut) - m.t, fill: 'var(--orange-50)' }, svg);
     // 格線與軸
     [0, 25, 50, 75, 100].forEach(v => {
       el('line', { x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: 'var(--gray-50)' }, svg);
@@ -116,21 +116,21 @@ const Charts = (() => {
       const bx = m.l + i * bw + 1, by = m.t + ih - h;
       const bar = el('path', {
         d: `M${bx} ${m.t + ih}V${by + 3}q0 -3 3 -3h${bw - 8}q3 0 3 3V${m.t + ih}Z`,
-        fill: 'var(--indigo-500)'
+        fill: 'var(--gray-400)'
       }, svg);
       if (i === 0 || i === rows.length - 1 || r[0].endsWith('-01')) {
         el('text', { x: bx + (bw - 2) / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-500)' }, svg).textContent = r[0].slice(2).replace('-', '/');
       }
       const hit = el('rect', { x: m.l + i * bw, y: m.t, width: bw, height: ih, fill: 'transparent' }, svg);
       hit.addEventListener('mouseenter', () => {
-        bar.setAttribute('fill', 'var(--indigo-700)');
+        bar.setAttribute('fill', 'var(--chart-mark)');
         tip.innerHTML = `<b>${r[0]}</b>營收 ${(r[1] / 1e5).toFixed(1)} 億元<br><span class="muted">YoY ${r[2] === '' ? '—' : Number(r[2]).toFixed(1) + '%'}</span>`;
         tip.style.display = 'block';
         const k = svg.getBoundingClientRect().width / W;
         tip.style.left = Math.min((bx + bw) * k, svg.getBoundingClientRect().width - 150) + 'px';
         tip.style.top = (by * k - 10) + 'px';
       });
-      hit.addEventListener('mouseleave', () => { bar.setAttribute('fill', 'var(--indigo-500)'); tip.style.display = 'none'; });
+      hit.addEventListener('mouseleave', () => { bar.setAttribute('fill', 'var(--gray-400)'); tip.style.display = 'none'; });
     });
   }
 

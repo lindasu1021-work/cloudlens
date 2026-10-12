@@ -13,13 +13,13 @@
 <style>
   /* 成功／錯誤狀態色只在本頁使用（03 檔第 3 節第 7 條） */
   .st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
-  .st-ok { color: #256B4D; background: #E6F2EC; }
-  .st-err { color: #C0392B; background: #FBE9E7; }
+  .st-ok { color: var(--status-ok); background: var(--white); border: 1px solid currentColor; }
+  .st-err { color: var(--status-error); background: var(--white); border: 1px solid currentColor; }
   .st-warn { color: var(--orange-800); background: var(--orange-100); }
   .st-skip { color: var(--ink-600); background: var(--gray-50); }
   .err { color: var(--ink-600); font-size: 12px; white-space: normal; max-width: 420px; }
   .progress { height: 8px; background: var(--gray-50); border-radius: 4px; overflow: hidden; margin-top: 6px; }
-  .progress i { display: block; height: 100%; background: var(--indigo-500); }
+  .progress i { display: block; height: 100%; background: var(--chart-mark); }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
   td.wrap { white-space: normal; }
 </style>
@@ -27,14 +27,14 @@
 <body>
 <nav class="nav" aria-label="主要導覽">
   <div class="nav-inner">
-    <span class="brand">CloudLens</span>
+    <span class="brand">Cloud<span>Lens</span></span>
     <a href="index.html">總覽</a>
     <a href="methodology.html">方法論</a>
     <a href="status.html" aria-current="page">資料狀態</a>
   </div>
 </nav>
 <main>
-  <h1 style="font-size:22px;color:var(--indigo-900);margin-bottom:4px">資料狀態</h1>
+  <h1 style="font-size:22px;color:var(--ink-900);margin-bottom:4px">資料狀態</h1>
   <p class="muted" id="meta" style="margin:0 0 16px">載入中…</p>
 
   <section class="card">

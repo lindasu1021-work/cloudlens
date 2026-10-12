@@ -11,36 +11,36 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/app.css">
 <style>
-  .hero { background: linear-gradient(120deg, var(--indigo-900), var(--indigo-700) 55%, var(--indigo-500)); color: var(--white); }
+  .hero { background: linear-gradient(90deg, var(--orange-500), var(--orange-300)); color: var(--ink-900); }
   .hero-inner { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
   .hero h1 { font-size: 26px; }
   .hero p { margin: 6px 0 0; opacity: .92; max-width: 860px; }
   .doc { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; }
   .toc { position: sticky; top: 16px; align-self: start; font-size: 13px; }
   .toc a { display: block; padding: 4px 0; color: var(--ink-600); }
-  .toc a:hover { color: var(--indigo-700); }
+  .toc a:hover { color: var(--link); }
   .doc section { margin-bottom: 36px; }
-  .doc h2 { font-size: 18px; color: var(--indigo-900); margin-bottom: 10px; }
+  .doc h2 { font-size: 18px; color: var(--ink-900); margin-bottom: 10px; }
   .doc h3 { font-size: 15px; margin: 16px 0 6px; }
   .doc p, .doc li { color: var(--ink-900); }
   .doc table { margin: 8px 0; }
   .doc td, .doc th { white-space: normal; vertical-align: top; }
   .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; align-items: stretch; margin: 12px 0; }
   .box { border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; background: var(--white); position: relative; margin-right: 22px; }
-  .box:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); color: var(--indigo-700); font-weight: 700; }
-  .box b { display: block; color: var(--indigo-900); margin-bottom: 4px; }
+  .box:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); color: var(--orange-600); font-weight: 700; }
+  .box b { display: block; color: var(--ink-900); margin-bottom: 4px; }
   .box .muted { font-size: 12px; }
   .callout { background: var(--orange-100); color: var(--orange-800); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
   .callout b { color: var(--orange-800); }
   .doc td a, .doc p a, .doc li a { text-decoration: underline; }
-  .info { background: var(--indigo-50); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
+  .info { background: var(--gray-50); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
   .formula { font-family: ui-monospace, Menlo, monospace; background: var(--gray-50); padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
 </style>
 </head>
 <body>
 <nav class="nav" aria-label="主要導覽">
   <div class="nav-inner">
-    <span class="brand">CloudLens</span>
+    <span class="brand">Cloud<span>Lens</span></span>
     <a href="index.html">總覽</a>
     <a href="methodology.html" aria-current="page">方法論</a>
     <a href="status.html">資料狀態</a>

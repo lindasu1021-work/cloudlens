@@ -1,32 +1,49 @@
-/* 色票與字體（docs/03_Step3_呈現與配色原則.md） */
+/*
+ * 色票 v2（docs/05_UI改版需求_v2.md 第 1 節）：橘色為主、黑灰白為基底、紫色為輔（紫＝AI）。
+ * 全站顏色只能從這裡引用，其他檔案不得寫死色碼。
+ */
 :root {
+  /* 中性色（約 75%） */
   --ink-900: #1A1A1A;
   --ink-600: #4A4A4A;
   --ink-500: #6B6B6B;
   --gray-400: #A6A6A6;
   --gray-200: #D9D9D9;
-  --gray-50: #F5F5F7;
+  --gray-50: #F5F5F5;
   --white: #FFFFFF;
 
-  --indigo-900: #2F1A7A;
+  /* 主色：橘（品牌、主要互動、優先度，約 15–20%） */
+  --orange-800: #8A4A0E;
+  --orange-700: #B35F12;
+  --orange-600: #D2711F;
+  --orange-500: #E5832F;
+  --orange-300: #F0B862;
+  --orange-100: #F7DCAA;
+  --orange-50: #FDF3E4;
+
+  /* 輔色：靛紫（AI 與次要資料，≤10%） */
   --indigo-700: #4A2F9F;
   --indigo-500: #6B6FD4;
   --indigo-100: #C0BFF6;
   --indigo-50: #EEEDFC;
 
-  --orange-700: #B35F12;
-  /* 衍生色：orange-100 底上的文字（orange-700 在 orange-100 上只有 3.5:1，未達 4.5:1） */
-  --orange-800: #8F4A0C;
-  --orange-500: #E5832F;
-  --orange-400: #EA9C38;
-  --orange-300: #F0B862;
-  --orange-100: #F7DCAA;
+  /* 狀態色（只在資料狀態頁） */
+  --status-error: #C0392B;
+  --status-ok: #2E7D5B;
 
-  /* Play 類別色：Migration 依調色盤驗證把 indigo-900 微調為 #5236A8（明度帶，規範允許 ±5%） */
-  --play-migration: #5236A8;
-  --play-data: #6B6FD4;
-  --play-genai: #EA9C38;
-  --play-security: #B35F12;
+  /* 語意 token */
+  --link: var(--orange-700);           /* 白底連結（4.6:1） */
+  --link-on-tint: var(--orange-800);   /* 灰底、淡橘底上的連結（orange-700 在 gray-50／orange-50 上僅 4.2:1） */
+  --chart-mark: var(--orange-600);     /* 圖表線、點、細長條（白底 3.4:1） */
+  --focus: var(--orange-500);
+  --shadow: rgba(26, 26, 26, .08);    /* 提示框陰影（ink-900 的 8%） */
+
+  /* Play（第 1.5 節）：同色系以深淺區分，再加形狀做第二編碼 */
+  --play-migration: var(--orange-600);
+  --play-security: var(--orange-800);
+  --play-data: var(--indigo-700);
+  --play-genai: var(--indigo-500);
+  --play-none: var(--gray-400);
 
   --font: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
   --radius: 8px;
