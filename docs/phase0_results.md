@@ -22,8 +22,8 @@
 | F1 | 備案：FinMind 月營收 | `api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMonthRevenue` | ✅ 200（未登入即可） | ❌ **402 已達請求上限** | — | GAS 共用 Google IP，匿名額度被用光；**不採用** |
 | F2 | MOPS 月營收彙總 HTML | `mopsov.twse.com.tw/nas/t21/{sii\|otc}/t21sc03_{民國年}_{月}_{0\|1}.html`（0＝國內、1＝KY；Big5 編碼） | ✅ 200，379 KB | ✅ 200，4.2 s | 2026-08：三產業 **351/351** | **改為月營收主來源**（可取任一歷史月） |
 | 9 | Gemini API | `generativelanguage.googleapis.com/v1beta/models/<model>:generateContent` | 端點存在（無金鑰回 403） | ⏳ | — | 待 Verna 設金鑰後執行 `testGemini` |
-| 10 | Web App GET | `<exec>?action=ping` | — | ✅ 回 JSON | — | 可用；GitHub Pages 實測待 push |
-| 11 | Web App POST（text/plain） | `<exec>` | — | ✅ 回 JSON，中文正常 | — | 可用；GitHub Pages 實測待 push |
+| 10 | Web App GET | `<exec>?action=ping` | — | ✅ 回 JSON | — | ✅ 從 GitHub Pages（瀏覽器跨網域）實測成功，1.7 s |
+| 11 | Web App POST（text/plain） | `<exec>` | — | ✅ 回 JSON，中文正常 | — | ✅ 從 GitHub Pages 實測成功，無預檢／CORS 錯誤，1.2 s |
 
 ## 2. 已確認的欄位與代碼（原標 ⚠待確認）
 
@@ -85,5 +85,5 @@
 ## 4. 剩餘待辦
 - [x] B 欄：GAS 對所有來源的結果（#1 在 GAS 為 16.6 秒，未逾時）
 - [x] Web App GET／text/plain POST（curl 實測）
-- [ ] Gemini：執行 `testGemini`
-- [ ] GitHub Pages → GAS：瀏覽器跨網域實測（push 後）
+- [ ] Gemini：金鑰有效（ListModels 回 45 個模型）；`gemini-2.5-flash` 對新使用者回 404，已改為依序試 `gemini-flash-latest` 等，待重跑 `testGemini`
+- [x] GitHub Pages → GAS：瀏覽器跨網域實測（https://lindasu1021-work.github.io/cloudlens/phase0.html）
