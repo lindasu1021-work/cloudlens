@@ -105,15 +105,25 @@ function testGemini() {
       .filter(function (m) { return (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0; })
       .map(function (m) { return m.name.replace('models/', ''); });
   }
-  if (!model) model = names.filter(function (n) { return /flash/.test(n) && !/preview|exp|image|tts|live/.test(n); })[0] || names[0];
+  // 舊模型可能對新使用者回 404，依序嘗試直到成功
+  var candidates = (model ? [model] : []).concat(['gemini-flash-latest'],
+    names.filter(function (n) { return /flash/.test(n) && !/preview|exp|image|tts|live/.test(n); }).reverse());
   var body = { contents: [{ parts: [{ text: '用一句繁體中文回答：雲端運算是什麼？' }] }] };
-  var res = fetchWithRetry_(base + 'models/' + model + ':generateContent', Object.assign({
-    method: 'post', contentType: 'application/json', payload: JSON.stringify(body) }, hdr));
+  var res, tried = [];
+  for (var i = 0; i < candidates.length && tried.length < 4; i++) {
+    if (tried.indexOf(candidates[i]) >= 0) continue;
+    model = candidates[i];
+    tried.push(model);
+    res = fetchWithRetry_(base + 'models/' + model + ':generateContent', Object.assign({
+      method: 'post', contentType: 'application/json', payload: JSON.stringify(body) }, hdr));
+    if (res.code !== 404) break;
+  }
   var text = '';
   try { text = JSON.parse(res.text).candidates[0].content.parts[0].text; } catch (e) { text = res.text.slice(0, 300); }
   var row = { id: '9_gemini', url: 'models/' + model + ':generateContent', ok: res.code === 200, http: res.code, ms: res.ms,
               attempts: res.attempts, count: names.length, fields: 'available models: ' + names.slice(0, 15).join(', '),
-              sample: text.slice(0, 300), note: list.code === 200 ? '' : 'ListModels HTTP ' + list.code, tested_at: new Date().toISOString() };
+              sample: text.slice(0, 300), note: 'tried: ' + tried.join(', ') + (list.code === 200 ? '' : '; ListModels HTTP ' + list.code),
+              tested_at: new Date().toISOString() };
   writePhase0_([row]);
   Logger.log(JSON.stringify(row, null, 2));
   return row;
