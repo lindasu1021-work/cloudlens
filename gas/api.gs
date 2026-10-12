@@ -75,6 +75,11 @@ function apiStatus_() {
   return { sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs, backfill: backfill,
            schedule: ['每日 22:00–23:00 重大訊息', '每週一 05:00–06:00 新聞・ESG・訊號・計分', '每月 15 日 05:00–06:00 公司主檔・月營收'],
            server_time: nowIso_(),
+           ai_recent: readTable_('ai_log').slice(-10).reverse().map(function (r) {
+             return { ts: String(r.ts), code: String(r.stock_code), action: r.action, mode: r.mode, success: r.success,
+                      error: String(r.error).slice(0, 400), est_tokens: r.est_tokens };
+           }),
+           ai_today: Number(getProp_(quotaKey_(), 0)),
            triggers: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }) };
 }
 

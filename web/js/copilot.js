@@ -28,7 +28,9 @@ const Copilot = (() => {
   }
 
   // [S#] → 可點的引用（與分數拆解、時間軸共用 hover 高亮）
-  const refify = html => html.replace(/\[(S\d+)\]/g, (m, r) => `<span class="ref" data-ref="${r}" tabindex="0">[${r}]</span>`);
+  // 也容許舊版快取中的合併寫法 [S2, S3]
+  const refify = html => html.replace(/\[(S\d+(?:\s*[,，、]\s*S\d+)*)\]/g, (m, list) =>
+    list.split(/\s*[,，、]\s*/).map(r => `<span class="ref" data-ref="${r}" tabindex="0">[${r}]</span>`).join(''));
   const chips = arr => (arr || []).length ? `<div class="cp-used">依據：${refify(arr.map(r => '[' + String(r).replace(/[\[\]]/g, '') + ']').join(' '))}</div>` : '';
 
   function md(text) {

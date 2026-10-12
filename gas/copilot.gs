@@ -63,8 +63,16 @@ function buildContext_(code) {
   var s = readTable_('scores').filter(function (r) { return String(r.stock_code) === code && String(r.run_id) === runId; })[0];
   if (!s) throw new Error('此公司不在帳戶池或尚未計分');
   var docs = companyDocs_(code, readTable_('signals'));
-  // Top 10：觸發事件、資安、雲端現況、營收／新聞動能優先，其次依日期
-  var top = docs.slice().sort(function (a, b) { return b.weight - a.weight || b.date.localeCompare(a.date); }).slice(0, 10)
+  // Top 10：先保證每種訊號類型至少一則（避免 10 則都是同類重訊、漏掉營收或策略訊號），同一類型最多 5 則，其餘依重要性與日期補滿
+  var ranked = docs.slice().sort(function (a, b) { return b.weight - a.weight || b.date.localeCompare(a.date); });
+  var typeOf = function (d) { return d.kinds[0].split(':')[0]; };
+  var picked = [], perType = {};
+  ranked.forEach(function (d) { if (!perType[typeOf(d)]) { picked.push(d); perType[typeOf(d)] = 1; } });
+  ranked.forEach(function (d) {
+    if (picked.length >= 10 || picked.indexOf(d) >= 0 || perType[typeOf(d)] >= 5) return;
+    picked.push(d); perType[typeOf(d)]++;
+  });
+  var top = picked.slice(0, 10)
     .sort(function (a, b) { return Number(a.ref.slice(1)) - Number(b.ref.slice(1)); })
     .map(function (d) { return { ref: d.ref, date: d.date, source: d.source, title: d.title, kinds: d.kinds, url: d.url }; });
   var rev = readTable_('raw_revenue').filter(function (r) { return String(r.stock_code) === code; })
@@ -72,14 +80,17 @@ function buildContext_(code) {
   var annual = rev.length ? rev.reduce(function (t, r) { return t + Number(r.revenue); }, 0) / rev.length * 12 : null;
   var plays = {};
   readTable_('config_play_aws').forEach(function (p) { plays[p.play] = { aws_offering: p.aws_offering, talking_point: p.talking_point }; });
-  var dash = function (v) { return v === '' ? '無資料' : v; };
+  var fin = String(c.industry_code) === '17';
+  var dash = function (v, why) { return v === '' ? why : v; };
+  var NOJOB = '無資料（公開職缺資料不足，此項停用）';
   return {
     company: { code: code, name: c.name_short, full_name: c.name_full, industry: c.industry_name, market: c.market,
                capital_100m_twd: Math.round(Number(c.capital) / 1e8),
                annual_revenue_100m_twd: annual === null ? '無資料' : Math.round(annual / 1e5) },
     scores: { need: s.need, timing: s.timing, tier: String(s.tier), data_completeness: s.data_completeness,
-              N1_scale: dash(s.n1), N2_hiring: dash(s.n2), N3_strategy: dash(s.n3), N4_security_compliance: dash(s.n4),
-              T1_trigger: dash(s.t1), T2_news_momentum: dash(s.t2), T3_revenue_momentum: dash(s.t3), T4_hiring_acceleration: dash(s.t4) },
+              N1_scale: dash(s.n1, '無資料'), N2_hiring: dash(s.n2, NOJOB), N3_strategy: dash(s.n3, '無資料'), N4_security_compliance: dash(s.n4, '無資料'),
+              T1_trigger: dash(s.t1, '無資料'), T2_news_momentum: dash(s.t2, '無資料'),
+              T3_revenue_momentum: dash(s.t3, fin ? '不適用（金融業營收受投資收益波動，不納入計分）' : '無資料'), T4_hiring_acceleration: dash(s.t4, NOJOB) },
     play_primary: s.play_primary, play_secondary: s.play_secondary || '無',
     cloud_status: { aws: '已是 AWS 客戶（擴充）', competitor: '使用競品雲（替換）', unknown: '未知（新導入）' }[s.cloud_status],
     signals: top,
@@ -93,7 +104,9 @@ function buildContext_(code) {
 var SYSTEM_PROMPT = [
   '你是 AWS 台灣企業業務（AE），專門開發尚未大量上雲的大型企業（Greenfield）。',
   '只根據使用者提供的「上下文」回答；上下文以外的事一律回答「目前資料中沒有」，不得推測、不得編造任何數字、日期、專案名稱或客戶名稱。',
-  '每個論點都要標註依據的訊號編號，格式 [S1]、[S2]；只能使用上下文 signals 中出現的編號。',
+  '每個論點都要標註依據的訊號編號，每個編號各自用方括號，例如 [S2][S3]（不要寫成 [S2, S3]）；只能使用上下文 signals 中出現的編號。',
+  '[S#] 只用來引用 signals 裡的訊號。公司基本資料（資本額、營收規模）與分數不是訊號，引用時標註「（公司資料）」，不要配 [S#]。',
+  '分數欄位寫「不適用」或「無資料」的項目，照實說明原因，不要當成缺點或推測。',
   '不得出現任何個人姓名；收件對象只用職稱（例：資訊長、財務長）。',
   'AWS 服務只能從上下文 play_to_aws 中挑選。語氣專業、具體、精簡，避免行銷空話。',
   '預設使用繁體中文（台灣用語）。'
@@ -124,6 +137,8 @@ function validateOutput_(button, out, ctx) {
   var norm = function (r) { return String(r).replace(/[\[\]\s]/g, ''); };
   var badRefs = function (arr) { return (arr || []).map(norm).filter(function (r) { return !refs[r]; }); };
   var textRefs = function (t) { return (String(t).match(/\[S\d+\]/g) || []).map(norm).filter(function (r) { return !refs[r]; }); };
+  var flat = typeof out === 'string' ? out : JSON.stringify(out || '');
+  if (/\[S\d+\s*[,，、]/.test(flat)) return '多個訊號編號請各自加方括號，例如 [S2][S3]，不要寫成 [S2, S3]';
   if (button === 'overview' || button === 'free') {
     if (typeof out !== 'string' || out.length < 30) return '輸出太短或不是文字';
     var br = textRefs(out);
@@ -182,13 +197,30 @@ function geminiCall_(contents, json) {
       if (!text) { lastErr = models[i] + ' 回傳空白（' + (((j.candidates || [])[0] || {}).finishReason || '無原因') + '）'; continue; }
       return { text: text, tokens: (j.usageMetadata || {}).totalTokenCount || 0, model: models[i] };
     }
-    lastErr = models[i] + ' HTTP ' + (res.code || res.error) + ' ' + String(res.text).slice(0, 160);
+    lastErr = models[i] + ' HTTP ' + (res.code || res.error) + ' ' + geminiErrorSummary_(res.text);
     if (res.code !== 404 && res.code !== 429 && res.code < 500) break;
   }
   var err = new Error(lastErr);
   err.quota = /HTTP 429/.test(lastErr);
   throw err;
 }
+
+/** 從 Gemini 錯誤回應取出訊息、額度類型（quotaId）與建議等待時間，方便判斷是每分鐘還是每日上限。 */
+function geminiErrorSummary_(text) {
+  try {
+    var e = JSON.parse(text).error || {};
+    var quota = [], retry = '';
+    (e.details || []).forEach(function (d) {
+      (d.violations || []).forEach(function (v) { if (v.quotaId) quota.push(v.quotaId + (v.quotaValue ? '=' + v.quotaValue : '')); });
+      if (d.retryDelay) retry = d.retryDelay;
+    });
+    return String(e.message || '').split('\n')[0].slice(0, 120) + (quota.length ? '｜額度：' + quota.join(',') : '') + (retry ? '｜建議等待 ' + retry : '');
+  } catch (x) { return String(text).slice(0, 160); }
+}
+
+var QUOTA_PAUSE_KEY = 'COPILOT_QUOTA_PAUSE_UNTIL';
+function quotaPaused_() { return Date.now() < Number(getProp_(QUOTA_PAUSE_KEY, 0)); }
+function pauseForQuota_() { PropertiesService.getScriptProperties().setProperty(QUOTA_PAUSE_KEY, String(Date.now() + 60 * 60 * 1000)); }
 
 /** 產生一個按鈕的內容（含 schema 驗證與最多 2 次修正重試）。 */
 function generate_(button, ctx, lang, question, zhSource) {
@@ -339,6 +371,8 @@ function precomputeCopilot_(runId, from) {
     .map(function (r) { return String(r.stock_code); });
   var batch = t1.slice(Number(from), Number(from) + PRECOMPUTE_BATCH);
   if (!batch.length) return { status: 'skipped', rows_in: 0, rows_out: 0, note: 'Tier 1 共 ' + t1.length + ' 家，本批無公司' };
+  // 免費層額度用完後暫停 1 小時；未完成的部分由之後的每日排程接著補（已生成的會沿用，不重複呼叫）
+  if (quotaPaused_()) return { status: 'skipped', rows_in: 0, rows_out: 0, note: 'Gemini 額度暫停中，之後的排程會接著補' };
   var made = 0, reused = 0, failed = [];
   for (var i = 0; i < batch.length; i++) {
     var code = batch[i], ctx = buildContext_(code);
@@ -353,7 +387,10 @@ function precomputeCopilot_(runId, from) {
       } catch (e) {
         aiLog_(code, b + ':zh', 'demo', false, String(e.message) + (e.raw ? '｜原始輸出：' + String(e.raw).slice(0, 600) : ''), e.tokens);
         failed.push(code + ':' + b);
-        if (e.quota) return { status: 'partial', rows_in: batch.length, rows_out: made, note: 'Gemini 額度用完，停在 ' + code + ':' + b + '；新增 ' + made + '、沿用 ' + reused };
+        if (e.quota) {
+          pauseForQuota_();
+          return { status: 'partial', rows_in: batch.length, rows_out: made, note: 'Gemini 額度用完，停在 ' + code + ':' + b + '；新增 ' + made + '、沿用 ' + reused + '；' + String(e.message).slice(0, 200) };
+        }
       }
       Utilities.sleep(4000); // 免費層每分鐘請求數有限
     }

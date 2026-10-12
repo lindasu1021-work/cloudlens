@@ -13,7 +13,8 @@ function dailyJob() {
     var tasks = [];
     // 主檔還沒建立時先抓（第一次部署）
     if (readColumn_('companies', 'stock_code').length === 0) tasks.push('companies:twse', 'companies:tpex', 'aliases_universe');
-    return tasks.concat(['ann:twse', 'ann:tpex', 'weekly_check']);
+    // Copilot 預生成：每週一次做不完（Gemini 免費層額度有限），每天接著補；已生成的沿用快取
+    return tasks.concat(['ann:twse', 'ann:tpex', 'weekly_check'], copilotTasks_());
   }, 'continueDailyJob');
 }
 
