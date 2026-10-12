@@ -21,7 +21,7 @@
 | 8 | AWS 客戶案例 | `aws.amazon.com/api/dirs/items/search?item.directoryId=solution-case-studies-cards-interactive-customer-references&item.locale=zh_TW` | ⚠️ 200 但不完整 | ⚠️ 200，0.3 s | 241 則（全球），標 Taiwan 只有 1 則 | 依 spec 備案：一次性整理清單存 config |
 | F1 | 備案：FinMind 月營收 | `api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMonthRevenue` | ✅ 200（未登入即可） | ❌ **402 已達請求上限** | — | GAS 共用 Google IP，匿名額度被用光；**不採用** |
 | F2 | MOPS 月營收彙總 HTML | `mopsov.twse.com.tw/nas/t21/{sii\|otc}/t21sc03_{民國年}_{月}_{0\|1}.html`（0＝國內、1＝KY；Big5 編碼） | ✅ 200，379 KB | ✅ 200，4.2 s | 2026-08：三產業 **351/351** | **改為月營收主來源**（可取任一歷史月） |
-| 9 | Gemini API | `generativelanguage.googleapis.com/v1beta/models/<model>:generateContent` | 端點存在（無金鑰回 403） | ⏳ | — | 待 Verna 設金鑰後執行 `testGemini` |
+| 9 | Gemini API | `generativelanguage.googleapis.com/v1beta/models/<model>:generateContent` | 端點存在（無金鑰回 403） | ✅ 200，11.4 s | 45 個可用模型 | ✅ `gemini-3.8-flash` 回應正常（繁中）。`gemini-2.5-flash` 對新使用者 404；`gemini-flash-latest` 曾 503 過載 |
 | 10 | Web App GET | `<exec>?action=ping` | — | ✅ 回 JSON | — | ✅ 從 GitHub Pages（瀏覽器跨網域）實測成功，1.7 s |
 | 11 | Web App POST（text/plain） | `<exec>` | — | ✅ 回 JSON，中文正常 | — | ✅ 從 GitHub Pages 實測成功，無預檢／CORS 錯誤，1.2 s |
 
@@ -85,5 +85,12 @@
 ## 4. 剩餘待辦
 - [x] B 欄：GAS 對所有來源的結果（#1 在 GAS 為 16.6 秒，未逾時）
 - [x] Web App GET／text/plain POST（curl 實測）
-- [ ] Gemini：金鑰有效（ListModels 回 45 個模型）；`gemini-2.5-flash` 對新使用者回 404，已改為依序試 `gemini-flash-latest` 等，待重跑 `testGemini`
+- [x] Gemini：`gemini-3.8-flash` 一次呼叫成功
+
+**Phase 0 結論：架構照原規劃（GAS＋Sheets＋GitHub Pages＋Gemini），不需備案 B。**
+
+## 5. 帶到後續 Phase 的注意事項
+- Phase 1：月營收用 MOPS HTML（Big5）；主檔丟棄個人姓名欄位；上市重訊主旨欄位名有尾端空格；`N/A` 視為缺資料。
+- Phase 1：上市主檔在 GAS 需 16.6 秒，排程分批時要算進 6 分鐘預算。
+- Phase 4：Gemini 免費層會暫時 503，Copilot 需「依序換備用模型 → 仍失敗回傳快取」；`config_settings.gemini_model` 存候選清單而非單一模型。
 - [x] GitHub Pages → GAS：瀏覽器跨網域實測（https://lindasu1021-work.github.io/cloudlens/phase0.html）
