@@ -78,7 +78,10 @@
       <span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>
       <span class="badge cloud">資料完整度 ${Math.round(s.data_completeness * 100)}%</span></div>`;
 
-  const refs = list => list.slice(0, 8).map(x => `<span class="ref" data-ref="${x.ref}" tabindex="0">[${x.ref}]</span>`).join('') + (list.length > 8 ? `<span class="muted">…等 ${list.length} 筆</span>` : '');
+  const refs = list => {
+    const uniq = [...new Set(list.map(x => x.ref))];
+    return uniq.slice(0, 8).map(r => `<span class="ref" data-ref="${r}" tabindex="0">[${r}]</span>`).join('') + (uniq.length > 8 ? `<span class="muted">…等 ${uniq.length} 份</span>` : '');
+  };
   function why(k) {
     const rev = c.revenue;
     switch (k) {
@@ -125,11 +128,15 @@
     }).join('');
   document.getElementById('breakdown').innerHTML = axis('need', 'Need 需求強度') + '<div style="height:12px"></div>' + axis('timing', 'Timing 時機');
 
-  document.getElementById('sig-count').textContent = `${sig.length} 筆，依日期新到舊`;
-  document.getElementById('timeline').innerHTML = sig.length ? sig.map(x => {
-    const title = x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>` : esc(x.title);
+  const SRC = { ann: '重大訊息', news: '新聞', esg: 'ESG 報告', revenue: '月營收' };
+  document.getElementById('sig-count').textContent = `${c.docs.length} 份文件，依日期新到舊`;
+  document.getElementById('timeline').innerHTML = c.docs.length ? c.docs.map(x => {
+    const ext = x.url && x.url[0] !== '#';
+    const label = x.src === 'ann' ? `${esc(x.title)}<span class="muted" style="font-size:12px">（公開資訊觀測站當月重訊）</span>` : esc(x.title);
+    const title = x.url ? `<a href="${esc(x.url)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${label}</a>` : label;
+    const kinds = [...new Set(x.parts.map(p => `${LABELS.type[p.type] || p.type}・${LABELS.cat[p.cat] || p.cat}`))];
     return `<li id="${x.ref}" data-ref="${x.ref}"><span class="sid">${x.ref}</span><span class="date">${String(x.at).slice(0, 10)}</span>
-      <span class="type">${LABELS.type[x.type] || x.type}・${LABELS.cat[x.cat] || x.cat}</span><span>${title}</span></li>`;
+      <span class="type">${SRC[x.src] || x.src}</span><span>${title}<br><span class="kinds">${kinds.join('　')}</span></span></li>`;
   }).join('') : '<li class="muted">沒有訊號</li>';
 
   // [S#] 與時間軸雙向對應

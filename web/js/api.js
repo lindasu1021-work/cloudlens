@@ -77,11 +77,34 @@ const CL = (() => {
     d.signals.forEach(s => { if (byCode[s.code]) byCode[s.code].signals.push(s); });
     Object.values(byCode).forEach(c => {
       c.signals.sort((a, b) => String(b.at).localeCompare(String(a.at)));
-      c.signals.forEach((s, i) => { s.ref = 'S' + (i + 1); });
+      // 一份文件（同一則重訊／新聞）可能同時產生多個訊號（例：資安事件同時計入 T1、N4、Play），
+      // [S#] 以「文件」編號，時間軸一份文件一列
+      const docs = {};
+      c.docs = [];
+      c.signals.forEach(s => {
+        const key = s.src + '|' + s.title + '|' + s.at;
+        if (!docs[key]) {
+          docs[key] = { ref: 'S' + (c.docs.length + 1), at: s.at, title: s.title, src: s.src, url: evidenceUrl(c.code, s), parts: [] };
+          c.docs.push(docs[key]);
+        }
+        docs[key].parts.push(s);
+        s.ref = docs[key].ref;
+      });
       c.revenue = d.revenue[c.code] || [];
     });
     cache = { ...d, byCode, accounts: Object.values(byCode).filter(c => c.score) };
     return cache;
+  }
+
+  /** 證據連結：新聞＝原文；重訊＝公開資訊觀測站「該公司當月重大訊息」（MOPS 沒有單則的固定網址）；營收＝本頁月營收圖 */
+  function evidenceUrl(code, s) {
+    if (s.src === 'news') return s.url || '';
+    if (s.src === 'ann') {
+      const y = Number(String(s.at).slice(0, 4)) - 1911, m = String(s.at).slice(5, 7);
+      return `https://mopsov.twse.com.tw/mops/web/ajax_t05st01?encodeURIComponent=1&step=1&firstin=1&off=1&TYPEK=all&co_id=${code}&year=${y}&month=${m}`;
+    }
+    if (s.src === 'revenue') return '#rev';
+    return '';
   }
 
   const ageDays = (iso, ref) => (new Date(ref + 'T23:59:59+08:00') - new Date(iso)) / 864e5;

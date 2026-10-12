@@ -115,7 +115,7 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 .ref:hover, .ref.on { text-decoration: underline; }
 
 .timeline { list-style: none; margin: 0; padding: 0; }
-.timeline li { display: grid; grid-template-columns: 40px 84px 92px minmax(0, 1fr); gap: 10px; padding: 7px 6px; border-radius: 6px; font-size: 13px; align-items: baseline; }
+.timeline li { display: grid; grid-template-columns: 40px 84px 64px minmax(0, 1fr); gap: 10px; padding: 7px 6px; border-radius: 6px; font-size: 13px; align-items: baseline; }
 .timeline li.on { background: var(--indigo-50); }
 .timeline .sid { color: var(--indigo-700); font-weight: 700; }
 .timeline .date { color: var(--ink-500); font-size: 12px; }
@@ -137,3 +137,4 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .up { color: var(--orange-700); font-weight: 700; }
 .up::first-letter { color: var(--orange-500); }
 .down { color: var(--ink-500); }
+.kinds { font-size: 12px; color: var(--ink-600); }
