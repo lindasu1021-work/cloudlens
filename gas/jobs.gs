@@ -7,6 +7,8 @@
 var BUDGET_MS = 4.5 * 60 * 1000; // GAS 單次上限 6 分鐘，留 1.5 分鐘緩衝
 
 function dailyJob() {
+  // 每週工作若因每日執行時間額度（免費帳號 90 分鐘）中斷，由每日排程幫它接續
+  if (getProp_('JOB_weekly', '')) scheduleContinuation_('continueWeeklyJob', 5 * 60 * 1000);
   runJob_('daily', function () { return todayStr_() + '-daily'; }, function () {
     var tasks = [];
     // 主檔還沒建立時先抓（第一次部署）
