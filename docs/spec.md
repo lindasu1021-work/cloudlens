@@ -76,7 +76,7 @@
 |---|---|---|---|---|
 | 1 | 證交所 OpenAPI 公司基本資料 | 主檔 | 每月 | `https://openapi.twse.com.tw/v1/opendata/t187ap03_L` ✅ |
 | 2 | 櫃買中心 OpenAPI 公司基本資料 | 主檔（上櫃） | 每月 | `https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O` ✅（欄位為英文） |
-| 3 | 證交所 OpenAPI 月營收 | T3 營收動能、N1 規模 | 每月 | `/v1/opendata/t187ap05_L`（上市）＋櫃買 `mopsfin_t187ap05_O`；缺漏與歷史用 FinMind 補（D17） |
+| 3 | 證交所 OpenAPI 月營收 | T3 營收動能、N1 規模 | 每月 | MOPS `mopsov.twse.com.tw/nas/t21/{sii|otc}/t21sc03_{民國年}_{月}_{0|1}.html`（Big5；D17）；OpenAPI `t187ap05_L`/`mopsfin_t187ap05_O` 為次要 |
 | 4 | 證交所 OpenAPI 每日重大訊息 | T1 觸發事件、N3、N4 | **每日**（只給當日） | `/v1/opendata/t187ap04_L`；上櫃 `mopsfin_t187ap04_O` ✅ |
 | 5 | 證交所 OpenAPI ESG 資訊安全 | N4 | 每月檢查 | `/v1/opendata/t187ap46_L_16`（欄位含資訊外洩事件數量等） |
 | 6 | Google News RSS | T2 新聞動能、N3 | 每週 | `https://news.google.com/rss/search?q=<查詢>&hl=zh-TW&gl=TW&ceid=TW:zh-Hant` ✅；`q` 可加 `when:30d`；每家一次查詢 |
