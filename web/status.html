@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudLens 資料狀態</title>
+<meta name="description" content="各資料來源最後成功時間、筆數與錯誤">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  /* 成功／錯誤狀態色只在本頁使用（03 檔第 3 節第 7 條） */
+  .st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
+  .st-ok { color: #256B4D; background: #E6F2EC; }
+  .st-err { color: #C0392B; background: #FBE9E7; }
+  .st-warn { color: var(--orange-800); background: var(--orange-100); }
+  .st-skip { color: var(--ink-600); background: var(--gray-50); }
+  .err { color: var(--ink-600); font-size: 12px; white-space: normal; max-width: 420px; }
+  .progress { height: 8px; background: var(--gray-50); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .progress i { display: block; height: 100%; background: var(--indigo-500); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  td.wrap { white-space: normal; }
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="主要導覽">
+  <div class="nav-inner">
+    <span class="brand">CloudLens</span>
+    <a href="index.html">總覽</a>
+    <a href="methodology.html">方法論</a>
+    <a href="status.html" aria-current="page">資料狀態</a>
+  </div>
+</nav>
+<main>
+  <h1 style="font-size:22px;color:var(--indigo-900);margin-bottom:4px">資料狀態</h1>
+  <p class="muted" id="meta" style="margin:0 0 16px">載入中…</p>
+
+  <section class="card">
+    <div class="card-head"><h2>資料來源</h2><span class="hint">超過預期更新週期 1.5 倍未成功＝資料過期</span></div>
+    <div class="card-body">
+      <table>
+        <thead><tr><th scope="col" class="plain">來源</th><th scope="col" class="plain">更新頻率</th><th scope="col" class="plain">最後成功</th><th scope="col" class="plain">最近筆數</th><th scope="col" class="plain">狀態</th><th scope="col" class="plain">最近錯誤</th></tr></thead>
+        <tbody id="sources"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="two">
+    <section class="card">
+      <div class="card-head"><h2>歷史資料回補</h2></div>
+      <div class="card-body" id="backfill"></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>資料表筆數</h2></div>
+      <div class="card-body"><table><tbody id="tables"></tbody></table></div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <div class="card-head"><h2>排程</h2></div>
+    <div class="card-body" id="schedule"></div>
+  </section>
+</main>
+<footer>排程失敗會自動寄送告警信；單一來源失敗不影響其他來源，計分會以「缺資料不算 0 分」處理。</footer>
+
+<script src="js/api.js"></script>
+<script>
+(async () => {
+  const { esc } = CL;
+  let st;
+  try { st = (await CL.gas('status', {}, 30000)).data; }
+  catch (e) { document.getElementById('meta').textContent = '目前無法連線後端：' + e.message; return; }
+
+  const now = new Date(st.server_time);
+  document.getElementById('meta').textContent = '查詢時間 ' + st.server_time.replace('T', ' ').slice(0, 16);
+
+  // 依 step 前綴彙總（revenue:sii、annhist:20260810、news:0 …）
+  const groups = [
+    { key: 'companies', name: '公司主檔（證交所＋櫃買）', every: '每月', days: 31 },
+    { key: 'revenue', name: '月營收（公開資訊觀測站）', every: '每月', days: 31 },
+    { key: 'ann', name: '重大訊息（每日）', every: '每日', days: 1 },
+    { key: 'annhist', name: '重大訊息（歷史回補）', every: '每週', days: 7 },
+    { key: 'news', name: '新聞（Google News）', every: '每週', days: 7 },
+    { key: 'esg', name: 'ESG 資訊安全（證交所）', every: '每週', days: 7 },
+    { key: 'signals', name: '訊號產生', every: '每週', days: 7 },
+    { key: 'scores', name: '計分', every: '每週', days: 7 }
+  ];
+  const badge = (cls, icon, text) => `<span class="st ${cls}"><span aria-hidden="true">${icon}</span>${text}</span>`;
+  document.getElementById('sources').innerHTML = groups.map(g => {
+    const list = st.sources.filter(s => s.source.split(':')[0] === g.key);
+    if (!list.length) return `<tr><td>${g.name}</td><td>${g.every}</td><td class="muted">尚未執行</td><td></td><td>${badge('st-skip', '–', '未執行')}</td><td></td></tr>`;
+    const lastOk = list.map(s => s.last_success_at).filter(Boolean).sort().pop() || '';
+    const okRow = list.filter(s => s.last_success_at === lastOk)[0];
+    const errs = list.filter(s => s.last_status === 'error');
+    const stale = !lastOk || (now - new Date(lastOk)) / 864e5 > g.days * 1.5;
+    const status = errs.length ? badge('st-err', '✕', `錯誤 ${errs.length}`) : stale ? badge('st-warn', '!', '資料過期') : badge('st-ok', '✓', '正常');
+    const err = errs.length ? `${esc(errs[0].source)}：${esc(errs[0].last_error.split('\n')[0].slice(0, 140))}` : '';
+    return `<tr><td>${g.name}</td><td>${g.every}</td><td>${lastOk ? lastOk.replace('T', ' ').slice(5, 16) : '—'}</td>
+      <td class="num">${okRow ? okRow.last_rows_out : ''}</td><td>${status}</td><td class="err">${err}</td></tr>`;
+  }).join('');
+
+  const bf = st.backfill || {};
+  const a = bf.announcements;
+  document.getElementById('backfill').innerHTML = `
+    <p style="margin:0">重大訊息：<b>${a ? a.done_days : 0}</b> / ${a ? a.total_days : 365} 天
+      <span class="muted">（每週回補 90 天，由新到舊；觸發事件只需近 90 天）</span></p>
+    <div class="progress" role="progressbar" aria-label="重大訊息回補進度" aria-valuemin="0" aria-valuemax="${a ? a.total_days : 365}" aria-valuenow="${a ? a.done_days : 0}">
+      <i style="width:${a ? a.done_days / a.total_days * 100 : 0}%"></i></div>
+    <p style="margin:14px 0 0">新聞：<b>${bf.news_companies || 0}</b> 家已完成首次回補 <span class="muted">（之後每週抓最近 8 天）</span></p>`;
+
+  const names = { companies: '公司主檔', company_aliases: '公司別名', raw_announcements: '重大訊息', raw_revenue: '月營收', raw_news: '新聞',
+    raw_esg_security: 'ESG 資安', signals: '訊號', scores: '分數（含歷史）', config_keywords: '關鍵字字典', run_log: '執行紀錄', mail_log: '告警信紀錄' };
+  document.getElementById('tables').innerHTML = Object.entries(st.tables)
+    .map(([k, v]) => `<tr><td>${names[k] || k}</td><td class="num">${Number(v).toLocaleString()}</td></tr>`).join('');
+
+  const jobsRunning = (st.jobs || []).filter(j => j.in_progress).map(j => `${j.job}（${j.checkpoint}）`);
+  document.getElementById('schedule').innerHTML = `<ul style="margin:0;padding-left:18px">${(st.schedule || []).map(s => `<li>${esc(s)}</li>`).join('')}</ul>
+    <p class="muted" style="margin:10px 0 0;font-size:13px">已安裝觸發器：${(st.triggers || []).map(esc).join('、') || '無'}
+    ${jobsRunning.length ? '　進行中：' + jobsRunning.join('、') : ''}</p>`;
+})();
+</script>
+</body>
+</html>

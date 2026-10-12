@@ -1,8 +1,41 @@
 /**
- * 資料層。MVP 讀 data/snapshot.json（本機以真實資料試算的快照）；
- * Phase 3 正式版改為呼叫 GAS Web App（?action=summary/accounts/account），介面不變。
+ * 資料層：呼叫 GAS Web App（?action=snapshot，一次取得總覽與帳戶頁所需資料）。
+ * sessionStorage 快取 30 分鐘（spec 第 6 節：降低 GAS 呼叫次數）；GAS 無法連線時退回 data/snapshot.json 靜態快照。
  */
 const CL = (() => {
+  // Web App 網址本來就公開在前端，不是秘密
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzb32r6vAc54inssIjGO3ol0FNmevyKkDvp_QMmpNYguGhz4C6k5fNk8Nmc3izW_7fo/exec';
+  const CACHE_KEY = 'cl:snapshot:v1', CACHE_MS = 30 * 60 * 1000;
+
+  async function gas(action, params = {}, timeoutMs = 20000) {
+    const qs = new URLSearchParams({ action, ...params }).toString();
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const res = await fetch(GAS_URL + '?' + qs, { signal: ctl.signal });
+      const body = await res.json();
+      if (!body.ok) throw new Error(body.error || 'API 錯誤');
+      return body;
+    } finally { clearTimeout(timer); }
+  }
+
+  async function fetchSnapshot() {
+    try {
+      const hit = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+      if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+    } catch (e) { /* 私密模式等情況讀不到 sessionStorage，直接重抓 */ }
+    try {
+      const body = await gas('snapshot');
+      const data = { ...body.data, source: 'live' };
+      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data })); } catch (e) { /* 容量不足時略過快取 */ }
+      return data;
+    } catch (e) {
+      const res = await fetch('data/snapshot.json');
+      if (!res.ok) throw new Error('資料載入失敗（GAS 與靜態快照皆無法取得）');
+      return { ...(await res.json()), source: 'fallback', fallback_reason: String(e.message || e) };
+    }
+  }
+
   const LABELS = {
     play: { Migration: 'Migration 遷移現代化', Data: 'Data 數據平台', GenAI: 'GenAI 生成式 AI', Security: 'Security 資安' },
     playShort: { Migration: 'Migration', Data: 'Data', GenAI: 'GenAI', Security: 'Security' },
@@ -36,9 +69,8 @@ const CL = (() => {
   let cache = null;
   async function load() {
     if (cache) return cache;
-    const res = await fetch('data/snapshot.json');
-    if (!res.ok) throw new Error('資料載入失敗（HTTP ' + res.status + '）');
-    const d = await res.json();
+    const d = await fetchSnapshot();
+    d.prev = d.prev || {};
     const byCode = {};
     d.companies.forEach(c => { byCode[c.code] = { ...c, signals: [] }; });
     d.scores.forEach(s => { if (byCode[s.stock_code]) byCode[s.stock_code].score = s; });
@@ -74,5 +106,13 @@ const CL = (() => {
     return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-hidden="true" style="fill:${c}">${shape}</svg>`;
   }
 
-  return { load, LABELS, PLAY_COLOR, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
+  /** 頁首資料來源說明 */
+  function sourceNote(d) {
+    if (d.source === 'live') {
+      return `資料更新 <b>${esc(String(d.updated_at || '').replace('T', ' ').slice(0, 16))}</b>（${d.run_id}・規則 v${d.rule_version}）・每週一 05:00 自動更新`;
+    }
+    return `<b>目前無法連線後端，顯示靜態快照</b>（${d.generated_at}・${esc(d.note)}）`;
+  }
+
+  return { load, gas, sourceNote, LABELS, PLAY_COLOR, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
 })();

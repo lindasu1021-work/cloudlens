@@ -196,6 +196,7 @@ function computeScores_(runId) {
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   appendObjects_('scores', keep.concat(rows));
   setSetting_('current_run_id', runId);
+  clearSnapshotCache_(runId);
   var val = computeValidation_(runId, rows, ruleVersion);
 
   var t = { '1': 0, '2': 0, '3': 0, hold: 0 };

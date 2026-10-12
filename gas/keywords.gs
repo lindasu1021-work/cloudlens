@@ -92,10 +92,23 @@ function defaultKeywords_() {
   });
 }
 
-/** config_keywords 為空時才匯入，避免覆蓋 Verna 的修改。 */
+/**
+ * 把程式內建字典中「Sheets 還沒有的詞」補進 config_keywords（以 類別＋關鍵字 判斷）。
+ * 不覆蓋、不刪除既有列：Verna 要停用某詞請把 active 改成 FALSE（直接刪列會在下次被補回）。
+ */
 function seedKeywords_() {
-  if (readColumn_('config_keywords', 'keyword_id').length) return 0;
-  return appendObjects_('config_keywords', defaultKeywords_());
+  var have = {}, maxSeq = {};
+  readTable_('config_keywords').forEach(function (r) {
+    have[r.category + '|' + r.keyword] = true;
+    var m = String(r.keyword_id).match(/^(.*)-(\d+)$/);
+    if (m) maxSeq[m[1]] = Math.max(maxSeq[m[1]] || 0, Number(m[2]));
+  });
+  var fresh = defaultKeywords_().filter(function (k) { return !have[k.category + '|' + k.keyword]; }).map(function (k) {
+    maxSeq[k.category] = (maxSeq[k.category] || 0) + 1;
+    k.keyword_id = k.category + '-' + ('00' + maxSeq[k.category]).slice(-3);
+    return k;
+  });
+  return appendObjects_('config_keywords', fresh);
 }
 
 // ---------- 比對 ----------

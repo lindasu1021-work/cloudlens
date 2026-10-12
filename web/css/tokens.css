@@ -15,6 +15,8 @@
   --indigo-50: #EEEDFC;
 
   --orange-700: #B35F12;
+  /* 衍生色：orange-100 底上的文字（orange-700 在 orange-100 上只有 3.5:1，未達 4.5:1） */
+  --orange-800: #8F4A0C;
   --orange-500: #E5832F;
   --orange-400: #EA9C38;
   --orange-300: #F0B862;

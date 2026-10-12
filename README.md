@@ -2,7 +2,7 @@
 
 以公開資料為台灣上市櫃企業打分數並標出切入劇本（Play），協助 AWS 業務決定「先打誰、拿什麼去談」，再用 AI 產出帳戶速覽與破冰信草稿。
 
-> 狀態：**Phase 0 技術驗證中**。完整規格見 [docs/spec.md](docs/spec.md)，驗證結果見 [docs/phase0_results.md](docs/phase0_results.md)。
+> 狀態：**Phase 3 前端完成**（網站：https://lindasu1021-work.github.io/cloudlens/）。完整規格見 [docs/spec.md](docs/spec.md)；各階段結果見 `docs/phase*_results.md`。
 
 ## 架構
 

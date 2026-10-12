@@ -14,6 +14,7 @@
 var CIO_CHANGE_RE = /異動|新任|委任|聘任|接任|任命/;
 
 function buildSignals_(runId) {
+  var added = seedKeywords_(); // 補上程式更新後新增的字典詞
   var kw = loadKeywords_();
   var ind = {};
   readTable_('companies').forEach(function (c) { ind[String(c.stock_code)] = String(c.industry_code); });
@@ -120,5 +121,6 @@ function buildSignals_(runId) {
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   appendObjects_('signals', out);
   return { rows_in: stats.ann + stats.news, rows_out: out.length,
-           note: '重訊 ' + stats.ann + '（排除 ' + stats.ann_excluded + '）、新聞 ' + stats.news + '（排除 ' + stats.news_excluded + '）' };
+           note: '重訊 ' + stats.ann + '（排除 ' + stats.ann_excluded + '）、新聞 ' + stats.news + '（排除 ' + stats.news_excluded + '）' +
+                 (added ? '；字典新增 ' + added + ' 詞' : '') };
 }

@@ -16,12 +16,12 @@
   <div class="nav-inner">
     <span class="brand">CloudLens</span>
     <a href="index.html">總覽</a>
-    <span class="soon">方法論（即將推出）</span>
-    <span class="soon">資料狀態（即將推出）</span>
+    <a href="methodology.html">方法論</a>
+    <a href="status.html">資料狀態</a>
   </div>
 </nav>
 <main>
-  <a class="back" href="index.html">← 回總覽</a>
+  <a class="back" href="index.html">← 回總覽</a> <span class="muted" id="src" style="font-size:12px;margin-left:12px"></span>
   <header class="acct-head" id="head"></header>
   <div class="acct-grid">
     <div class="side-stack">
@@ -63,6 +63,7 @@
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, playTag, ageDays } = CL;
   const d = await CL.load();
+  document.getElementById('src').innerHTML = CL.sourceNote(d);
   const code = new URLSearchParams(location.search).get('code');
   const c = d.byCode[code];
   if (!c || !c.score) { document.getElementById('head').innerHTML = '<h1>查無此帳戶</h1>'; return; }

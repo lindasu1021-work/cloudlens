@@ -16,8 +16,8 @@
   <div class="nav-inner">
     <span class="brand">CloudLens</span>
     <a href="index.html" aria-current="page">總覽</a>
-    <span class="soon" title="Phase 5 上線">方法論（即將推出）</span>
-    <span class="soon" title="Phase 3 上線">資料狀態（即將推出）</span>
+    <a href="methodology.html">方法論</a>
+    <a href="status.html">資料狀態</a>
   </div>
 </nav>
 <main>
@@ -40,8 +40,13 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><h2>最新觸發事件</h2><span class="hint">近 30 天</span></div>
-      <div class="card-body"><ul class="events" id="events"></ul></div>
+      <div class="card-head"><h2>本週動態</h2><span class="hint" id="dyn-hint"></span></div>
+      <div class="card-body">
+        <h3 class="sub-h">分數變化前 5</h3>
+        <ul class="movers" id="movers"></ul>
+        <h3 class="sub-h">最新觸發事件（近 30 天）</h3>
+        <ul class="events" id="events"></ul>
+      </div>
     </div>
   </section>
 
@@ -79,8 +84,7 @@
   try { d = await CL.load(); }
   catch (e) { document.getElementById('notice').textContent = e.message; return; }
 
-  document.getElementById('notice').innerHTML =
-    `<b>MVP 預覽</b>　資料快照 ${d.generated_at}（${d.run_id}・規則 v${d.rule_version}）：${esc(d.note)}。重大訊息涵蓋近一年、新聞涵蓋近一年（每家每時段上限約 100 則）。`;
+  document.getElementById('notice').innerHTML = CL.sourceNote(d);
 
   const rows = d.accounts.map(c => ({
     code: c.code, name: c.name, industry: c.industry, market: c.market,
@@ -108,8 +112,22 @@
   document.getElementById('legend').innerHTML = ['Migration', 'Data', 'GenAI', 'Security']
     .map(p => `<span>${shapeSvg(p, 11)}${LABELS.play[p]}（${rows.filter(r => r.play === p).length}）</span>`).join('');
 
+  // 本週動態：與上一次計分比較（分數變化用 ▲▼，不用紅綠）
+  const prevRows = rows.filter(r => d.prev[r.code]).map(r => {
+    const p = d.prev[r.code];
+    return { ...r, delta: Math.round(((r.need + r.timing) - ((Number(p.need) || 0) + (Number(p.timing) || 0))) * 10) / 10, tierFrom: String(p.tier) };
+  });
+  document.getElementById('dyn-hint').textContent = d.prev_run_id ? `與 ${d.prev_run_id} 比較` : '';
+  const movers = prevRows.filter(r => r.delta !== 0 || r.tier !== r.tierFrom).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 5);
+  document.getElementById('movers').innerHTML = !d.prev_run_id
+    ? '<li class="muted">目前是第一次計分，下週起顯示與上週的比較。</li>'
+    : movers.length ? movers.map(r => `<li><a href="account.html?code=${r.code}">${esc(r.name)}</a>
+        <span class="${r.delta > 0 ? 'up' : 'down'}">${r.delta > 0 ? '▲' : '▼'} ${Math.abs(r.delta)}</span>
+        ${r.tier !== r.tierFrom ? `<span class="muted">${LABELS.tier[r.tierFrom]} → </span>${tierBadge(r.tier)}` : ''}</li>`).join('')
+    : '<li class="muted">與上週相比沒有變化。</li>';
+
   // 最新觸發事件
-  const evList = recent.slice().sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 9);
+  const evList = recent.slice().sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 7);
   document.getElementById('events').innerHTML = evList.length ? evList.map(s => {
     const c = d.byCode[s.code];
     const fresh = ageDays(s.at, d.generated_at) <= 7;

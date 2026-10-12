@@ -1,6 +1,6 @@
 /**
  * GAS Web App 進入點。回應格式一律 { ok, data?, error?, run_id }（spec 第 6 節）。
- * Phase 1：ping、status（資料狀態）、companies（主檔，供決定資本額門檻）、phase0。
+ * snapshot、summary、accounts、account、status、methodology（spec 第 6 節）；另有 ping、companies、phase0。
  */
 
 function doGet(e) {
@@ -16,6 +16,10 @@ function doGet(e) {
     else if (action === 'status') data = apiStatus_();
     else if (action === 'companies') data = readTable_('companies');
     else if (action === 'account') data = apiAccount_(String(p.code || ''), runId);
+    else if (action === 'snapshot') data = getSnapshot_(runId);
+    else if (action === 'summary') data = apiSummary_(runId);
+    else if (action === 'accounts') data = apiAccounts_(runId, p);
+    else if (action === 'methodology') data = apiMethodology_();
     else if (action === 'phase0') data = readPhase0_();
     else return jsonOut_({ ok: false, error: 'unknown action: ' + action, run_id: runId });
     return jsonOut_({ ok: true, data: data, run_id: runId });
@@ -59,7 +63,14 @@ function apiStatus_() {
     var st = getProp_('JOB_' + j, '');
     return { job: j, in_progress: !!st, checkpoint: st ? JSON.parse(st).idx + '/' + JSON.parse(st).tasks.length : '' };
   });
-  return { sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs,
+  var hist = JSON.parse(getProp_('ANN_HIST', 'null') || 'null');
+  var backfill = {
+    announcements: hist ? { done_days: Object.keys(hist.done).length, total_days: Math.round((hist.end - hist.start) / 864e5) + 1 } : null,
+    news_companies: Object.keys(JSON.parse(getProp_('NEWS_BACKFILLED', '{}'))).length
+  };
+  return { sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs, backfill: backfill,
+           schedule: ['每日 22:00–23:00 重大訊息', '每週一 05:00–06:00 新聞・ESG・訊號・計分', '每月 15 日 05:00–06:00 公司主檔・月營收'],
+           server_time: nowIso_(),
            triggers: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }) };
 }
 

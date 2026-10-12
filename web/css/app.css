@@ -67,6 +67,7 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 48px; }
 .filters .count { color: var(--ink-500); font-size: 13px; margin-left: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { background: var(--gray-50); color: var(--ink-600); font-weight: 700; text-align: left; padding: 0; white-space: nowrap; }
+th.plain { padding: 8px 10px; }
 th button { all: unset; cursor: pointer; display: block; padding: 8px 10px; }
 th button:focus-visible { outline: 3px solid var(--indigo-100); }
 th[aria-sort="ascending"] button::after { content: " ▲"; font-size: 10px; }
@@ -83,7 +84,7 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 
 /* 標章 */
 .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; line-height: 1.6; white-space: nowrap; }
-.tier-1 { background: var(--orange-100); color: var(--orange-700); font-weight: 700; }
+.tier-1 { background: var(--orange-100); color: var(--orange-800); font-weight: 700; }
 .tier-2 { background: var(--indigo-100); color: var(--indigo-900); }
 .tier-3 { background: var(--gray-50); color: var(--ink-600); border: 1px solid var(--gray-200); }
 .tier-hold { background: var(--white); color: var(--ink-500); border: 1px solid var(--gray-200); }
@@ -128,3 +129,11 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24px; }
+
+.sub-h { font-size: 13px; color: var(--ink-600); margin: 4px 0 6px; }
+.sub-h + .events, .movers + .sub-h { margin-top: 12px; }
+.movers { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.movers li { padding: 4px 0; display: flex; gap: 8px; align-items: center; }
+.up { color: var(--orange-700); font-weight: 700; }
+.up::first-letter { color: var(--orange-500); }
+.down { color: var(--ink-500); }
