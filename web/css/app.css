@@ -87,8 +87,8 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 
 /* 標章 */
 .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; line-height: 1.6; white-space: nowrap; }
-.tier-1 { background: var(--orange-500); color: var(--ink-900); font-weight: 700; }
-.tier-2 { background: var(--orange-100); color: var(--orange-800); } /* 規範寫 orange-700，但在 orange-100 上僅 3.5:1，改 orange-800（5.1:1） */
+.tier-1 { background: var(--orange-700); color: var(--white); font-weight: 700; }
+.tier-2 { background: var(--orange-100); color: var(--orange-800); }
 .tier-3 { background: var(--gray-50); color: var(--ink-600); border: 1px solid var(--gray-200); }
 .tier-hold { background: var(--white); color: var(--ink-500); border: 1px solid var(--gray-200); }
 .cloud { background: var(--gray-50); color: var(--ink-600); }
@@ -125,11 +125,13 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 .timeline .date { color: var(--ink-500); font-size: 12px; }
 .type { font-size: 12px; color: var(--ink-600); }
 
-.copilot { background: var(--indigo-50); border-radius: var(--radius); padding: 16px 18px; }
-.copilot h2 { font-size: 16px; color: var(--indigo-700); }
-.copilot .ref { color: var(--indigo-700); } /* Copilot 面板內的 [S#]：紫底上用紫字（橘字在 indigo-50 上對比不足） */
+.copilot { background: var(--ink-900); color: var(--white); border-radius: var(--radius); padding: 16px 18px; }
+.copilot h2 { font-size: 16px; color: var(--white); }
+.copilot h2::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--orange-500); margin-right: 8px; vertical-align: middle; }
 .copilot ul, .copilot ol { padding-left: 18px; margin: 6px 0; font-size: 13px; }
-.copilot .tag { display: inline-block; background: var(--white); color: var(--indigo-700); font-size: 12px; padding: 1px 8px; border-radius: 10px; }
+.copilot .muted { color: var(--gray-400); }
+.copilot .ref { color: var(--orange-300); }
+.copilot .tag { display: inline-block; background: transparent; color: var(--gray-200); border: 1px solid var(--ink-600); font-size: 12px; padding: 1px 8px; border-radius: 10px; }
 .side-stack { display: grid; gap: 16px; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -144,35 +146,41 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .down { color: var(--ink-500); }
 .kinds { font-size: 12px; color: var(--ink-600); }
 
-/* Copilot */
-.cp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.cp-mode { font-size: 12px; display: flex; gap: 6px; align-items: center; }
-.tag-live { background: var(--indigo-100) !important; color: var(--indigo-700) !important; }
-.linklike { all: unset; color: var(--indigo-700); cursor: pointer; font-size: 12px; text-decoration: underline; }
+/* Copilot（黑底白字、橘色點綴） */
+.cp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cp-mode { font-size: 12px; display: flex; gap: 8px; align-items: center; }
+.copilot .tag-live { color: var(--orange-300); border-color: var(--orange-500); }
+.linklike { all: unset; color: var(--orange-300); cursor: pointer; font-size: 12px; text-decoration: underline; }
 .linklike:focus-visible { outline: 3px solid var(--focus); }
 .cp-login { display: flex; gap: 6px; margin-bottom: 10px; }
-.cp-login input, .cp-ask textarea { font: inherit; font-size: 13px; border: 1px solid var(--gray-200); border-radius: 6px; padding: 6px 8px; background: var(--white); color: var(--ink-900); flex: 1; }
+.cp-login input, .cp-ask textarea { font: inherit; font-size: 13px; border: 1px solid var(--ink-600); border-radius: 6px; padding: 6px 8px; background: var(--ink-800); color: var(--white); flex: 1; }
+.cp-login input::placeholder, .cp-ask textarea::placeholder { color: var(--gray-400); }
 .cp-ask { margin: 8px 0; }
 .cp-ask textarea { width: 100%; resize: vertical; margin-bottom: 6px; }
-.btn-primary { font: inherit; font-size: 13px; font-weight: 700; background: var(--orange-500); color: var(--ink-900); border: 0; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
-.btn-primary:hover { background: var(--orange-300); }
+.btn-primary { font: inherit; font-size: 13px; font-weight: 700; background: var(--orange-700); color: var(--white); border: 0; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+.btn-primary:hover { background: var(--orange-800); }
 .btn-secondary { font: inherit; font-size: 12px; background: var(--white); color: var(--ink-900); border: 1px solid var(--gray-200); border-radius: 6px; padding: 4px 10px; cursor: pointer; margin-top: 8px; }
 .btn-secondary:hover { background: var(--gray-50); }
+.copilot .btn-secondary { background: transparent; color: var(--white); border-color: var(--ink-600); }
+.copilot .btn-secondary:hover { border-color: var(--orange-500); background: transparent; }
 .cp-btns { display: flex; flex-wrap: wrap; gap: 6px; }
-.cp-btn, .cp-lang button { font: inherit; font-size: 12px; background: var(--white); color: var(--ink-900); border: 1px solid var(--gray-200); border-radius: 14px; padding: 3px 10px; cursor: pointer; }
-.cp-btn:hover, .cp-lang button:hover { border-color: var(--indigo-700); }
-.cp-btn[aria-pressed="true"], .cp-lang button[aria-pressed="true"] { background: var(--indigo-700); color: var(--white); border-color: var(--indigo-700); }
+.cp-btn, .cp-lang button { font: inherit; font-size: 12px; background: transparent; color: var(--white); border: 1px solid var(--ink-600); border-radius: 14px; padding: 3px 10px; cursor: pointer; }
+.cp-btn:hover, .cp-lang button:hover { border-color: var(--orange-500); }
+.cp-btn[aria-pressed="true"], .cp-lang button[aria-pressed="true"] { background: var(--orange-700); color: var(--white); border-color: var(--orange-700); }
 .cp-lang { display: flex; gap: 6px; margin-top: 8px; }
-.cp-out { margin-top: 12px; font-size: 13px; min-height: 40px; }
-.cp-out h4 { font-size: 13px; margin: 10px 0 2px; color: var(--indigo-700); }
+.cp-out { margin-top: 14px; font-size: 13px; min-height: 40px; color: var(--white); }
+.cp-out h4 { font-size: 13px; margin: 12px 0 2px; color: var(--orange-300); }
 .cp-out p { margin: 4px 0; }
-.cp-mail { background: var(--white); border-radius: 6px; padding: 10px 12px; }
+.cp-out .muted { color: var(--gray-400); }
+.cp-mail { background: var(--ink-800); border-radius: 6px; padding: 10px 12px; }
 .cp-subject { font-weight: 700; margin-bottom: 6px; }
-.cp-used { font-size: 12px; color: var(--ink-600); margin-top: 4px; }
+.cp-used { font-size: 12px; color: var(--gray-200); margin-top: 4px; }
 .cp-obj li { margin-bottom: 8px; }
-.cp-medd { background: var(--white); border-radius: 6px; }
-.cp-medd th { background: var(--white); width: 92px; font-size: 12px; vertical-align: top; white-space: normal; }
-.cp-medd td { white-space: normal; vertical-align: top; }
-.cp-meta { font-size: 12px; color: var(--ink-500); margin-top: 8px; }
-.cp-notice { background: var(--white); border-left: 3px solid var(--indigo-500); padding: 6px 10px; color: var(--ink-600); }
-.cp-foot { font-size: 12px; color: var(--ink-500); margin: 10px 0 0; }
+.cp-medd { background: var(--ink-800); border-radius: 6px; }
+.cp-medd th { background: var(--ink-800); color: var(--white); width: 92px; font-size: 12px; vertical-align: top; white-space: normal; }
+.cp-medd td { white-space: normal; vertical-align: top; border-bottom-color: var(--ink-900); }
+.cp-medd .badge.tier-2 { background: var(--orange-100); color: var(--orange-800); }
+.cp-medd .badge.tier-3 { background: var(--ink-900); color: var(--gray-200); border-color: var(--ink-600); }
+.cp-meta { font-size: 12px; color: var(--gray-400); margin-top: 8px; }
+.cp-notice { background: var(--ink-800); border-left: 3px solid var(--orange-500); padding: 6px 10px; color: var(--gray-200); }
+.cp-foot { font-size: 12px; color: var(--gray-400); margin: 12px 0 0; }

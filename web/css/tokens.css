@@ -1,10 +1,12 @@
 /*
- * 色票 v2（docs/05_UI改版需求_v2.md 第 1 節）：橘色為主、黑灰白為基底、紫色為輔（紫＝AI）。
+ * 色票 v2.1（docs/05_UI改版需求_v2.md 第 1 節＋2026-10-12 Verna 回饋）：
+ * 橘色為主（提高飽和度）、黑灰白為基底；紫色只用於圖表的 Data／GenAI 系列，不做大面積底色。
  * 全站顏色只能從這裡引用，其他檔案不得寫死色碼。
  */
 :root {
   /* 中性色（約 75%） */
   --ink-900: #1A1A1A;
+  --ink-800: #262626;   /* 黑底面板（Copilot）上的卡片 */
   --ink-600: #4A4A4A;
   --ink-500: #6B6B6B;
   --gray-400: #A6A6A6;
@@ -12,29 +14,27 @@
   --gray-50: #F5F5F5;
   --white: #FFFFFF;
 
-  /* 主色：橘（品牌、主要互動、優先度，約 15–20%） */
-  --orange-800: #8A4A0E;
-  --orange-700: #B35F12;
-  --orange-600: #D2711F;
-  --orange-500: #E5832F;
-  --orange-300: #F0B862;
-  --orange-100: #F7DCAA;
-  --orange-50: #FDF3E4;
+  /* 主色：橘（品牌、主要互動、優先度，約 15–20%）。v2.1 提高飽和度 */
+  --orange-800: #9A3412;   /* 圖表 Security、淡橘底上的文字、按鈕 hover */
+  --orange-700: #C2410C;   /* 白字橘底（Tier 1、主要按鈕，5.2:1）、連結文字 */
+  --orange-600: #EA580C;   /* 圖表線、點、細長條（白底 3.6:1） */
+  --orange-500: #F97316;   /* 品牌亮橘：字標、選取底線、焦點框（不放白字） */
+  --orange-300: #FDBA74;   /* 黑底上的 [S#] 與強調、漸層終點 */
+  --orange-100: #FFEDD5;   /* Tier 2 標章底 */
+  --orange-50: #FFF7ED;    /* hover、選取列、Tier 1 象限淡底 */
 
-  /* 輔色：靛紫（AI 與次要資料，≤10%） */
+  /* 輔色：靛紫，只用於圖表的 Data／GenAI 系列 */
   --indigo-700: #4A2F9F;
   --indigo-500: #6B6FD4;
-  --indigo-100: #C0BFF6;
-  --indigo-50: #EEEDFC;
 
   /* 狀態色（只在資料狀態頁） */
   --status-error: #C0392B;
   --status-ok: #2E7D5B;
 
   /* 語意 token */
-  --link: var(--orange-700);           /* 白底連結（4.6:1） */
-  --link-on-tint: var(--orange-800);   /* 灰底、淡橘底上的連結（orange-700 在 gray-50／orange-50 上僅 4.2:1） */
-  --chart-mark: var(--orange-600);     /* 圖表線、點、細長條（白底 3.4:1） */
+  --link: var(--orange-700);           /* 白底 5.2:1、gray-50 上 4.8:1、orange-50 上 4.9:1 */
+  --link-on-tint: var(--orange-700);
+  --chart-mark: var(--orange-600);
   --focus: var(--orange-500);
   --shadow: rgba(26, 26, 26, .08);    /* 提示框陰影（ink-900 的 8%） */
 
