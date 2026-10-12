@@ -1,6 +1,6 @@
 # CloudLens 規格書（交接給 Claude Code）
 
-> 版本：v1.0（2026-10-11）｜作者：Verna（Wei-Lin Su）
+> 版本：v1.1（2026-10-12，依 Phase 0 結果更新第 3 節；決策 D17–D20）｜作者：Verna（Wei-Lin Su）
 > 本檔整合同資料夾的 00–04 決策檔。細節以這些檔為準：
 > - `00_決策紀錄.md`：所有決策與日期
 > - `01_Step1_訊號與評分規則_v1.md`：完整關鍵字字典、計分細則
@@ -54,7 +54,7 @@
 
 ```
 [每日 GAS 排程]  重大訊息 → raw_announcements
-[每週 GAS 排程]  新聞 RSS · 就業通 · ESG 資安 · AWS 案例 → raw_*
+[每週 GAS 排程]  新聞 RSS · ESG 資安 · AWS 案例 → raw_*
 [每月 GAS 排程]  公司主檔 · 月營收 → companies / raw_revenue
         ▼
 [GAS 處理]  清理 → 公司對應 → 關鍵字比對 → signals
@@ -74,16 +74,16 @@
 
 | # | 來源 | 用途 | 頻率 | 端點／方式 |
 |---|---|---|---|---|
-| 1 | 證交所 OpenAPI 公司基本資料 | 主檔 | 每月 | `https://openapi.twse.com.tw/v1/opendata/t187ap03_L` ⚠待確認 |
-| 2 | 櫃買中心 OpenAPI 公司基本資料 | 主檔（上櫃） | 每月 | ⚠待確認（tpex.org.tw openapi） |
-| 3 | 證交所 OpenAPI 月營收 | T3 營收動能、N1 規模 | 每月 | `/v1/opendata/t187ap05_P`（公開發行公司每月營業收入彙總表） |
-| 4 | 證交所 OpenAPI 每日重大訊息 | T1 觸發事件、N3、N4 | **每日**（只給當日） | `/v1/opendata/t187ap04_L`；上櫃對應端點 ⚠待確認 |
+| 1 | 證交所 OpenAPI 公司基本資料 | 主檔 | 每月 | `https://openapi.twse.com.tw/v1/opendata/t187ap03_L` ✅ |
+| 2 | 櫃買中心 OpenAPI 公司基本資料 | 主檔（上櫃） | 每月 | `https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O` ✅（欄位為英文） |
+| 3 | 證交所 OpenAPI 月營收 | T3 營收動能、N1 規模 | 每月 | `/v1/opendata/t187ap05_L`（上市）＋櫃買 `mopsfin_t187ap05_O`；缺漏與歷史用 FinMind 補（D17） |
+| 4 | 證交所 OpenAPI 每日重大訊息 | T1 觸發事件、N3、N4 | **每日**（只給當日） | `/v1/opendata/t187ap04_L`；上櫃 `mopsfin_t187ap04_O` ✅ |
 | 5 | 證交所 OpenAPI ESG 資訊安全 | N4 | 每月檢查 | `/v1/opendata/t187ap46_L_16`（欄位含資訊外洩事件數量等） |
-| 6 | Google News RSS | T2 新聞動能、N3 | 每週 | `https://news.google.com/rss/search?q=<查詢>&hl=zh-TW&gl=TW&ceid=TW:zh-Hant` ⚠待確認參數；每家一次查詢 |
-| 7 | 台灣就業通網站職缺清單（勞動部開放資料） | N2、T4 | 每週 | data.gov.tw dataset 44062 ⚠待確認下載網址與欄位；涵蓋率需在 Phase 0/1 評估 |
-| 8 | AWS 台灣客戶案例頁 | 驗證集、雲端現況「已是 AWS 客戶」 | 每月 | ⚠待確認頁面結構；若不易解析，改為一次性整理清單存入 config |
+| 6 | Google News RSS | T2 新聞動能、N3 | 每週 | `https://news.google.com/rss/search?q=<查詢>&hl=zh-TW&gl=TW&ceid=TW:zh-Hant` ✅；`q` 可加 `when:30d`；每家一次查詢 |
+| 7 | ~~台灣就業通~~ | ~~N2、T4~~ | — | ❌ 不採用（D18）：上限 1,000 筆且幾乎全為台北市；N2、T4 視為缺資料 |
+| 8 | AWS 台灣客戶案例頁 | 驗證集、雲端現況「已是 AWS 客戶」 | 每月 | ❌ 無法自動取得台灣清單 → 一次性人工整理存 `config_aws_cases`（D20） |
 
-產業代碼（篩選用）：電機機械 05、金融保險 17、電子零組件 28 ⚠待確認（上市與上櫃代碼可能不同）。
+產業代碼（篩選用）：電機機械 05、金融保險 17、電子零組件 28 ✅（上市與上櫃相同）。上櫃無 ESG 資訊安全端點（D19）。
 
 ---
 
@@ -214,7 +214,7 @@
 | 排程 | 時間（台灣） | 內容 |
 |---|---|---|
 | 每日 | 22:00–23:00 | 重大訊息；檢查週排程是否 >8 天未成功 |
-| 每週 | 週一 05:00–06:00 | 新聞、就業通、ESG、AWS 案例 → 訊號 → 計分 → 預生成 Copilot → API 快照 → 摘要信 |
+| 每週 | 週一 05:00–06:00 | 新聞、ESG → 訊號 → 計分 → 預生成 Copilot → API 快照 → 摘要信 |
 | 每月 | 12 日 05:00–06:00 | 公司主檔、月營收 |
 
 - 6 分鐘上限：分批＋斷點（Script Properties）＋接續觸發器
@@ -232,7 +232,7 @@
 |---|---|---|
 | 0 技術驗證 | GAS 對第 3 節 8 個來源的連線測試；GitHub Pages ↔ GAS 的 GET 與 text/plain POST 測試；Gemini 免費層一次呼叫測試 | 產出連線結果表（可/不可、HTTP 狀態、耗時、筆數、欄位樣本）；確認所有 ⚠待確認 項目；不可連者依備案處理 |
 | 1 資料骨幹 | 建立第 4 節所有分頁；主檔、月營收、重大訊息；run_log；每日排程 | 主檔篩出三產業公司並提供資本額分布給 Verna 決定門檻；每日排程連跑 3 天無誤、重跑不重複 |
-| 2 訊號與計分 | 匯入 01 檔字典到 config；新聞、就業通、ESG、AWS 案例；signals、scores、Tier、Play、雲端現況；每週排程 | 挑 3 家公司（三產業各 1）輸出逐分明細供 Verna 人工核對；缺資料不算 0 分機制正確 |
+| 2 訊號與計分 | 匯入 01 檔字典到 config；新聞、ESG、AWS 案例清單；signals、scores、Tier、Play、雲端現況；每週排程 | 挑 3 家公司（三產業各 1）輸出逐分明細供 Verna 人工核對；缺資料不算 0 分機制正確 |
 | 3 前端 | 4 頁、配色、API 串接、篩選排序、證據追溯 | 1280px 下版面正確；任何分數可追到訊號與來源連結；Lighthouse 無障礙 ≥ 90 |
 | 4 Copilot | Gemini 串接、按鈕、JSON 驗證重試、快取、展示/即時模式、每日上限 | 每個按鈕對 2 家公司產出合理結果；[S#] 皆對得到真實訊號；額度用完能降級 |
 | 5 驗證與文件 | precision@20% 驗證、方法論頁、每週摘要信、README | README 含：架構圖＋AWS 對照圖、設定步驟、手動觸發、看 log、常見錯誤、停用排程、資料來源與限制、預估成本（零） |
