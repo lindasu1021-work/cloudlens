@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudLens 帳戶頁</title>
+<meta name="description" content="帳戶分數拆解、訊號證據與切入劇本">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav class="nav" aria-label="主要導覽">
+  <div class="nav-inner">
+    <span class="brand">CloudLens</span>
+    <a href="index.html">總覽</a>
+    <span class="soon">方法論（即將推出）</span>
+    <span class="soon">資料狀態（即將推出）</span>
+  </div>
+</nav>
+<main>
+  <a class="back" href="index.html">← 回總覽</a>
+  <header class="acct-head" id="head"></header>
+  <div class="acct-grid">
+    <div class="side-stack">
+      <section class="card">
+        <div class="card-head"><h2>分數拆解</h2><span class="hint">斜線＝無資料（不算 0 分，移出分母）；點 [S#] 對應下方訊號</span></div>
+        <div class="card-body" id="breakdown"></div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>訊號時間軸</h2><span class="hint" id="sig-count"></span></div>
+        <div class="card-body"><ul class="timeline" id="timeline"></ul></div>
+      </section>
+    </div>
+    <aside class="side-stack">
+      <section class="copilot" aria-label="Copilot">
+        <h2>Copilot</h2>
+        <span class="tag">Phase 4 上線</span>
+        <p style="font-size:13px;margin:10px 0 0">只針對這家公司，以上方訊號 [S#] 為依據產出：</p>
+        <ul>
+          <li>帳戶速覽</li><li>破冰信（CIO／CFO，中英）</li><li>預想異議</li><li>MEDDPICC 初稿</li>
+        </ul>
+        <p class="muted" style="font-size:12px;margin:0">每個論點都會標註 [S#]；資料沒有的不會編造。</p>
+      </section>
+      <section class="card chart-wrap" id="rev">
+        <div class="card-head"><h2>月營收</h2><span class="hint">近 15 個月・億元</span></div>
+        <div class="card-body"><div class="chart"></div><div class="tooltip" role="status"></div></div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>切入劇本</h2></div>
+        <div class="card-body" id="play"></div>
+      </section>
+    </aside>
+  </div>
+</main>
+<footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
+
+<script src="js/api.js"></script>
+<script src="js/charts.js"></script>
+<script>
+(async () => {
+  const { LABELS, COMPONENTS, fmt, esc, tierBadge, playTag, ageDays } = CL;
+  const d = await CL.load();
+  const code = new URLSearchParams(location.search).get('code');
+  const c = d.byCode[code];
+  if (!c || !c.score) { document.getElementById('head').innerHTML = '<h1>查無此帳戶</h1>'; return; }
+  const s = c.score, sig = c.signals;
+  document.title = `${c.name} ${c.code}｜CloudLens`;
+  const by = (type, cat) => sig.filter(x => x.type === type && (!cat || x.cat === cat));
+
+  document.getElementById('head').innerHTML = `
+    <div><h1>${esc(c.name)} <span style="font-weight:400">${c.code}</span></h1>
+      <div class="sub">${esc(c.full)}・${esc(c.industry)}・${c.market}・實收資本額 ${(c.capital / 1e8).toFixed(0)} 億元</div></div>
+    <div class="tags">${tierBadge(String(s.tier))}
+      <span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>
+      <span class="badge cloud">資料完整度 ${Math.round(s.data_completeness * 100)}%</span></div>`;
+
+  const refs = list => list.slice(0, 8).map(x => `<span class="ref" data-ref="${x.ref}" tabindex="0">[${x.ref}]</span>`).join('') + (list.length > 8 ? `<span class="muted">…等 ${list.length} 筆</span>` : '');
+  function why(k) {
+    const rev = c.revenue;
+    switch (k) {
+      case 'n1': {
+        const last = rev.slice(-12);
+        if (last.length < 6) return '月營收不足 6 個月，以實收資本額百分位代理';
+        return `近 12 個月營收 ${(last.reduce((a, r) => a + r[1], 0) / 1e5).toFixed(0)} 億元，帳戶池百分位 × 25`;
+      }
+      case 'n2': case 't4': return '台灣就業通資料僅 1,000 筆且集中台北市，無法使用（D18）';
+      case 'n3': {
+        const docs = new Set(by('N3').map(x => x.src + x.title + x.at));
+        return docs.size ? `近 365 天命中遷移／數據／AI 字典的文件 ${docs.size} 份，遞減報酬 25×(1−0.5ⁿ)　${refs(by('N3'))}` : '近 365 天沒有命中策略字典的重訊或新聞';
+      }
+      case 'n4': {
+        const p = [];
+        if (c.industry === '金融保險') p.push('金融業監管基礎 10');
+        const e = by('N4', 'esg_breach'), i = by('N4', 'incident');
+        p.push(e.length ? `ESG 資訊外洩 +10 ${refs(e)}` : (c.market === '上市' ? 'ESG 無外洩事件' : '上櫃無 ESG 資安揭露（滿分改 15）'));
+        p.push(i.length ? `資安事件重訊 +15 ${refs(i)}` : '近 365 天無資安事件重訊');
+        return p.join('；');
+      }
+      case 't1': {
+        const act = by('T1').filter(x => ageDays(x.at, d.generated_at) <= 90);
+        return act.length ? `近 90 天觸發事件（30 天內 ×1、31–90 天 ×0.5，上限 50）　${refs(act)}` : '近 90 天沒有觸發事件';
+      }
+      case 't2': { const e = by('T2'); return e.length ? `${esc(e[0].title)}　${refs(e)}` : '近 30 天命中新聞未達過去 90 天月均的 1.5 倍'; }
+      case 't3': {
+        if (s.t3 === '') return c.industry === '金融保險' ? '金融業營收受投資收益波動，不適用（D27）' : '月營收不足 3 個月';
+        const e = by('T3');
+        return e.length ? `${esc(e[0].title)}　${refs(e)}` : '近 3 個月 YoY ' + rev.slice(-3).map(r => r[2] === '' ? '—' : Number(r[2]).toFixed(1) + '%').join('、') + '，未連續高於 +15% 或低於 −15%';
+      }
+    }
+  }
+  const maxOf = comp => comp.key === 'n4' && c.market === '上櫃' ? 15 : comp.max;
+  const axis = (ax, title) => `
+    <div class="axis-title"><h3>${title}</h3><span class="score">${fmt(s[ax])}<span class="muted" style="font-size:13px;font-weight:400"> / 100・帳戶池百分位 ${Math.round(s[ax + '_pct'] * 100)}</span></span></div>` +
+    COMPONENTS.filter(x => x.axis === ax).map(x => {
+      const v = s[x.key], miss = v === '', mx = maxOf(x);
+      return `<div class="comp"><div class="comp-row">
+        <div class="comp-name">${x.name}</div>
+        <div class="track${miss ? ' missing' : ''}" role="img" aria-label="${x.name} ${miss ? '無資料' : v + ' / ' + mx}">${miss ? '' : `<i style="width:${v / mx * 100}%"></i>`}</div>
+        <div class="comp-val">${miss ? '<span class="muted">無資料</span>' : `<b>${fmt(v)}</b> <span class="muted">/ ${mx}</span>`}</div>
+      </div><div class="comp-why">${why(x.key)}</div></div>`;
+    }).join('');
+  document.getElementById('breakdown').innerHTML = axis('need', 'Need 需求強度') + '<div style="height:12px"></div>' + axis('timing', 'Timing 時機');
+
+  document.getElementById('sig-count').textContent = `${sig.length} 筆，依日期新到舊`;
+  document.getElementById('timeline').innerHTML = sig.length ? sig.map(x => {
+    const title = x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>` : esc(x.title);
+    return `<li id="${x.ref}" data-ref="${x.ref}"><span class="sid">${x.ref}</span><span class="date">${String(x.at).slice(0, 10)}</span>
+      <span class="type">${LABELS.type[x.type] || x.type}・${LABELS.cat[x.cat] || x.cat}</span><span>${title}</span></li>`;
+  }).join('') : '<li class="muted">沒有訊號</li>';
+
+  // [S#] 與時間軸雙向對應
+  const setOn = (ref, on) => document.querySelectorAll(`[data-ref="${ref}"]`).forEach(n => n.classList.toggle('on', on));
+  document.querySelectorAll('[data-ref]').forEach(n => {
+    n.addEventListener('mouseenter', () => setOn(n.dataset.ref, true));
+    n.addEventListener('mouseleave', () => setOn(n.dataset.ref, false));
+  });
+  document.querySelectorAll('.ref').forEach(n => {
+    const jump = () => document.getElementById(n.dataset.ref).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    n.addEventListener('click', jump);
+    n.addEventListener('keydown', e => { if (e.key === 'Enter') jump(); });
+  });
+
+  Charts.revenueBars(document.getElementById('rev'), c.revenue.slice(-15));
+
+  const cnt = {};
+  sig.forEach(x => String(x.play || '').split(',').filter(Boolean).forEach(p => { cnt[p] = (cnt[p] || 0) + 1; }));
+  document.getElementById('play').innerHTML = `
+    <p style="margin:0 0 6px">主 Play：${playTag(s.play_primary)}　次 Play：${playTag(s.play_secondary)}</p>
+    <p class="muted" style="font-size:12px;margin:0">相關訊號：${Object.entries(cnt).map(([p, n]) => `${p} ${n} 筆`).join('、') || '無（依產業先驗判定）'}。AWS 對應方案與話術於 Phase 4 加入。</p>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">雲端現況：${LABELS.cloud[s.cloud_status]}</p>`;
+})();
+</script>
+</body>
+</html>

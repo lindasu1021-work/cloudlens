@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudLens 帳戶總覽</title>
+<meta name="description" content="以公開資料為台灣上市櫃企業評分並標出 AWS 切入劇本">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<nav class="nav" aria-label="主要導覽">
+  <div class="nav-inner">
+    <span class="brand">CloudLens</span>
+    <a href="index.html" aria-current="page">總覽</a>
+    <span class="soon" title="Phase 5 上線">方法論（即將推出）</span>
+    <span class="soon" title="Phase 3 上線">資料狀態（即將推出）</span>
+  </div>
+</nav>
+<main>
+  <p class="notice" id="notice">載入中…</p>
+
+  <section class="kpis" aria-label="關鍵指標">
+    <div class="kpi"><div class="kpi-label">帳戶池</div><div class="kpi-value" id="k-accounts">—</div><div class="kpi-sub">三產業・實收資本額 ≥ 10 億</div></div>
+    <div class="kpi"><div class="kpi-label">Tier 1 立即開發</div><div class="kpi-value" id="k-tier1">—</div><div class="kpi-sub" id="k-tier1-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">近 30 天觸發事件</div><div class="kpi-value" id="k-events">—</div><div class="kpi-sub">重大訊息：併購、擴廠、資安事件…</div></div>
+    <div class="kpi"><div class="kpi-label">Greenfield 比例</div><div class="kpi-value" id="k-green">—</div><div class="kpi-sub">雲端現況未知（新導入機會）</div></div>
+  </section>
+
+  <section class="grid-2">
+    <div class="card chart-wrap" id="quad">
+      <div class="card-head"><h2>先打誰：Need × Timing 象限</h2><span class="hint">點選公司看分數拆解；虛線＝帳戶池前 30% 門檻</span></div>
+      <div class="card-body">
+        <div class="chart"></div>
+        <div class="legend" id="legend"></div>
+        <div class="tooltip" role="status"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>最新觸發事件</h2><span class="hint">近 30 天</span></div>
+      <div class="card-body"><ul class="events" id="events"></ul></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="t-title">
+    <div class="card-head"><h2 id="t-title">帳戶清單</h2><span class="hint">點欄位標題排序</span></div>
+    <div class="card-body">
+      <div class="filters">
+        <label class="sr-only" for="f-q">搜尋公司</label>
+        <input id="f-q" type="search" placeholder="搜尋公司名稱或代號">
+        <label class="sr-only" for="f-ind">產業</label>
+        <select id="f-ind"><option value="">全部產業</option></select>
+        <label class="sr-only" for="f-tier">Tier</label>
+        <select id="f-tier"><option value="">全部 Tier</option><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option><option value="hold">暫緩</option></select>
+        <label class="sr-only" for="f-play">主 Play</label>
+        <select id="f-play"><option value="">全部 Play</option></select>
+        <label class="sr-only" for="f-cloud">雲端現況</label>
+        <select id="f-cloud"><option value="">全部雲端現況</option></select>
+        <span class="count" id="count"></span>
+      </div>
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
+
+<script src="js/api.js"></script>
+<script src="js/charts.js"></script>
+<script>
+(async () => {
+  const { LABELS, fmt, esc, tierBadge, playTag, shapeSvg, ageDays } = CL;
+  let d;
+  try { d = await CL.load(); }
+  catch (e) { document.getElementById('notice').textContent = e.message; return; }
+
+  document.getElementById('notice').innerHTML =
+    `<b>MVP 預覽</b>　資料快照 ${d.generated_at}（${d.run_id}・規則 v${d.rule_version}）：${esc(d.note)}。重大訊息涵蓋近一年、新聞涵蓋近一年（每家每時段上限約 100 則）。`;
+
+  const rows = d.accounts.map(c => ({
+    code: c.code, name: c.name, industry: c.industry, market: c.market,
+    need: c.score.need === '' ? 0 : Number(c.score.need), timing: c.score.timing === '' ? 0 : Number(c.score.timing),
+    tier: String(c.score.tier), play: c.score.play_primary, play2: c.score.play_secondary,
+    cloud: c.score.cloud_status, comp: Number(c.score.data_completeness)
+  }));
+
+  // KPI
+  const t1 = rows.filter(r => r.tier === '1');
+  const recent = d.signals.filter(s => s.type === 'T1' && ageDays(s.at, d.generated_at) <= 30);
+  document.getElementById('k-accounts').textContent = rows.length;
+  document.getElementById('k-tier1').textContent = t1.length;
+  document.getElementById('k-tier1-sub').textContent = `占 ${Math.round(t1.length / rows.length * 100)}%・Need 與 Timing 皆在前 30%`;
+  document.getElementById('k-events').textContent = recent.length;
+  document.getElementById('k-green').textContent = Math.round(rows.filter(r => r.cloud === 'unknown').length / rows.length * 100) + '%';
+
+  // 象限圖：分隔線畫在「高」群組最低分與「低」群組最高分的中間，避免壓在點上
+  const mid = (hi, lo) => (Math.min(...hi) + Math.max(0, ...lo)) / 2;
+  const highN = r => r.tier === '1' || r.tier === '2', highT = r => r.tier === '1' || r.tier === '3';
+  const needCut = mid(rows.filter(highN).map(r => r.need), rows.filter(r => !highN(r)).map(r => r.need));
+  const timingCut = mid(rows.filter(highT).map(r => r.timing), rows.filter(r => !highT(r)).map(r => r.timing));
+  const go = r => { location.href = 'account.html?code=' + r.code; };
+  Charts.quadrant(document.getElementById('quad'), rows, { needCut, timingCut, onClick: go });
+  document.getElementById('legend').innerHTML = ['Migration', 'Data', 'GenAI', 'Security']
+    .map(p => `<span>${shapeSvg(p, 11)}${LABELS.play[p]}（${rows.filter(r => r.play === p).length}）</span>`).join('');
+
+  // 最新觸發事件
+  const evList = recent.slice().sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 9);
+  document.getElementById('events').innerHTML = evList.length ? evList.map(s => {
+    const c = d.byCode[s.code];
+    const fresh = ageDays(s.at, d.generated_at) <= 7;
+    return `<li><div class="meta">${fresh ? '<span class="dot" title="近 7 天"></span>' : ''}${String(s.at).slice(5, 10).replace('-', '/')}・<a href="account.html?code=${s.code}">${esc(c.name)}</a>・${LABELS.cat[s.cat] || s.cat}</div>
+      <div class="title">${esc(s.title)}</div></li>`;
+  }).join('') : '<li class="muted">近 30 天沒有觸發事件</li>';
+
+  // 篩選選項
+  const opts = (id, vals, label) => {
+    document.getElementById(id).insertAdjacentHTML('beforeend', vals.map(v => `<option value="${v}">${label ? label[v] : v}</option>`).join(''));
+  };
+  opts('f-ind', [...new Set(rows.map(r => r.industry))]);
+  opts('f-play', ['Migration', 'Data', 'GenAI', 'Security'], LABELS.play);
+  opts('f-cloud', ['aws', 'competitor', 'unknown'], LABELS.cloud);
+
+  // 表格
+  const cols = [
+    { k: 'code', t: '代號' }, { k: 'name', t: '公司' }, { k: 'industry', t: '產業' },
+    { k: 'need', t: 'Need', num: true }, { k: 'timing', t: 'Timing', num: true }, { k: 'tierOrder', t: 'Tier' },
+    { k: 'play', t: '主 Play' }, { k: 'play2', t: '次 Play' }, { k: 'cloud', t: '雲端現況' }, { k: 'comp', t: '資料完整度', num: true }
+  ];
+  const tierOrder = { '1': 0, '2': 1, '3': 2, hold: 3 };
+  rows.forEach(r => { r.tierOrder = tierOrder[r.tier]; });
+  let sort = { k: 'tierOrder', dir: 1 };
+  const thead = document.getElementById('thead');
+  thead.innerHTML = cols.map(c => `<th aria-sort="none" data-k="${c.k}"><button type="button">${c.t}</button></th>`).join('');
+  thead.querySelectorAll('th').forEach(th => th.querySelector('button').addEventListener('click', () => {
+    const k = th.dataset.k;
+    sort = { k, dir: sort.k === k ? -sort.dir : (cols.find(c => c.k === k).num ? -1 : 1) };
+    render();
+  }));
+  ['f-q', 'f-ind', 'f-tier', 'f-play', 'f-cloud'].forEach(id => document.getElementById(id).addEventListener('input', render));
+
+  function render() {
+    const q = document.getElementById('f-q').value.trim();
+    const f = id => document.getElementById(id).value;
+    const list = rows.filter(r =>
+      (!q || r.name.includes(q) || r.code.includes(q)) &&
+      (!f('f-ind') || r.industry === f('f-ind')) && (!f('f-tier') || r.tier === f('f-tier')) &&
+      (!f('f-play') || r.play === f('f-play')) && (!f('f-cloud') || r.cloud === f('f-cloud'))
+    ).sort((a, b) => {
+      const va = a[sort.k], vb = b[sort.k];
+      const c = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb), 'zh-Hant');
+      return (c || (b.need + b.timing) - (a.need + a.timing)) * (c ? sort.dir : 1);
+    });
+    thead.querySelectorAll('th').forEach(th => th.setAttribute('aria-sort', th.dataset.k === sort.k ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
+    document.getElementById('count').textContent = `顯示 ${list.length} / ${rows.length} 家`;
+    document.getElementById('tbody').innerHTML = list.map(r => `
+      <tr data-code="${r.code}" tabindex="0">
+        <td>${r.code}</td><td><a href="account.html?code=${r.code}">${esc(r.name)}</a></td><td>${esc(r.industry)}</td>
+        <td class="num">${fmt(r.need)}<span class="bar"><i style="width:${r.need}%"></i></span></td>
+        <td class="num">${fmt(r.timing)}<span class="bar"><i style="width:${r.timing}%"></i></span></td>
+        <td>${tierBadge(r.tier)}</td><td>${playTag(r.play)}</td><td>${playTag(r.play2)}</td>
+        <td><span class="badge cloud">${LABELS.cloudShort[r.cloud]}</span></td>
+        <td class="num muted">${Math.round(r.comp * 100)}%</td>
+      </tr>`).join('');
+  }
+  document.getElementById('tbody').addEventListener('click', e => {
+    const tr = e.target.closest('tr'); if (tr && e.target.tagName !== 'A') location.href = 'account.html?code=' + tr.dataset.code;
+  });
+  document.getElementById('tbody').addEventListener('keydown', e => {
+    const tr = e.target.closest('tr'); if (tr && e.key === 'Enter') location.href = 'account.html?code=' + tr.dataset.code;
+  });
+  render();
+})();
+</script>
+</body>
+</html>
