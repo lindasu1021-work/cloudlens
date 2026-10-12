@@ -35,15 +35,7 @@
       </section>
     </div>
     <aside class="side-stack">
-      <section class="copilot" aria-label="Copilot">
-        <h2>Copilot</h2>
-        <span class="tag">Phase 4 上線</span>
-        <p style="font-size:13px;margin:10px 0 0">只針對這家公司，以上方訊號 [S#] 為依據產出：</p>
-        <ul>
-          <li>帳戶速覽</li><li>破冰信（CIO／CFO，中英）</li><li>預想異議</li><li>MEDDPICC 初稿</li>
-        </ul>
-        <p class="muted" style="font-size:12px;margin:0">每個論點都會標註 [S#]；資料沒有的不會編造。</p>
-      </section>
+      <section class="copilot" aria-label="Copilot" id="copilot"></section>
       <section class="card chart-wrap" id="rev">
         <div class="card-head"><h2>月營收</h2><span class="hint">近 15 個月・億元</span></div>
         <div class="card-body"><div class="chart"></div><div class="tooltip" role="status"></div></div>
@@ -59,6 +51,7 @@
 
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/copilot.js"></script>
 <script>
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, playTag, ageDays } = CL;
@@ -139,17 +132,21 @@
       <span class="type">${SRC[x.src] || x.src}</span><span>${title}<br><span class="kinds">${kinds.join('　')}</span></span></li>`;
   }).join('') : '<li class="muted">沒有訊號</li>';
 
-  // [S#] 與時間軸雙向對應
+  // [S#] 與時間軸雙向對應（Copilot 產生的內容也套用）
   const setOn = (ref, on) => document.querySelectorAll(`[data-ref="${ref}"]`).forEach(n => n.classList.toggle('on', on));
-  document.querySelectorAll('[data-ref]').forEach(n => {
-    n.addEventListener('mouseenter', () => setOn(n.dataset.ref, true));
-    n.addEventListener('mouseleave', () => setOn(n.dataset.ref, false));
-  });
-  document.querySelectorAll('.ref').forEach(n => {
-    const jump = () => document.getElementById(n.dataset.ref).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    n.addEventListener('click', jump);
-    n.addEventListener('keydown', e => { if (e.key === 'Enter') jump(); });
-  });
+  function hookRefs(scope) {
+    scope.querySelectorAll('[data-ref]').forEach(n => {
+      n.addEventListener('mouseenter', () => setOn(n.dataset.ref, true));
+      n.addEventListener('mouseleave', () => setOn(n.dataset.ref, false));
+    });
+    scope.querySelectorAll('.ref').forEach(n => {
+      const jump = () => { const t = document.getElementById(n.dataset.ref); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      n.addEventListener('click', jump);
+      n.addEventListener('keydown', e => { if (e.key === 'Enter') jump(); });
+    });
+  }
+  hookRefs(document);
+  Copilot.mount(document.getElementById('copilot'), c.code, hookRefs);
 
   Charts.revenueBars(document.getElementById('rev'), c.revenue.slice(-15));
 

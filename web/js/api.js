@@ -137,5 +137,5 @@ const CL = (() => {
     return `<b>目前無法連線後端，顯示靜態快照</b>（${d.generated_at}・${esc(d.note)}）`;
   }
 
-  return { load, gas, sourceNote, LABELS, PLAY_COLOR, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
+  return { load, gas, GAS_URL, sourceNote, LABELS, PLAY_COLOR, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
 })();

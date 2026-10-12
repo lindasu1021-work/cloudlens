@@ -32,6 +32,10 @@ function doGet(e) {
 function doPost(e) {
   try {
     var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (body.action === 'copilot') {
+      var runId = String(setting_('current_run_id', ''));
+      return jsonOut_({ ok: true, data: apiCopilot_(body), run_id: runId });
+    }
     return jsonOut_({ ok: true, data: { method: 'POST', content_type: e.postData.type, echo: body,
                                          server_time: new Date().toISOString() }, run_id: '' });
   } catch (err) {

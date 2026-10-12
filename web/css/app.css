@@ -122,8 +122,8 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 .type { font-size: 12px; color: var(--ink-600); }
 
 .copilot { background: var(--indigo-50); border-radius: var(--radius); padding: 16px 18px; }
-.copilot h2 { font-size: 16px; margin-bottom: 6px; }
-.copilot ul { padding-left: 18px; margin: 8px 0; color: var(--ink-600); font-size: 13px; }
+.copilot h2 { font-size: 16px; }
+.copilot ul, .copilot ol { padding-left: 18px; margin: 6px 0; font-size: 13px; }
 .copilot .tag { display: inline-block; background: var(--gray-50); color: var(--ink-600); font-size: 12px; padding: 1px 8px; border-radius: 10px; }
 .side-stack { display: grid; gap: 16px; }
 
@@ -138,3 +138,36 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .up::first-letter { color: var(--orange-500); }
 .down { color: var(--ink-500); }
 .kinds { font-size: 12px; color: var(--ink-600); }
+
+/* Copilot */
+.cp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.cp-mode { font-size: 12px; display: flex; gap: 6px; align-items: center; }
+.tag-live { background: var(--indigo-100) !important; color: var(--indigo-900) !important; }
+.linklike { all: unset; color: var(--indigo-700); cursor: pointer; font-size: 12px; text-decoration: underline; }
+.linklike:focus-visible { outline: 3px solid var(--indigo-100); }
+.cp-login { display: flex; gap: 6px; margin-bottom: 10px; }
+.cp-login input, .cp-ask textarea { font: inherit; font-size: 13px; border: 1px solid var(--gray-200); border-radius: 6px; padding: 6px 8px; background: var(--white); color: var(--ink-900); flex: 1; }
+.cp-ask { margin: 8px 0; }
+.cp-ask textarea { width: 100%; resize: vertical; margin-bottom: 6px; }
+.btn-primary { font: inherit; font-size: 13px; background: var(--indigo-700); color: var(--white); border: 0; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+.btn-primary:hover { background: var(--indigo-900); }
+.btn-secondary { font: inherit; font-size: 12px; background: var(--white); color: var(--ink-900); border: 1px solid var(--gray-200); border-radius: 6px; padding: 4px 10px; cursor: pointer; margin-top: 8px; }
+.btn-secondary:hover { background: var(--gray-50); }
+.cp-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.cp-btn, .cp-lang button { font: inherit; font-size: 12px; background: var(--white); color: var(--ink-900); border: 1px solid var(--gray-200); border-radius: 14px; padding: 3px 10px; cursor: pointer; }
+.cp-btn:hover, .cp-lang button:hover { border-color: var(--indigo-700); }
+.cp-btn[aria-pressed="true"], .cp-lang button[aria-pressed="true"] { background: var(--indigo-700); color: var(--white); border-color: var(--indigo-700); }
+.cp-lang { display: flex; gap: 6px; margin-top: 8px; }
+.cp-out { margin-top: 12px; font-size: 13px; min-height: 40px; }
+.cp-out h4 { font-size: 13px; margin: 10px 0 2px; color: var(--indigo-900); }
+.cp-out p { margin: 4px 0; }
+.cp-mail { background: var(--white); border-radius: 6px; padding: 10px 12px; }
+.cp-subject { font-weight: 700; margin-bottom: 6px; }
+.cp-used { font-size: 12px; color: var(--ink-600); margin-top: 4px; }
+.cp-obj li { margin-bottom: 8px; }
+.cp-medd { background: var(--white); border-radius: 6px; }
+.cp-medd th { background: var(--white); width: 92px; font-size: 12px; vertical-align: top; white-space: normal; }
+.cp-medd td { white-space: normal; vertical-align: top; }
+.cp-meta { font-size: 12px; color: var(--ink-500); margin-top: 8px; }
+.cp-notice { background: var(--white); border-left: 3px solid var(--indigo-500); padding: 6px 10px; color: var(--ink-600); }
+.cp-foot { font-size: 12px; color: var(--ink-500); margin: 10px 0 0; }
