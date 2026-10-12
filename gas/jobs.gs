@@ -68,9 +68,12 @@ function runJob_(job, makeRunId, makeTasks, continueHandler) {
     var runId = st ? st.run_id : makeRunId();
     var tasks = st ? st.tasks : makeTasks();
     var failures = st ? st.failures : [];
+    // 保險：先排一個 7 分鐘後的接續。若這次執行被 GAS 6 分鐘上限強制終止，會從最後存的斷點繼續
+    scheduleContinuation_(continueHandler, 7 * 60 * 1000);
     for (var i = st ? st.idx : 0; i < tasks.length; i++) {
+      var save = { run_id: runId, tasks: tasks, idx: i, failures: failures, saved: Date.now() };
+      props.setProperty(stateKey, JSON.stringify(save));
       if (Date.now() - t0 > BUDGET_MS) {
-        props.setProperty(stateKey, JSON.stringify({ run_id: runId, tasks: tasks, idx: i, failures: failures, saved: Date.now() }));
         scheduleContinuation_(continueHandler);
         Logger.log(job + '：時間預算用完，停在 ' + i + '/' + tasks.length + '，1 分鐘後接續');
         return;

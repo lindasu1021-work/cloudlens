@@ -27,10 +27,10 @@ function listTriggers() {
   return list;
 }
 
-/** 接續觸發器：同名只保留一個。 */
-function scheduleContinuation_(handler) {
+/** 接續觸發器：同名只保留一個。預設 1 分鐘後。 */
+function scheduleContinuation_(handler, ms) {
   clearContinuation_(handler);
-  ScriptApp.newTrigger(handler).timeBased().after(60 * 1000).create();
+  ScriptApp.newTrigger(handler).timeBased().after(ms || 60 * 1000).create();
 }
 
 function clearContinuation_(handler) {

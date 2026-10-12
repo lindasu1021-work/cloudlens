@@ -48,7 +48,9 @@ function annRawId_(src, code, date, time, subject) {
 // ---------- 歷史回補（MOPS 依日期查詢，一次一天、全市場） ----------
 
 var MOPS_ANN_URL = 'https://mopsov.twse.com.tw/mops/web/ajax_t05st02';
-var ANN_HIST_DAYS = 365, ANN_HIST_CHUNK = 7;
+// GAS 實測從海外連 MOPS 每天約 27 秒：一個步驟只抓 1 天，避免單一步驟撞到 6 分鐘上限；
+// 每次每週工作最多回補 90 天（由新到舊），一年份約 4 週補齊（免費帳號每日排程總時間 90 分鐘）
+var ANN_HIST_DAYS = 365, ANN_HIST_CHUNK = 1, ANN_HIST_PER_RUN = 90;
 
 /**
  * 尚未回補的 7 天區段。第一次執行時固定起始日（今天往前 365 天）與結束日（今天），
@@ -63,7 +65,7 @@ function annHistTasks_() {
     props.setProperty('ANN_HIST', JSON.stringify(st));
   }
   var tasks = [];
-  for (var t = st.start; t <= st.end; t += ANN_HIST_CHUNK * 864e5) {
+  for (var t = st.end; t >= st.start && tasks.length < ANN_HIST_PER_RUN; t -= ANN_HIST_CHUNK * 864e5) {
     var key = Utilities.formatDate(new Date(t), TZ, 'yyyyMMdd');
     if (!st.done[key]) tasks.push('annhist:' + key);
   }

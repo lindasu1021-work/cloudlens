@@ -125,8 +125,10 @@ function scopeOk_(scope, industryCode) {
 }
 
 /** 回傳命中的字典項目（依產業限定）。text 為原文；substring 比對時忽略空白。 */
+var compactCache_ = { text: null, compact: '' };
 function matchCat_(entries, text, industryCode) {
-  var compact = String(text).replace(/\s+/g, '');
+  if (compactCache_.text !== text) compactCache_ = { text: text, compact: String(text).replace(/\s+/g, '') };
+  var compact = compactCache_.compact;
   return (entries || []).filter(function (e) {
     if (!scopeOk_(e.scope, industryCode)) return false;
     return e.re ? e.re.test(text) : compact.indexOf(e.kw) >= 0;
