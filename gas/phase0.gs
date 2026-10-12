@@ -105,7 +105,7 @@ function testGemini() {
       .filter(function (m) { return (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0; })
       .map(function (m) { return m.name.replace('models/', ''); });
   }
-  // 舊模型可能對新使用者回 404，依序嘗試直到成功
+  // 舊模型可能對新使用者回 404、熱門模型可能暫時 503，依序嘗試直到成功
   var candidates = (model ? [model] : []).concat(['gemini-flash-latest'],
     names.filter(function (n) { return /flash/.test(n) && !/preview|exp|image|tts|live/.test(n); }).reverse());
   var body = { contents: [{ parts: [{ text: '用一句繁體中文回答：雲端運算是什麼？' }] }] };
@@ -116,7 +116,7 @@ function testGemini() {
     tried.push(model);
     res = fetchWithRetry_(base + 'models/' + model + ':generateContent', Object.assign({
       method: 'post', contentType: 'application/json', payload: JSON.stringify(body) }, hdr));
-    if (res.code !== 404) break;
+    if (res.code !== 404 && res.code < 500) break;
   }
   var text = '';
   try { text = JSON.parse(res.text).candidates[0].content.parts[0].text; } catch (e) { text = res.text.slice(0, 300); }
