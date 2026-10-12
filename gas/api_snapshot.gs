@@ -9,7 +9,7 @@
 var SNAP_TTL = 6 * 60 * 60;
 var SNAP_CHUNK = 90000;
 
-function snapKey_(runId) { return 'snap:' + runId; }
+function snapKey_(runId) { return 'snap:v2:' + runId; } // v2：加入 pool、play_scores、訊號 points/lane
 
 function getSnapshot_(runId) {
   var cache = CacheService.getScriptCache();
@@ -55,10 +55,42 @@ function buildSnapshot_(runId) {
     if (codes[c]) (revenue[c] = revenue[c] || []).push([String(r.year_month), Number(r.revenue), r.yoy_pct]);
   });
   Object.keys(revenue).forEach(function (c) { revenue[c].sort(function (a, b) { return a[0].localeCompare(b[0]); }); revenue[c] = revenue[c].slice(-15); });
-  var signals = readTable_('signals').filter(function (s) { return codes[String(s.stock_code)]; }).map(function (s) {
+  var now = Date.now();
+  var LANE = { ann: 'announcement', news: 'news', revenue: 'revenue', esg: 'esg' };
+  var rawSignals = readTable_('signals').filter(function (s) { return codes[String(s.stock_code)]; });
+  var signals = rawSignals.map(function (s) {
     return { id: s.signal_id, code: String(s.stock_code), type: s.signal_type, cat: s.category, play: s.play, strength: s.strength,
-             pts: s.points_raw, at: String(s.observed_at), title: s.title, url: s.source === 'news' ? s.evidence_url : '', src: s.source };
+             pts: s.points_raw, points: Math.round(signalContribution_(s, now) * 10) / 10, lane: LANE[s.source] || s.source,
+             at: String(s.observed_at), title: s.title, url: s.source === 'news' ? s.evidence_url : '', src: s.source };
   });
+  // 每家公司的四個 Play 分數（與計分同一公式）
+  var byCode = {};
+  rawSignals.forEach(function (s) { (byCode[String(s.stock_code)] = byCode[String(s.stock_code)] || []).push(s); });
+  var ind = {};
+  companies.forEach(function (c) { ind[String(c.stock_code)] = String(c.industry_code); });
+  scores.forEach(function (r) {
+    var ps = playScores_(byCode[String(r.stock_code)] || [], ind[String(r.stock_code)], now);
+    r.play_scores = ps.scores;
+    r.play_from_signals = Math.round(ps.fromSignals * 10) / 10;
+  });
+  // 帳戶池中位數（缺資料不計入）與 Tier 門檻（前 30%）
+  var median = function (vals) {
+    vals = vals.filter(function (v) { return v !== '' && v !== null && !isNaN(Number(v)); }).map(Number).sort(function (a, b) { return a - b; });
+    if (!vals.length) return null;
+    var m = Math.floor(vals.length / 2);
+    return vals.length % 2 ? vals[m] : (vals[m - 1] + vals[m]) / 2;
+  };
+  var pool = { median: {} };
+  ['n1', 'n2', 'n3', 'n4', 't1', 't2', 't3', 't4', 'need', 'timing'].forEach(function (k) {
+    pool.median[k] = median(scores.map(function (r) { return r[k]; }));
+  });
+  var high = function (axis, tiers) {
+    var hi = scores.filter(function (r) { return tiers.indexOf(String(r.tier)) >= 0; }).map(function (r) { return Number(r[axis]); });
+    var lo = scores.filter(function (r) { return tiers.indexOf(String(r.tier)) < 0; }).map(function (r) { return Number(r[axis]) || 0; });
+    return hi.length ? (Math.min.apply(null, hi) + Math.max.apply(null, lo.concat([0]))) / 2 : null;
+  };
+  pool.need_cut = high('need', ['1', '2']);
+  pool.timing_cut = high('timing', ['1', '3']);
   var scoreLog = readTable_('run_log').filter(function (r) { return r.step === 'scores' && String(r.run_id) === runId; }).pop();
   var validation = readTable_('validation').filter(function (v) { return String(v.run_id) === runId; }).pop() || null;
   return {
@@ -69,7 +101,7 @@ function buildSnapshot_(runId) {
     companies: companies.map(function (c) {
       return { code: String(c.stock_code), name: c.name_short, full: c.name_full, market: c.market, industry: c.industry_name, capital: Number(c.capital) };
     }),
-    scores: scores, prev: prev, signals: signals, revenue: revenue, validation: validation,
+    scores: scores, prev: prev, signals: signals, revenue: revenue, validation: validation, pool: pool,
     aws_cases: readTable_('config_validation')
   };
 }

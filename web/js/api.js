@@ -5,7 +5,7 @@
 const CL = (() => {
   // Web App 網址本來就公開在前端，不是秘密
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzb32r6vAc54inssIjGO3ol0FNmevyKkDvp_QMmpNYguGhz4C6k5fNk8Nmc3izW_7fo/exec';
-  const CACHE_KEY = 'cl:snapshot:v1', CACHE_MS = 30 * 60 * 1000;
+  const CACHE_KEY = 'cl:snapshot:v2', CACHE_MS = 30 * 60 * 1000;
 
   async function gas(action, params = {}, timeoutMs = 20000) {
     const qs = new URLSearchParams({ action, ...params }).toString();
@@ -84,12 +84,23 @@ const CL = (() => {
       c.signals.forEach(s => {
         const key = s.src + '|' + s.title + '|' + s.at;
         if (!docs[key]) {
-          docs[key] = { ref: 'S' + (c.docs.length + 1), at: s.at, title: s.title, src: s.src, url: evidenceUrl(c.code, s), parts: [] };
+          docs[key] = { ref: 'S' + (c.docs.length + 1), at: s.at, title: s.title, src: s.src, url: evidenceUrl(c.code, s), parts: [],
+                        lane: s.lane || LANE_OF[s.src] || s.src, points: 0, play: '' };
           c.docs.push(docs[key]);
         }
-        docs[key].parts.push(s);
-        s.ref = docs[key].ref;
+        const doc = docs[key];
+        doc.parts.push(s);
+        s.ref = doc.ref;
+        // 文件得分＝各訊號貢獻的最大值；文件的 Play＝貢獻最大且有 Play 的訊號的第一個 Play
+        const pts = Number(s.points ?? 0);
+        if (pts >= doc.points) {
+          doc.points = pts;
+          const pl = String(s.play || '').split(',')[0].trim();
+          if (pl && (pts > 0 || !doc.play)) doc.play = pl;
+        }
+        if (!doc.play && s.play) doc.play = String(s.play).split(',')[0].trim();
       });
+      c.docs.forEach(d => { d.kinds = [...new Set(d.parts.map(p => `${LABELS.type[p.type] || p.type}・${LABELS.cat[p.cat] || p.cat}`))]; });
       c.revenue = d.revenue[c.code] || [];
     });
     cache = { ...d, byCode, accounts: Object.values(byCode).filter(c => c.score) };
@@ -107,6 +118,7 @@ const CL = (() => {
     return '';
   }
 
+  const LANE_OF = { ann: 'announcement', news: 'news', revenue: 'revenue', esg: 'esg' };
   const ageDays = (iso, ref) => (new Date(ref + 'T23:59:59+08:00') - new Date(iso)) / 864e5;
   const fmt = (v, d = 1) => (v === '' || v === null || v === undefined) ? '—' : Number(v).toFixed(d).replace(/\.0$/, '');
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

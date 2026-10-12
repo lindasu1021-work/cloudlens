@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CloudLens 帳戶頁</title>
-<meta name="description" content="帳戶分數拆解、訊號證據與切入劇本">
+<meta name="description" content="帳戶分數、訊號證據、營收動能與 Copilot">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
@@ -23,27 +23,46 @@
 <main>
   <a class="back" href="index.html">← 回總覽</a> <span class="muted" id="src" style="font-size:12px;margin-left:12px"></span>
   <header class="acct-head" id="head"></header>
+
+  <!-- A 分數摘要列 -->
+  <section class="summary-row" aria-label="分數摘要">
+    <div class="card mini"><h2 class="mini-h">Need 需求強度</h2><div id="g-need" class="gauge"></div><p class="mini-note" id="g-need-note"></p></div>
+    <div class="card mini"><h2 class="mini-h">Timing 時機</h2><div id="g-timing" class="gauge"></div><p class="mini-note" id="g-timing-note"></p></div>
+    <div class="card mini"><h2 class="mini-h" id="q-title">在帳戶池的位置</h2><div id="mini-quad"></div></div>
+    <div class="card mini">
+      <div class="mini-head"><h2 class="mini-h" id="rank-title">同產業排名</h2>
+        <div class="seg-toggle" role="group" aria-label="排名依據"><button type="button" data-metric="need" aria-pressed="true">Need</button><button type="button" data-metric="timing" aria-pressed="false">Timing</button></div></div>
+      <div id="rank"></div>
+    </div>
+  </section>
+
   <div class="acct-grid">
     <div class="side-stack">
       <section class="card">
-        <div class="card-head"><h2>分數拆解</h2><span class="hint">斜線＝無資料（不算 0 分，移出分母）；點 [S#] 對應下方訊號</span></div>
+        <div class="card-head"><h2 id="b-title">分數拆解</h2><span class="hint">橘條＝得分・黑刻度＝帳戶池中位數・斜線＝無資料（不算 0 分）</span></div>
         <div class="card-body" id="breakdown"></div>
       </section>
       <section class="card">
-        <div class="card-head"><h2>訊號時間軸</h2><span class="hint" id="sig-count"></span></div>
-        <div class="card-body"><ul class="timeline" id="timeline"></ul></div>
-      </section>
-    </div>
-    <aside class="side-stack">
-      <section class="copilot" aria-label="Copilot" id="copilot"></section>
-      <section class="card chart-wrap" id="rev">
-        <div class="card-head"><h2>月營收</h2><span class="hint">近 15 個月・億元</span></div>
-        <div class="card-body"><div class="chart"></div><div class="tooltip" role="status"></div></div>
+        <div class="card-head"><h2 id="c-title">訊號時間軸</h2><span class="hint">顏色＋形狀＝Play・大小＝得分・點擊看下方清單</span></div>
+        <div class="card-body chart-pad"><div id="swim"></div>
+          <div class="legend" id="swim-legend"></div></div>
       </section>
       <section class="card">
-        <div class="card-head"><h2>切入劇本</h2></div>
-        <div class="card-body" id="play"></div>
+        <div class="card-head"><h2 id="d-title">營收動能</h2><span class="hint">近 15 個月・上：月營收（億元）・下：年增率（虛線＝±15% 門檻）</span></div>
+        <div class="card-body chart-pad"><div id="control"></div></div>
       </section>
+      <section class="card">
+        <div class="card-head"><h2 id="e-title">Play 組成</h2><span class="hint">各 Play 分數占比（含產業先驗各 +5）</span></div>
+        <div class="card-body"><div id="stack"></div><p class="mini-note" id="e-note"></p></div>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>訊號清單</h2><span class="hint" id="f-hint"></span></div>
+        <div class="card-body"><ul class="siglist" id="siglist"></ul>
+          <button type="button" class="btn-secondary" id="toggle-all"></button></div>
+      </section>
+    </div>
+    <aside class="copilot-col">
+      <section class="copilot" aria-label="Copilot" id="copilot"></section>
     </aside>
   </div>
 </main>
@@ -51,18 +70,23 @@
 
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/account-charts.js"></script>
 <script src="js/copilot.js"></script>
 <script>
 (async () => {
-  const { LABELS, COMPONENTS, fmt, esc, tierBadge, playTag, ageDays } = CL;
+  const { LABELS, COMPONENTS, fmt, esc, tierBadge, ageDays } = CL;
   const d = await CL.load();
   document.getElementById('src').innerHTML = CL.sourceNote(d);
   const code = new URLSearchParams(location.search).get('code');
   const c = d.byCode[code];
   if (!c || !c.score) { document.getElementById('head').innerHTML = '<h1>查無此帳戶</h1>'; return; }
-  const s = c.score, sig = c.signals;
+  const s = c.score, sig = c.signals, docs = c.docs;
+  const pool = d.pool || { median: {} };
+  const fin = c.industry === '金融保險', otc = c.market === '上櫃';
   document.title = `${c.name} ${c.code}｜CloudLens`;
   const by = (type, cat) => sig.filter(x => x.type === type && (!cat || x.cat === cat));
+  const rows = d.accounts.map(a => ({ code: a.code, name: a.name, industry: a.industry, need: Number(a.score.need) || 0, timing: Number(a.score.timing) || 0, play: a.score.play_primary }));
+  const self = rows.find(r => r.code === code);
 
   document.getElementById('head').innerHTML = `
     <div><h1>${esc(c.name)} <span style="font-weight:400">${c.code}</span></h1>
@@ -71,91 +95,166 @@
       <span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>
       <span class="badge cloud">資料完整度 ${Math.round(s.data_completeness * 100)}%</span></div>`;
 
+  // ---------- A 分數摘要 ----------
+  const maxOf = k => k === 'n4' && otc ? 15 : COMPONENTS.find(x => x.key === k).max;
+  const compose = axis => {
+    const parts = COMPONENTS.filter(x => x.axis === axis);
+    const have = parts.filter(x => s[x.key] !== ''), miss = parts.filter(x => s[x.key] === '');
+    const max = have.reduce((a, x) => a + maxOf(x.key), 0);
+    return `<b>${axis === 'need' ? 'Need' : 'Timing'} ${fmt(s[axis])}</b>` +
+      `= (${have.map(x => x.key.toUpperCase() + ' ' + fmt(s[x.key])).join(' + ')}) ÷ 可取得滿分 ${max} × 100` +
+      (miss.length ? `<br><span class="muted">${miss.map(x => x.key.toUpperCase()).join('、')} 無資料，已移出分母</span>` : '');
+  };
+  AC.gauge(document.getElementById('g-need'), { value: s.need === '' ? null : Number(s.need), pct: s.need_pct === '' ? null : Number(s.need_pct), cut: pool.need_cut, tipHtml: compose('need') });
+  AC.gauge(document.getElementById('g-timing'), { value: s.timing === '' ? null : Number(s.timing), pct: s.timing_pct === '' ? null : Number(s.timing_pct), cut: pool.timing_cut, tipHtml: compose('timing') });
+  const over = (v, cut) => cut === null || cut === undefined ? '' : (Number(v) >= cut ? `✔ 已過前 30% 門檻（刻度＝${fmt(cut)} 分）` : `距前 30% 門檻（${fmt(cut)} 分）還差 ${fmt(cut - Number(v))} 分`);
+  document.getElementById('g-need-note').textContent = over(s.need, pool.need_cut);
+  document.getElementById('g-timing-note').textContent = over(s.timing, pool.timing_cut);
+  document.getElementById('q-title').textContent = `位置：${LABELS.tierLong[String(s.tier)]}`;
+  AC.miniQuad(document.getElementById('mini-quad'), { rows, self, needCut: pool.need_cut ?? 50, timingCut: pool.timing_cut ?? 50,
+    onClick: () => { location.href = 'index.html?focus=' + code; } });
+  const peers = rows.filter(r => r.industry === c.industry);
+  const drawRank = metric => {
+    const rank = AC.lollipop(document.getElementById('rank'), { peers, selfCode: code, metric });
+    document.getElementById('rank-title').textContent = `${c.industry} ${peers.length} 家中排第 ${rank}`;
+    document.querySelectorAll('.seg-toggle button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
+  };
+  document.querySelectorAll('.seg-toggle button').forEach(b => b.addEventListener('click', () => drawRank(b.dataset.metric)));
+  drawRank('need');
+
+  // ---------- B 分數拆解（子彈圖＋帳戶池中位數） ----------
   const refs = list => {
     const uniq = [...new Set(list.map(x => x.ref))];
-    return uniq.slice(0, 8).map(r => `<span class="ref" data-ref="${r}" tabindex="0">[${r}]</span>`).join('') + (uniq.length > 8 ? `<span class="muted">…等 ${uniq.length} 份</span>` : '');
+    return uniq.slice(0, 3).map(r => `<span class="ref" data-ref="${r}" tabindex="0">[${r}]</span>`).join('') +
+      (uniq.length > 3 ? `<span class="more" data-tip="${uniq.slice(3).map(r => '[' + r + ']').join(' ')}" tabindex="0">＋${uniq.length - 3}</span>` : '');
   };
-  function why(k) {
-    const rev = c.revenue;
+  const REASON = {
+    D18: '台灣就業通公開職缺資料僅 1,000 筆且集中台北市，招募項目停用，移出分母（決策 D18）',
+    D27: '金融保險業營收受投資收益波動，不代表擴張或降本，營收動能不納入計分（決策 D27）',
+    D19: '櫃買中心沒有 ESG 資訊安全揭露，N4 的 ESG 子項移出分母（滿分改 15，決策 D19）'
+  };
+  const last12 = c.revenue.slice(-12);
+  const docsOf = list => [...new Set(list.map(x => x.ref))].length;
+  function line(k) {
     switch (k) {
-      case 'n1': {
-        const last = rev.slice(-12);
-        if (last.length < 6) return '月營收不足 6 個月，以實收資本額百分位代理';
-        return `近 12 個月營收 ${(last.reduce((a, r) => a + r[1], 0) / 1e5).toFixed(0)} 億元，帳戶池百分位 × 25`;
-      }
-      case 'n2': case 't4': return '台灣就業通資料僅 1,000 筆且集中台北市，無法使用（D18）';
-      case 'n3': {
-        const docs = new Set(by('N3').map(x => x.src + x.title + x.at));
-        return docs.size ? `近 365 天命中遷移／數據／AI 字典的文件 ${docs.size} 份，遞減報酬 25×(1−0.5ⁿ)　${refs(by('N3'))}` : '近 365 天沒有命中策略字典的重訊或新聞';
-      }
+      case 'n1': return last12.length >= 6 ? `近 12 月營收 ${Math.round(last12.reduce((a, r) => a + r[1], 0) / 1e5).toLocaleString()} 億，池內第 ${Math.round(Number(s.n1) / 25 * 100)} 百分位` : '月營收不足 6 個月，以實收資本額百分位代理';
+      case 'n3': return docsOf(by('N3')) ? `近 365 天 ${docsOf(by('N3'))} 份文件命中遷移／數據／AI 字典` : '近 365 天沒有命中策略字典';
       case 'n4': {
         const p = [];
-        if (c.industry === '金融保險') p.push('金融業監管基礎 10');
-        const e = by('N4', 'esg_breach'), i = by('N4', 'incident');
-        p.push(e.length ? `ESG 資訊外洩 +10 ${refs(e)}` : (c.market === '上市' ? 'ESG 無外洩事件' : '上櫃無 ESG 資安揭露（滿分改 15）'));
-        p.push(i.length ? `資安事件重訊 +15 ${refs(i)}` : '近 365 天無資安事件重訊');
-        return p.join('；');
+        if (fin) p.push('金融業基礎 10');
+        if (by('N4', 'esg_breach').length) p.push('ESG 外洩 +10');
+        if (by('N4', 'incident').length) p.push('資安事件重訊 +15');
+        return p.length ? p.join('・') : (otc ? '無資安事件（上櫃無 ESG 揭露）' : '無 ESG 外洩、無資安事件重訊');
       }
-      case 't1': {
-        const act = by('T1').filter(x => ageDays(x.at, d.generated_at) <= 90);
-        return act.length ? `近 90 天觸發事件（30 天內 ×1、31–90 天 ×0.5，上限 50）　${refs(act)}` : '近 90 天沒有觸發事件';
-      }
-      case 't2': { const e = by('T2'); return e.length ? `${esc(e[0].title)}　${refs(e)}` : '近 30 天命中新聞未達過去 90 天月均的 1.5 倍'; }
-      case 't3': {
-        if (s.t3 === '') return c.industry === '金融保險' ? '金融業營收受投資收益波動，不適用（D27）' : '月營收不足 3 個月';
-        const e = by('T3');
-        return e.length ? `${esc(e[0].title)}　${refs(e)}` : '近 3 個月 YoY ' + rev.slice(-3).map(r => r[2] === '' ? '—' : Number(r[2]).toFixed(1) + '%').join('、') + '，未連續高於 +15% 或低於 −15%';
-      }
+      case 't1': { const n = docsOf(by('T1').filter(x => ageDays(x.at, d.generated_at) <= 90)); return n ? `近 90 天 ${n} 份觸發事件重訊` : '近 90 天沒有觸發事件'; }
+      case 't2': { const e = by('T2'); return e.length ? e[0].title : '近 30 天命中新聞未達月均 1.5 倍'; }
+      case 't3': { const e = by('T3'); return e.length ? e[0].title : '近 3 個月 YoY 未連續超過 ±15%'; }
     }
+    return '';
   }
-  const maxOf = comp => comp.key === 'n4' && c.market === '上櫃' ? 15 : comp.max;
-  const axis = (ax, title) => `
-    <div class="axis-title"><h3>${title}</h3><span class="score">${fmt(s[ax])}<span class="muted" style="font-size:13px;font-weight:400"> / 100・帳戶池百分位 ${Math.round(s[ax + '_pct'] * 100)}</span></span></div>` +
-    COMPONENTS.filter(x => x.axis === ax).map(x => {
-      const v = s[x.key], miss = v === '', mx = maxOf(x);
-      return `<div class="comp"><div class="comp-row">
-        <div class="comp-name">${x.name}</div>
-        <div class="track${miss ? ' missing' : ''}" role="img" aria-label="${x.name} ${miss ? '無資料' : v + ' / ' + mx}">${miss ? '' : `<i style="width:${v / mx * 100}%"></i>`}</div>
-        <div class="comp-val">${miss ? '<span class="muted">無資料</span>' : `<b>${fmt(v)}</b> <span class="muted">/ ${mx}</span>`}</div>
-      </div><div class="comp-why">${why(x.key)}</div></div>`;
-    }).join('');
-  document.getElementById('breakdown').innerHTML = axis('need', 'Need 需求強度') + '<div style="height:12px"></div>' + axis('timing', 'Timing 時機');
+  const RULE = {
+    n1: '近 12 個月營收在帳戶池內的百分位 × 25（無營收者以實收資本額代理）',
+    n3: '近 365 天重訊＋新聞命中字典的文件數 n（強 1、弱 0.5），得分 25 × (1 − 0.5ⁿ)',
+    n4: '金融業基礎 10；ESG 揭露外洩 > 0 加 10；近 365 天資安事件重訊加 15；上限 25',
+    t1: '重訊主旨命中觸發事件，依類型給分 × 時間衰減（30 天內 ×1、31–90 天 ×0.5），上限 50',
+    t2: '近 30 天命中新聞 ÷ 過去 90 天月均：≥ 2 倍滿分、≥ 1.5 倍一半（至少 2 則）',
+    t3: '連 3 個月 YoY > +15% → 20（擴張）；< −15% → 15（降本）'
+  };
+  const evid = { n1: [], n3: by('N3'), n4: by('N4'), t1: by('T1').filter(x => ageDays(x.at, d.generated_at) <= 90), t2: by('T2'), t3: by('T3') };
+  const bullet = x => {
+    const v = s[x.key], miss = v === '', mx = maxOf(x.key), med = pool.median[x.key];
+    const reason = x.key === 'n2' || x.key === 't4' ? 'D18' : x.key === 't3' && fin ? 'D27' : '';
+    const medPct = med === null || med === undefined ? null : Math.min(100, med / mx * 100);
+    return `<div class="bul">
+      <div class="bul-name">${x.name}${x.key === 'n4' && otc ? ` <span class="code" data-tip="${esc(REASON.D19)}" tabindex="0">D19</span>` : ''}</div>
+      <div class="bul-track${miss ? ' missing' : ''}" data-tip="${esc(miss ? REASON[reason] || '無資料' : RULE[x.key] || '')}">
+        ${miss ? '' : `<i style="width:${Number(v) / mx * 100}%"></i>`}
+        ${!miss && medPct !== null ? `<b class="med" style="left:${medPct}%"></b><span class="med-l${medPct < 8 ? ' edge-l' : medPct > 92 ? ' edge-r' : ''}" style="left:${medPct}%">中位 ${fmt(med)}</span>` : ''}
+      </div>
+      <div class="bul-val">${miss ? `<span class="muted">無資料</span> <span class="code" data-tip="${esc(REASON[reason] || '')}" tabindex="0">${reason}</span>` : `<b>${fmt(v)}</b> <span class="muted">/ ${mx}</span>`}</div>
+      <div class="bul-line">${miss ? '' : esc(line(x.key))} ${miss ? '' : refs(evid[x.key] || [])}</div>
+    </div>`;
+  };
+  document.getElementById('breakdown').innerHTML = ['need', 'timing'].map(ax => `
+    <div class="axis-title"><h3>${ax === 'need' ? 'Need 需求強度' : 'Timing 時機'}</h3><span class="score">${fmt(s[ax])}<span class="muted" style="font-size:13px;font-weight:400"> / 100</span></span></div>
+    ${COMPONENTS.filter(x => x.axis === ax).map(bullet).join('')}`).join('<div style="height:10px"></div>');
 
+  // ---------- C 泳道點圖 ----------
+  const recent = docs.filter(x => ageDays(x.at, d.generated_at) <= 365);
+  const t1n = docsOf(by('T1').filter(x => ageDays(x.at, d.generated_at) <= 30));
+  document.getElementById('c-title').textContent = recent.length
+    ? `近一年 ${recent.length} 份訊號${t1n ? `，近 30 天有 ${t1n} 份觸發事件` : ''}` : '近一年沒有訊號';
+  AC.swimlane(document.getElementById('swim'), { docs: recent, refDate: d.generated_at, onPick: ref => pick(ref) });
+  document.getElementById('swim-legend').innerHTML = ['Migration', 'Data', 'GenAI', 'Security'].map(p => `<span>${CL.shapeSvg(p, 11)}${LABELS.playShort[p]}</span>`).join('') +
+    `<span><svg width="11" height="11" aria-hidden="true"><circle cx="5.5" cy="5.5" r="4.5" fill="var(--white)" stroke="var(--ink-500)" stroke-width="1.5"/></svg>無 Play（營收、新聞量）</span>`;
+
+  // ---------- D 營收管制圖 ----------
+  const rv = c.revenue.slice(-15);
+  document.getElementById('d-title').textContent = fin ? '金融業營收受投資收益影響，不納入計分（D27）'
+    : s.t3 === '' ? '月營收不足 3 個月，營收動能無資料'
+    : Number(s.t3) === 20 ? '連 3 月 YoY > +15% → T3 拿滿 20 分'
+    : Number(s.t3) === 15 ? '連 3 月 YoY < −15% → T3 15 分（降本話術）'
+    : '未連續超過 ±15% 門檻 → T3 0 分';
+  AC.control(document.getElementById('control'), { rows: rv, applicable: !fin });
+
+  // ---------- E Play 組成 ----------
+  const ps = s.play_scores || null;
+  if (ps) {
+    const tot = Object.values(ps).reduce((a, b) => a + b, 0) || 1;
+    const pc = p => Math.round(ps[p] / tot * 100);
+    document.getElementById('e-title').textContent = `主 Play：${s.play_primary}（${pc(s.play_primary)}%）` + (s.play_secondary ? `・次 Play：${s.play_secondary}（${pc(s.play_secondary)}%）` : '・無次 Play');
+    AC.playStack(document.getElementById('stack'), { scores: ps });
+    document.getElementById('e-note').textContent = s.play_from_signals ? '' : '這家公司沒有帶 Play 的訊號，比例只來自產業先驗（P3 將改標「訊號不足」）。';
+  } else document.getElementById('stack').innerHTML = '<p class="empty">Play 分數將於下次 API 更新後顯示</p>';
+
+  // ---------- F 訊號清單 ----------
+  const byPts = docs.slice().sort((a, b) => b.points - a.points || String(b.at).localeCompare(String(a.at)));
+  let expanded = false;
   const SRC = { ann: '重大訊息', news: '新聞', esg: 'ESG 報告', revenue: '月營收' };
-  document.getElementById('sig-count').textContent = `${c.docs.length} 份文件，依日期新到舊`;
-  document.getElementById('timeline').innerHTML = c.docs.length ? c.docs.map(x => {
-    const ext = x.url && x.url[0] !== '#';
-    const label = x.src === 'ann' ? `${esc(x.title)}<span class="muted" style="font-size:12px">（公開資訊觀測站當月重訊）</span>` : esc(x.title);
-    const title = x.url ? `<a href="${esc(x.url)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${label}</a>` : label;
-    const kinds = [...new Set(x.parts.map(p => `${LABELS.type[p.type] || p.type}・${LABELS.cat[p.cat] || p.cat}`))];
-    return `<li id="${x.ref}" data-ref="${x.ref}"><span class="sid">${x.ref}</span><span class="date">${String(x.at).slice(0, 10)}</span>
-      <span class="type">${SRC[x.src] || x.src}</span><span>${title}<br><span class="kinds">${kinds.join('　')}</span></span></li>`;
-  }).join('') : '<li class="muted">沒有訊號</li>';
+  function renderList() {
+    const list = expanded ? byPts : byPts.slice(0, 5);
+    document.getElementById('f-hint').textContent = `依得分排序・${expanded ? '全部' : '前 5'} / ${docs.length} 份`;
+    document.getElementById('siglist').innerHTML = list.length ? list.map(x => {
+      const ext = x.url && x.url[0] !== '#';
+      const label = x.src === 'ann' ? `${esc(x.title)}<span class="muted" style="font-size:12px">（公開資訊觀測站當月重訊）</span>` : esc(x.title);
+      const title = x.url ? `<a href="${esc(x.url)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${label}</a>` : label;
+      return `<li id="${x.ref}" data-ref="${x.ref}"><span class="pdot">${x.play && CL.PLAY_SHAPE[x.play] ? CL.shapeSvg(x.play, 10) : '<svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="var(--white)" stroke="var(--ink-500)" stroke-width="1.5"/></svg>'}</span>
+        <span class="sid">${x.ref}</span><span class="date">${String(x.at).slice(0, 10)}</span><span class="type">${SRC[x.src] || x.src}</span>
+        <span>${title}<br><span class="kinds">${x.kinds.join('　')}・得分 ${fmt(x.points)}</span></span></li>`;
+    }).join('') : '<li class="muted">沒有訊號</li>';
+    const btn = document.getElementById('toggle-all');
+    btn.hidden = docs.length <= 5;
+    btn.textContent = expanded ? '收合' : `顯示全部 ${docs.length} 則`;
+    hookRefs(document.getElementById('siglist'));
+  }
+  document.getElementById('toggle-all').addEventListener('click', () => { expanded = !expanded; renderList(); });
 
-  // [S#] 與時間軸雙向對應（Copilot 產生的內容也套用）
+  // [S#] 互動：hover 高亮、點擊捲到清單（清單收合時自動展開）
   const setOn = (ref, on) => document.querySelectorAll(`[data-ref="${ref}"]`).forEach(n => n.classList.toggle('on', on));
+  function pick(ref) {
+    if (!document.getElementById(ref)) { expanded = true; renderList(); }
+    const t = document.getElementById(ref);
+    if (!t) return;
+    document.querySelectorAll('.siglist li.picked').forEach(n => n.classList.remove('picked'));
+    t.classList.add('picked');
+    t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
   function hookRefs(scope) {
     scope.querySelectorAll('[data-ref]').forEach(n => {
+      if (n.__hooked) return; n.__hooked = true;
       n.addEventListener('mouseenter', () => setOn(n.dataset.ref, true));
       n.addEventListener('mouseleave', () => setOn(n.dataset.ref, false));
     });
     scope.querySelectorAll('.ref').forEach(n => {
-      const jump = () => { const t = document.getElementById(n.dataset.ref); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-      n.addEventListener('click', jump);
-      n.addEventListener('keydown', e => { if (e.key === 'Enter') jump(); });
+      if (n.__click) return; n.__click = true;
+      n.addEventListener('click', () => pick(n.dataset.ref));
+      n.addEventListener('keydown', e => { if (e.key === 'Enter') pick(n.dataset.ref); });
     });
   }
+  renderList();
   hookRefs(document);
+  AC.bindTips(document.getElementById('breakdown'));
   Copilot.mount(document.getElementById('copilot'), c.code, hookRefs);
-
-  Charts.revenueBars(document.getElementById('rev'), c.revenue.slice(-15));
-
-  const cnt = {};
-  sig.forEach(x => String(x.play || '').split(',').filter(Boolean).forEach(p => { cnt[p] = (cnt[p] || 0) + 1; }));
-  document.getElementById('play').innerHTML = `
-    <p style="margin:0 0 6px">主 Play：${playTag(s.play_primary)}　次 Play：${playTag(s.play_secondary)}</p>
-    <p class="muted" style="font-size:12px;margin:0">相關訊號：${Object.entries(cnt).map(([p, n]) => `${p} ${n} 筆`).join('、') || '無（依產業先驗判定）'}。AWS 對應方案與話術於 Phase 4 加入。</p>
-    <p class="muted" style="font-size:12px;margin:8px 0 0">雲端現況：${LABELS.cloud[s.cloud_status]}</p>`;
 })();
 </script>
 </body>

@@ -148,16 +148,7 @@ function computeScores_(runId) {
     r.timing = avail.timing ? Math.round(got.timing / avail.timing * 1000) / 10 : '';
     r.data_completeness = total ? Math.round((avail.need + avail.timing) / total * 100) / 100 : '';
 
-    // Play：N3/PLAY 每份文件 強 10、弱 5；T1 依分數×衰減；N4 依分數；產業先驗各 +5
-    var play = {};
-    PLAYS.forEach(function (p) { play[p] = 0; });
-    (INDUSTRY_PRIOR[String(c.industry_code)] || []).forEach(function (p) { play[p] += 5; });
-    list.forEach(function (s) {
-      var v = s.signal_type === 'N3' || s.signal_type === 'PLAY' ? Number(s.points_raw) * 10
-        : s.signal_type === 'T1' ? Number(s.points_raw) * decay_(s.observed_at, now)
-        : s.signal_type === 'N4' ? Number(s.points_raw) : 0;
-      String(s.play).split(',').forEach(function (p) { p = p.trim(); if (play[p] !== undefined) play[p] += v; });
-    });
+    var play = playScores_(list, String(c.industry_code), now).scores;
     var ranked = PLAYS.slice().sort(function (a, b) { return play[b] - play[a]; });
     r.play_primary = ranked[0];
     r.play_secondary = play[ranked[1]] >= play[ranked[0]] * 0.5 && play[ranked[1]] > 0 ? ranked[1] : '';
@@ -204,6 +195,27 @@ function computeScores_(runId) {
   return { rows_in: codes.length, rows_out: rows.length,
            note: 'Tier1 ' + t['1'] + '、Tier2 ' + t['2'] + '、Tier3 ' + t['3'] + '、暫緩 ' + t.hold +
                  '；驗證 precision@20% = ' + val.hits + '/' + val.size };
+}
+
+/** 單一訊號對 Play 的貢獻：N3/PLAY 強 10、弱 5；T1 依分數×時間衰減；N4 依分數；其餘 0。前端泳道圖的點大小也用這個值。 */
+function signalContribution_(s, now) {
+  var t = s.signal_type;
+  if (t === 'N3' || t === 'PLAY') return Number(s.points_raw) * 10;
+  if (t === 'T1') return Number(s.points_raw) * decay_(s.observed_at, now);
+  if (t === 'N4' || t === 'T2' || t === 'T3') return Number(s.points_raw);
+  return 0;
+}
+
+/** 四個 Play 的分數＝訊號貢獻加總＋產業先驗（各 +5）。回傳 { scores, fromSignals }。 */
+function playScores_(list, industryCode, now) {
+  var play = {}, sig = 0;
+  PLAYS.forEach(function (p) { play[p] = 0; });
+  (INDUSTRY_PRIOR[industryCode] || []).forEach(function (p) { play[p] += 5; });
+  list.forEach(function (s) {
+    var v = signalContribution_(s, now);
+    String(s.play || '').split(',').forEach(function (p) { p = p.trim(); if (play[p] !== undefined && v) { play[p] += v; sig += v; } });
+  });
+  return { scores: play, fromSignals: sig };
 }
 
 function evidence_(runId, code, type, category, points, title) {

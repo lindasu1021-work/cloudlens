@@ -192,6 +192,11 @@
     const tr = e.target.closest('tr'); if (tr && e.key === 'Enter') location.href = 'account.html?code=' + tr.dataset.code;
   });
   render();
+
+  // 從帳戶頁迷你象限圖點過來（?focus=代號）：清掉篩選、捲到該公司並高亮
+  const focus = new URLSearchParams(location.search).get('focus');
+  const tr = focus && document.querySelector(`#tbody tr[data-code="${focus}"]`);
+  if (tr) { tr.classList.add('focus'); tr.scrollIntoView({ block: 'center' }); }
 })();
 </script>
 </body>

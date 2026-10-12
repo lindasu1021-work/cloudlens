@@ -41,7 +41,7 @@ const Copilot = (() => {
       const close = () => { if (inList) { html += '</ul>'; inList = false; } };
       if (!t) { close(); return; }
       const inline = s => refify(esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'));
-      if (/^#{1,4}\s/.test(t)) { close(); html += `<h4>${inline(t.replace(/^#+\s*/, ''))}</h4>`; }
+      if (/^#{1,4}\s/.test(t)) { close(); html += `<h3 class="cp-h">${inline(t.replace(/^#+\s*/, ''))}</h3>`; }
       else if (/^[-*•]\s/.test(t) || /^\d+\.\s/.test(t)) { if (!inList) { html += '<ul>'; inList = true; } html += `<li>${inline(t.replace(/^([-*•]|\d+\.)\s*/, ''))}</li>`; }
       else { close(); html += `<p>${inline(t)}</p>`; }
     });
