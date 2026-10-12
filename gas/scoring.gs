@@ -42,6 +42,8 @@ function highSet_(rows, field, p) {
 }
 
 function computeScores_(runId) {
+  // D28 的驗證集分頁在 setupPhase2 之後才加入：不存在時自動建立並寫入預設清單
+  if (!ss().getSheetByName('config_validation')) { setupSheets(); seedValidation_(); }
   var now = Date.now();
   var weights = {};
   readTable_('config_weights').forEach(function (w) {
@@ -58,8 +60,9 @@ function computeScores_(runId) {
   readTable_('raw_revenue').forEach(function (r) { (rev[String(r.stock_code)] = rev[String(r.stock_code)] || {})[String(r.year_month)] = r; });
   var esg = {};
   readTable_('raw_esg_security').forEach(function (e) { esg[String(e.stock_code)] = true; });
-  var awsCases = {};
+  var awsCases = {}, known = {};
   readTable_('config_aws_cases').forEach(function (a) { if (a.stock_code) awsCases[String(a.stock_code)] = a.case_url || true; });
+  readTable_('config_validation').forEach(function (v) { if (v.stock_code) known[String(v.stock_code)] = String(v.cloud).toLowerCase(); });
   var newsDone = JSON.parse(getProp_('NEWS_BACKFILLED', '{}'));
   var allMonths = Object.keys(rev).reduce(function (acc, k) { return acc.concat(Object.keys(rev[k])); }, []).sort();
   var latestYm = allMonths[allMonths.length - 1];
@@ -129,8 +132,8 @@ function computeScores_(runId) {
       if (t2 > 0) extraSignals.push(evidence_(runId, code, 'T2', 'news_momentum', t2,
         '近 30 天命中新聞 ' + c30 + ' 則，過去 90 天月均 ' + (c90 / 3).toFixed(1) + ' 則（' + ratio.toFixed(1) + ' 倍）'));
     } else put('T2', 'timing', null, weights.T2.max);
-    // T3：連 3 個月 YoY > +15% → 20；< −15% → 15
-    var months = Object.keys(rev[code] || {}).sort().slice(-3);
+    // T3：連 3 個月 YoY > +15% → 20；< −15% → 15。金融保險業營收受投資收益波動，視為缺資料（D27）
+    var months = String(c.industry_code) === '17' ? [] : Object.keys(rev[code] || {}).sort().slice(-3);
     var yoys = months.map(function (m) { return rev[code][m].yoy_pct; }).filter(function (v) { return v !== '' && v !== null; }).map(Number);
     if (yoys.length === 3 && months[2] >= prevYm_(latestYm, 1)) {
       var t3 = yoys.every(function (v) { return v > 15; }) ? 20 : yoys.every(function (v) { return v < -15; }) ? 15 : 0;
@@ -161,7 +164,10 @@ function computeScores_(runId) {
 
     // 雲端現況：AWS 案例 → aws；競品 → competitor；提及 AWS → aws；其他 → unknown
     var vendors = list.filter(function (s) { return s.signal_type === 'VENDOR'; }).map(function (s) { return s.category; });
-    r.cloud_status = awsCases[code] ? 'aws' : vendors.indexOf('competitor') >= 0 ? 'competitor' : vendors.indexOf('aws') >= 0 ? 'aws' : 'unknown';
+    var kc = known[code] || '';
+    r.cloud_status = awsCases[code] || /aws/.test(kc) ? 'aws'
+      : /azure|gcp|google/.test(kc) || vendors.indexOf('competitor') >= 0 ? 'competitor'
+      : vendors.indexOf('aws') >= 0 ? 'aws' : 'unknown';
 
     r.top_signal_ids = list.filter(function (s) { return s.signal_type !== 'VENDOR'; })
       .sort(function (a, b) { return String(b.observed_at).localeCompare(String(a.observed_at)); })
@@ -190,11 +196,13 @@ function computeScores_(runId) {
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   appendObjects_('scores', keep.concat(rows));
   setSetting_('current_run_id', runId);
+  var val = computeValidation_(runId, rows, ruleVersion);
 
   var t = { '1': 0, '2': 0, '3': 0, hold: 0 };
   rows.forEach(function (r) { t[r.tier]++; });
   return { rows_in: codes.length, rows_out: rows.length,
-           note: 'Tier1 ' + t['1'] + '、Tier2 ' + t['2'] + '、Tier3 ' + t['3'] + '、暫緩 ' + t.hold };
+           note: 'Tier1 ' + t['1'] + '、Tier2 ' + t['2'] + '、Tier3 ' + t['3'] + '、暫緩 ' + t.hold +
+                 '；驗證 precision@20% = ' + val.hits + '/' + val.size };
 }
 
 function evidence_(runId, code, type, category, points, title) {
@@ -213,4 +221,36 @@ function setSetting_(key, value) {
   upsertObjects_('config_settings', 'key', readTable_('config_settings').filter(function (r) { return r.key === key; })
     .map(function (r) { r.value = value; return r; }));
   settingsCache_ = null;
+}
+
+/**
+ * 驗證（D28）：config_validation 中屬於帳戶池的公司，落在 Need 排名前 20% 的比例。
+ * 同一 run_id + rule_version 先刪後寫。
+ */
+function computeValidation_(runId, rows, ruleVersion) {
+  var set = readTable_('config_validation').map(function (v) { return String(v.stock_code); });
+  var ranked = rows.filter(function (r) { return r.need !== ''; }).sort(function (a, b) { return b.need - a.need; });
+  var topN = Math.ceil(ranked.length * 0.2);
+  var top = {};
+  ranked.slice(0, topN).forEach(function (r) { top[r.stock_code] = true; });
+  var inPool = set.filter(function (c) { return rows.some(function (r) { return r.stock_code === c; }); });
+  var hits = inPool.filter(function (c) { return top[c]; });
+  // 基準線：只用 N1（營收規模）排名，檢查系統是否比「挑最大的公司」更好
+  var base = {};
+  rows.slice().sort(function (a, b) { return Number(b.n1) - Number(a.n1); }).slice(0, topN).forEach(function (r) { base[r.stock_code] = true; });
+  var baseHits = inPool.filter(function (c) { return base[c]; }).length;
+  // 平均名次（越小越好），比 precision 更能區分
+  var rankOf = {};
+  ranked.forEach(function (r, i) { rankOf[r.stock_code] = i + 1; });
+  var avgRank = inPool.length ? Math.round(inPool.reduce(function (s, c) { return s + (rankOf[c] || ranked.length); }, 0) / inPool.length * 10) / 10 : '';
+  var rec = { run_id: runId, rule_version: ruleVersion, validation_set_size: inPool.length, hits_top20pct: hits.length,
+              precision: inPool.length ? Math.round(hits.length / inPool.length * 100) / 100 : '',
+              note: '前 20% = Need 前 ' + topN + ' 名；命中：' + hits.join(',') + '；未命中：' +
+                    inPool.filter(function (c) { return !top[c]; }).join(',') + '；平均名次 ' + avgRank + '/' + ranked.length +
+                    '；基準線（只看營收規模）命中 ' + baseHits + '/' + inPool.length };
+  var keep = readTable_('validation').filter(function (v) { return !(String(v.run_id) === runId && String(v.rule_version) === String(ruleVersion)); });
+  var sh = sheet_('validation');
+  if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
+  appendObjects_('validation', keep.concat([rec]));
+  return { size: inPool.length, hits: hits.length };
 }

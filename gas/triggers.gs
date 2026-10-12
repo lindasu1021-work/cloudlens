@@ -66,6 +66,7 @@ function setupPhase2() {
   if (String(setting_('capital_threshold', '')) === '') setSetting_('capital_threshold', 1000000000); // D22：10 億
   Logger.log('字典匯入 ' + seedKeywords_() + ' 筆');
   seedAwsCases_();
+  seedValidation_();
   installTriggers();
   recomputeUniverse();
   scheduleContinuation_('continueWeeklyJob');
@@ -80,4 +81,21 @@ function seedAwsCases_() {
     case_url: 'https://aws.amazon.com/tw/events/taiwan/news/taipei-region',
     checked_at: '2026-10-12', note: 'AWS 亞太（台北）區域啟用新聞稿點名之台灣客戶'
   }]);
+}
+
+/** D28：驗證集（公開來源證實使用公有雲），僅在空白時寫入；之後在 Sheets 維護。 */
+function seedValidation_() {
+  if (readColumn_('config_validation', 'stock_code').length) return;
+  appendObjects_('config_validation', [
+    { stock_code: '2882', company_name: '國泰金控', cloud: 'aws', evidence_url: 'https://aws.amazon.com/tw/events/taiwan/news/taipei-region',
+      source_type: '雲端廠商官方', checked_at: '2026-10-12', note: 'AWS 台北區域啟用新聞稿點名客戶' },
+    { stock_code: '2884', company_name: '玉山金控', cloud: 'gcp', evidence_url: 'https://cloud.google.com/customers/intl/zh-tw/esunbank?hl=zh-TW',
+      source_type: '雲端廠商官方', checked_at: '2026-10-12', note: 'Google Cloud 客戶案例：混合雲、AI 房貸顧問；另有 Azure BCDR 海外試點' },
+    { stock_code: '2891', company_name: '中信金控', cloud: 'azure', evidence_url: 'https://news.microsoft.com/source/asia/2026/04/10/ctbcbank_aiacrosstheorganization/?lang=zh-hant',
+      source_type: '雲端廠商官方', checked_at: '2026-10-12', note: '中國信託銀行導入 Azure 與生成式 AI' },
+    { stock_code: '2890', company_name: '永豐金控', cloud: 'azure', evidence_url: 'https://news.microsoft.com/source/asia/2025/04/22/azure-bcdr/?lang=zh-hant',
+      source_type: '雲端廠商官方', checked_at: '2026-10-12', note: '永豐銀行 Azure BCDR 上雲' },
+    { stock_code: '2371', company_name: '大同', cloud: 'gcp', evidence_url: '',
+      source_type: '媒體報導', checked_at: '2026-10-12', note: '天下雜誌：宏庭科技助大同於 Google Cloud 完成 33TB SAP 系統轉型' }
+  ]);
 }

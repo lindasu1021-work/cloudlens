@@ -41,22 +41,22 @@
 
 ## 3. 人工核對：三產業各 1 家逐分明細
 
-> 請 Verna 點開證據連結核對：每一分是否對得到合理的訊號。
+> 請 Verna 點開證據連結核對：每一分是否對得到合理的訊號。（已套用 D27：金融業 T3 為缺資料）
 
 ### 2882 國泰金（金融保險・上市）
 
-- **Need 93**（百分位 1）／**Timing 38.9**（百分位 0.93）→ **Tier 1**
-- 主 Play：**GenAI**　次 Play：—　雲端現況：**aws**　資料完整度：1
+- **Need 93**（百分位 1）／**Timing 28.6**（百分位 0.91）→ **Tier 1**
+- 主 Play：**GenAI**　次 Play：—　雲端現況：**aws**　資料完整度：0.88
 
 | 項目 | 得分 / 滿分 | 計算依據 |
 |---|---|---|
 | N1 規模 | 24.7 / 25 | 近 12 個月營收 3,503 億元（2025-09～2026-08），帳戶池百分位 × 25 |
 | N2 數位人才招募 | 缺資料 | 就業通不可用（D18） → 移出分母 |
-| N3 策略意圖 | 25 / 25 | 近 365 天命中 MIG/DATA/AI 文件 13 份，加權 n=11（強 1、弱 0.5）→ 25×(1−0.5ⁿ)。例：S4, S5, S6, S7, S8, S9 |
-| N4 資安合規壓力 | 20 / 25 | 金融業基礎 10；ESG 外洩 +10（S3）；近 365 天無資安事件重訊 |
+| N3 策略意圖 | 25 / 25 | 近 365 天命中 MIG/DATA/AI 文件 13 份，加權 n=11（強 1、弱 0.5）→ 25×(1−0.5ⁿ)。例：S3, S4, S5, S6, S7, S8 |
+| N4 資安合規壓力 | 20 / 25 | 金融業基礎 10；ESG 外洩 +10（S2）；近 365 天無資安事件重訊 |
 | T1 觸發事件 | 0 / 50 | 近 90 天無觸發事件 |
 | T2 新聞動能 | 20 / 20 | 近 30 天命中新聞 9 則，過去 90 天月均 3.0 則（3.0 倍） |
-| T3 營收動能 | 15 / 20 | 2026-06、2026-07、2026-08 營收 YoY -42.0%、-69.7%、-69.5% |
+| T3 營收動能 | 缺資料 | 無資料 → 移出分母 |
 | T4 招募加速 | 缺資料 | 就業通不可用（D18） → 移出分母 |
 
 訊號節錄（[S#] 依日期新到舊）：
@@ -64,22 +64,21 @@
 | # | 日期 | 類型 | 類別 | 標題 |
 |---|---|---|---|---|
 | S1 | 2026-10-12 | T2 | news_momentum | 近 30 天命中新聞 9 則，過去 90 天月均 3.0 則（3.0 倍） |
-| S2 | 2026-10-12 | T3 | revenue_decline | 2026-06、2026-07、2026-08 營收 YoY -42.0%、-69.7%、-69.5% |
-| S3 | 2026-10-12 | N4 | esg_breach | 民國 114 年 ESG 揭露資訊外洩事件 20 件 |
-| S4 | 2026-09-24 | N3 | AI | [國泰金控技術年會登場 重磅推出AI數位同事（青年日報）](https://news.google.com/rss/articles/CBMibkFVX3lxTE5jVkV1MzlTcEJDNDZ4VzNRdW9sdTFHbk04U3VEaVdvd0l6WkhJUUhWQzZCWWpXZmc5UXJCUlFLUDJZZHNxZ3JWSnBBUmFtdXNTQ0JrSlZnRFcxZmk4YTFrcVR6cVoyano3Tm1vOG1R?oc=5) |
-| S5 | 2026-09-24 | N3 | AI | [國泰金控技術年會登場重磅推出AI數位同事／ 青年日報（LINE TODAY）](https://news.google.com/rss/articles/CBMiVkFVX3lxTE03YlZTXzBLQWthVjJlbXVXc2kxdlprYm5lWmtTMHROd0JNa2prc2tTbkYxVG5iTHR6cXN0c2JSLXo3Q0JoWnBfcFVSZ0VSRnhHZTl6ZEZB?oc=5) |
-| S6 | 2026-09-16 | N3 | AI | [不只等人下指令！國泰金測試AI數位同事，能長期記憶、主動推進任務（iThome）](https://news.google.com/rss/articles/CBMiTkFVX3lxTE5RWWJ1alcycHRHak16ZURPaWpJTDhFSkFZaXg1SG1JQ3VpUzc2WWpmc1o2YmVKa21lVjBBNXo1LW1Kd2NFNC1velF3enNBZw?oc=5) |
-| S7 | 2026-09-16 | N3 | AI | [從 Cloud First 邁向 Agent First 國泰金 AI 數位同事亮相（CIO Taiwan）](https://news.google.com/rss/articles/CBMiREFVX3lxTE8tTjZPMnhOOHdvSnNrQXdVclFyM0tYejQxMGlxMlJhU05tWVBiclhnakpPcGF2NDljdHh3bzl5RWVCUGJF?oc=5) |
-| S8 | 2026-09-16 | N3 | AI | [國泰金技術年會宣告Agent First階段來臨 首度公開「AI數位同事」創新試驗（鉅亨網）](https://news.google.com/rss/articles/CBMiT0FVX3lxTE1hZ29KR1QwYnVOM21Wck01N1Yyb1ZzUmJ3UV9lVGt5OXMyXzM2Vll5RFZNU3ZLbzUwYWJ4UUtTZUNGSFYzenFRMlVOZ09vODQ?oc=5) |
-| S9 | 2026-09-16 | N3 | AI | [國泰金導入AI優化企金平台，壽險/財富管理齊成長（台視全球資訊網）](https://news.google.com/rss/articles/CBMikgFBVV95cUxQT2dsYlJmaVVielNiS3ZReWxLaGhfbU1sSVlES2VEWVpDTjY4Tm5pQkluSFdicHppTFg1T0ZDWWYyV05FWEd1WllMeUVaRGd0UFN4NFNsOWJqVHl2Qlo0cUlsMEozOXF3UHd6ak5SenFRMEplUU5yblZwOHprc2VvQXNaaUIyeEtKS2prRjV4OWlrZw?oc=5) |
-| S10 | 2026-09-15 | N3 | AI | [國泰金首發 AI 數位同事！蔡宗翰曝未來十年 AI 戰略走向「千人千面」（TechNews 科技新報）](https://news.google.com/rss/articles/CBMiZkFVX3lxTFBmMEE0a1dVSF9CQnRLUGNHVHVnbWI0d2xISGR4RU43Z2lTdDVtV3VQWnZmbDU0aWlDSlNybUl3TlVaWjZSLUt0UGJkRV9uMnZWVmlncmJOb2EwNWtCQ2xzRnpBQmI0Zw?oc=5) |
-| S11 | 2026-09-15 | N3 | AI | [蔡宗翰首度演講2／AI非替代而是協作！國泰金控科技長拋AI新戰略：打造「GAIA」架構與數位同事時代（鏡週刊Mirror Media）](https://news.google.com/rss/articles/CBMiZkFVX3lxTE5FdEFjdnlCSmx1STU4YTRVTHE1SWpFcDNLc0U5SzFhamxKZXVoWkVFQ21wel82MFRCQTRYMHJDV3VVb0ljYlYxb19GVVFjV2lwdml6akowVUpXenhjZnQtWUJzVkctd9IBa0FVX3lxTE1pQ2pEUWlnRWx2aXk1aThyYmRtdFBNS3E2eS1PdUNlN0hFOUIyeU1INzBQdGY5UXV1WG9xY3Q2MzZLMTJvaUQ2Z0JtbWxUa2YwYTc5RzJob0psLXhueEIzM0xWR2p1cEpZUzZz?oc=5) |
-| S17 | 2025-11-13 | T1 | m_and_a | 代子公司國泰人壽公告擬增資子公司Cathay Walbrook Holding 2 Limited |
-| S18 | 2025-11-13 | T1 | m_and_a | 代子公司國泰人壽公告擬增資子公司Cathay Walbrook Holding 1 Limited |
+| S2 | 2026-10-12 | N4 | esg_breach | 民國 114 年 ESG 揭露資訊外洩事件 20 件 |
+| S3 | 2026-09-24 | N3 | AI | [國泰金控技術年會登場 重磅推出AI數位同事（青年日報）](https://news.google.com/rss/articles/CBMibkFVX3lxTE5jVkV1MzlTcEJDNDZ4VzNRdW9sdTFHbk04U3VEaVdvd0l6WkhJUUhWQzZCWWpXZmc5UXJCUlFLUDJZZHNxZ3JWSnBBUmFtdXNTQ0JrSlZnRFcxZmk4YTFrcVR6cVoyano3Tm1vOG1R?oc=5) |
+| S4 | 2026-09-24 | N3 | AI | [國泰金控技術年會登場重磅推出AI數位同事／ 青年日報（LINE TODAY）](https://news.google.com/rss/articles/CBMiVkFVX3lxTE03YlZTXzBLQWthVjJlbXVXc2kxdlprYm5lWmtTMHROd0JNa2prc2tTbkYxVG5iTHR6cXN0c2JSLXo3Q0JoWnBfcFVSZ0VSRnhHZTl6ZEZB?oc=5) |
+| S5 | 2026-09-16 | N3 | AI | [不只等人下指令！國泰金測試AI數位同事，能長期記憶、主動推進任務（iThome）](https://news.google.com/rss/articles/CBMiTkFVX3lxTE5RWWJ1alcycHRHak16ZURPaWpJTDhFSkFZaXg1SG1JQ3VpUzc2WWpmc1o2YmVKa21lVjBBNXo1LW1Kd2NFNC1velF3enNBZw?oc=5) |
+| S6 | 2026-09-16 | N3 | AI | [從 Cloud First 邁向 Agent First 國泰金 AI 數位同事亮相（CIO Taiwan）](https://news.google.com/rss/articles/CBMiREFVX3lxTE8tTjZPMnhOOHdvSnNrQXdVclFyM0tYejQxMGlxMlJhU05tWVBiclhnakpPcGF2NDljdHh3bzl5RWVCUGJF?oc=5) |
+| S7 | 2026-09-16 | N3 | AI | [國泰金技術年會宣告Agent First階段來臨 首度公開「AI數位同事」創新試驗（鉅亨網）](https://news.google.com/rss/articles/CBMiT0FVX3lxTE1hZ29KR1QwYnVOM21Wck01N1Yyb1ZzUmJ3UV9lVGt5OXMyXzM2Vll5RFZNU3ZLbzUwYWJ4UUtTZUNGSFYzenFRMlVOZ09vODQ?oc=5) |
+| S8 | 2026-09-16 | N3 | AI | [國泰金導入AI優化企金平台，壽險/財富管理齊成長（台視全球資訊網）](https://news.google.com/rss/articles/CBMikgFBVV95cUxQT2dsYlJmaVVielNiS3ZReWxLaGhfbU1sSVlES2VEWVpDTjY4Tm5pQkluSFdicHppTFg1T0ZDWWYyV05FWEd1WllMeUVaRGd0UFN4NFNsOWJqVHl2Qlo0cUlsMEozOXF3UHd6ak5SenFRMEplUU5yblZwOHprc2VvQXNaaUIyeEtKS2prRjV4OWlrZw?oc=5) |
+| S9 | 2026-09-15 | N3 | AI | [國泰金首發 AI 數位同事！蔡宗翰曝未來十年 AI 戰略走向「千人千面」（TechNews 科技新報）](https://news.google.com/rss/articles/CBMiZkFVX3lxTFBmMEE0a1dVSF9CQnRLUGNHVHVnbWI0d2xISGR4RU43Z2lTdDVtV3VQWnZmbDU0aWlDSlNybUl3TlVaWjZSLUt0UGJkRV9uMnZWVmlncmJOb2EwNWtCQ2xzRnpBQmI0Zw?oc=5) |
+| S10 | 2026-09-15 | N3 | AI | [蔡宗翰首度演講2／AI非替代而是協作！國泰金控科技長拋AI新戰略：打造「GAIA」架構與數位同事時代（鏡週刊Mirror Media）](https://news.google.com/rss/articles/CBMiZkFVX3lxTE5FdEFjdnlCSmx1STU4YTRVTHE1SWpFcDNLc0U5SzFhamxKZXVoWkVFQ21wel82MFRCQTRYMHJDV3VVb0ljYlYxb19GVVFjV2lwdml6akowVUpXenhjZnQtWUJzVkctd9IBa0FVX3lxTE1pQ2pEUWlnRWx2aXk1aThyYmRtdFBNS3E2eS1PdUNlN0hFOUIyeU1INzBQdGY5UXV1WG9xY3Q2MzZLMTJvaUQ2Z0JtbWxUa2YwYTc5RzJob0psLXhueEIzM0xWR2p1cEpZUzZz?oc=5) |
+| S16 | 2025-11-13 | T1 | m_and_a | 代子公司國泰人壽公告擬增資子公司Cathay Walbrook Holding 2 Limited |
+| S17 | 2025-11-13 | T1 | m_and_a | 代子公司國泰人壽公告擬增資子公司Cathay Walbrook Holding 1 Limited |
 
 ### 2308 台達電（電子零組件・上市）
 
-- **Need 66.6**（百分位 0.94）／**Timing 44.4**（百分位 0.95）→ **Tier 1**
+- **Need 66.6**（百分位 0.94）／**Timing 44.4**（百分位 0.96）→ **Tier 1**
 - 主 Play：**Migration**　次 Play：Data　雲端現況：**unknown**　資料完整度：1
 
 | 項目 | 得分 / 滿分 | 計算依據 |
@@ -116,7 +115,7 @@
 
 ### 2049 上銀（電機機械・上市）
 
-- **Need 90.4**（百分位 0.99）／**Timing 36.1**（百分位 0.92）→ **Tier 1**
+- **Need 90.4**（百分位 0.99）／**Timing 36.1**（百分位 0.93）→ **Tier 1**
 - 主 Play：**Security**　次 Play：Data　雲端現況：**unknown**　資料完整度：0.94
 
 | 項目 | 得分 / 滿分 | 計算依據 |
@@ -146,17 +145,35 @@
 | S10 | 2026-04-01 | N3 | DATA | [上銀攜手虎科大成立研發暨人才培育中心未來十年將斥5千萬元打造智慧製造實戰基地- 產業（工商時報）](https://news.google.com/rss/articles/CBMiX0FVX3lxTE8zZXJGQWRyck9zZnBaMU1VUG52ZnF5RjRtNzZkTklNWWpjaENhdk8wT0prUDBzMXk5N3ZjNlh1XzU3VkExZ3ZCbnBNV21IOWQ1dmRPY25SbllPYTd0eVdv?oc=5) |
 | S11 | 2026-04-01 | N3 | DATA | [上銀與虎科大攜手成「HIWIN-NFU智慧製造研發暨人才培育中心」（工商時報）](https://news.google.com/rss/articles/CBMiX0FVX3lxTE53N1dPOUwxQ2pjVmFyMzJUVTZoMVN6VngxTDFpRElyVXVVSFFjdDdJQVBDeHRmUUo3bGdzMm5QUzVqbEh2OTE1VGlrN2JobVlBekIyTkdwRDBnU1VDaFA4?oc=5) |
 
-## 4. 已知限制與需要 Verna 決定的事
 
-1. **驗證集只有 1 家**：AWS 官方公開、且屬於帳戶池的台灣客戶只確認到國泰金控（台北區域啟用新聞稿）。precision@20% 在 n=1 時沒有統計意義。
-   建議 Phase 5 改用「公開報導中明確使用公有雲（AWS／Azure／GCP）」的公司當驗證集（例：大同－Google Cloud），驗證的是「Need 高 = 有雲端需求」，與原設計意圖一致。
-2. **金融業 T3 營收動能失真**：國泰金近 3 個月營收 YoY −42%～−70%，來自保險業投資收益波動，不代表「降本需求」，卻拿到 15 分。
-   建議：金融保險業 T3 視為缺資料（移出分母）。
-3. **N3 上限飽和**：遞減報酬下 n≥5 就接近滿分（國泰金、台達電、上銀都在 24–25），前段班區分度低。建議上線後依驗證結果調整（rule v2）。
-4. **同一新聞多家媒體轉載會重複計算**：例：國泰金「AI 數位同事」有 6 家媒體報導。因遞減報酬影響有限，先註記。
-5. **新聞仍有產品類雜訊**：例：電子零組件廠的「AI 應用」產品新聞。字典可在 Sheets 持續調整。
+## 4. 已決定事項與已知限制
+
+**已決定（2026-10-12，Verna 授權 Claude Code 採可行性最高方案）**
+- **D27 金融業 T3 缺資料**：保險業營收受投資收益波動（國泰金 YoY −70%），不代表降本需求。
+- **D28 驗證集改為「公開來源證實使用公有雲」**：`config_validation` 分頁，5 家：
+
+| 代號 | 公司 | 雲端 | 來源 |
+|---|---|---|---|
+| 2882 | 國泰金控 | AWS | [AWS 台北區域啟用新聞稿](https://aws.amazon.com/tw/events/taiwan/news/taipei-region) |
+| 2884 | 玉山金控 | Google Cloud | [Google Cloud 客戶案例](https://cloud.google.com/customers/intl/zh-tw/esunbank?hl=zh-TW) |
+| 2891 | 中信金控 | Azure | [Microsoft Source Asia 2026/04](https://news.microsoft.com/source/asia/2026/04/10/ctbcbank_aiacrosstheorganization/?lang=zh-hant) |
+| 2890 | 永豐金控 | Azure | [Microsoft Source Asia 2025/04](https://news.microsoft.com/source/asia/2025/04/22/azure-bcdr/?lang=zh-hant) |
+| 2371 | 大同 | Google Cloud | 天下雜誌報導（系統抓到的新聞訊號） |
+
+  此清單同時用於雲端現況：Azure／GCP → competitor（替換機會）。
+
+**驗證結果（模擬，rule v1）**
+- precision@20% = **5/5**，平均名次 10.4／185。
+- ⚠️ **但「只看營收規模」的基準線也是 5/5**。前 20%（37 家）中金融保險占 22 家，驗證集 5 家有 4 家是金控 → 目前的驗證**無法證明**評分優於「挑最大的公司」。
+- 方法論頁需誠實揭露；Phase 5 建議：(a) 擴充製造業驗證樣本；(b) 改看「產業內排名」以排除產業規模效應；(c) 驗證集公司的雲端新聞本身會推高 N3，有循環論證風險，計算時應排除其 VENDOR 來源文件。
+
+**已知限制**
+1. **N3 上限飽和**：n≥5 即接近滿分，前段班區分度低（rule v2 再調）。
+2. **同一新聞多家媒體轉載重複計算**：遞減報酬下影響有限。
+3. **新聞仍有產品類雜訊**：字典可在 Sheets 持續調整。
+4. **製造業官方雲端案例稀少**：雲端廠商官網幾乎沒有台灣製造業上市公司案例。
 
 ## 5. 待完成
-- [ ] GAS 實跑 `setupPhase2`（首次每週工作約 30–45 分鐘，背景自動接續）
+- [ ] GAS 實跑 `setupPhase2`：2026-10-12 15:27 已執行，首次每週工作進行中
 - [ ] Verna 人工核對 §3
-- [ ] Verna 決定 §4 第 1、2 點
+- [x] §4 決策（D27、D28）

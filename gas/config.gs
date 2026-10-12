@@ -13,6 +13,8 @@ var SCHEMA = {
   config_play_aws: ['play', 'aws_offering', 'talking_point'],
   config_company_overrides: ['stock_code', 'news_query', 'news_exclude_terms', 'note'],
   config_aws_cases: ['stock_code', 'company_name', 'case_url', 'checked_at', 'note'],
+  // D28：驗證集＝公開來源證實使用公有雲的帳戶池公司；cloud 欄同時用於雲端現況
+  config_validation: ['stock_code', 'company_name', 'cloud', 'evidence_url', 'source_type', 'checked_at', 'note'],
   // 4.2 主檔
   companies: ['stock_code', 'name_full', 'name_short', 'market', 'industry_code', 'industry_name', 'capital', 'in_universe', 'updated_at'],
   company_aliases: ['alias', 'stock_code'],
