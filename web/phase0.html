@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CloudLens Phase 0 連線測試</title>
+<style>
+  :root { --brand: #4A2F9F; --nav: #2F1A7A; --text: #1F1B2D; --muted: #5B5670; --bg: #FFFFFF; --line: #DDD8EA; }
+  body { margin: 0; font-family: "Noto Sans TC", system-ui, sans-serif; color: var(--text); background: var(--bg); }
+  header { background: var(--nav); color: #fff; padding: 14px 24px; font-weight: 600; }
+  main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+  button { margin: 12px 8px 12px 0; padding: 8px 16px; border: 0; border-radius: 6px; background: var(--brand); color: #fff; font: inherit; cursor: pointer; }
+  button:focus-visible { outline: 3px solid #B9A8F0; outline-offset: 2px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 8px; vertical-align: top; }
+  pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>CloudLens · Phase 0 跨網域測試</header>
+<main>
+  <label for="url">GAS Web App URL（…/exec）</label>
+  <input id="url" placeholder="https://script.google.com/macros/s/XXXX/exec">
+  <button id="get">測試 GET</button>
+  <button id="post">測試 POST（text/plain）</button>
+  <table>
+    <thead><tr><th>測試</th><th>結果</th><th>耗時</th><th>回應</th></tr></thead>
+    <tbody id="out"></tbody>
+  </table>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  try { $('url').value = localStorage.getItem('gasUrl') || ''; } catch (e) {}
+
+  async function run(name, fn) {
+    const url = $('url').value.trim();
+    try { localStorage.setItem('gasUrl', url); } catch (e) {}
+    const t0 = performance.now();
+    let result, body;
+    try {
+      const res = await fn(url);
+      const json = await res.json();
+      result = res.ok && json.ok ? '✔ 成功' : '✘ 失敗';
+      body = JSON.stringify(json, null, 2);
+    } catch (e) {
+      result = '✘ 失敗';
+      body = String(e);
+    }
+    const tr = document.createElement('tr');
+    [name, result, Math.round(performance.now() - t0) + ' ms', ''].forEach((v, i) => {
+      const td = document.createElement('td');
+      if (i === 3) { const pre = document.createElement('pre'); pre.textContent = body; td.appendChild(pre); }
+      else td.textContent = v;
+      tr.appendChild(td);
+    });
+    $('out').prepend(tr);
+  }
+
+  $('get').onclick = () => run('GET ?action=ping', (u) => fetch(u + '?action=ping&from=' + encodeURIComponent(location.origin)));
+  $('post').onclick = () => run('POST text/plain', (u) => fetch(u, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'ping', from: location.origin, msg: '中文測試' })
+  }));
+</script>
+</body>
+</html>
