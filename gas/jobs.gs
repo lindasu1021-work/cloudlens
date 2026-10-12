@@ -21,6 +21,16 @@ function monthlyJob() {
   }, 'continueMonthlyJob');
 }
 
+function weeklyJob() {
+  runJob_('weekly', function () { return weeklyRunId_(); }, function () {
+    return ['esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores']);
+  }, 'continueWeeklyJob');
+}
+
+/** 每週 run_id：ISO 週次（2026-W42）；同一週重跑沿用同一個 run_id。 */
+function weeklyRunId_() { return weekRunId_(new Date()); }
+
+function continueWeeklyJob() { weeklyJob(); }
 function continueDailyJob() { dailyJob(); }
 function continueMonthlyJob() { monthlyJob(); }
 
@@ -33,6 +43,11 @@ function runTask_(key, runId) {
     case 'revenue': return fetchRevenueFile_(runId, p[1], p[2], p[3]);
     case 'ann': return fetchAnnouncements_(runId, p[1]);
     case 'weekly_check': return checkWeeklyFreshness_(runId);
+    case 'esg': return fetchEsg_(runId);
+    case 'news': return fetchNewsBatch_(runId, p[1], p[2]);
+    case 'annhist': return fetchAnnHistory_(runId, p[1]);
+    case 'signals': return buildSignals_(runId);
+    case 'scores': return computeScores_(runId);
   }
   throw new Error('unknown task ' + key);
 }
