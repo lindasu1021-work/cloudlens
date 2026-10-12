@@ -35,11 +35,23 @@ function fetchWithRetry_(url, options) {
   return last;
 }
 
-/** 取得 JSON；非 200 或解析失敗丟例外（由 run_log 記錄）。 */
+/**
+ * 取得 JSON；非 200 或解析失敗丟例外（由 run_log 記錄）。
+ * 回應偶爾會被截斷（Phase 1 實測櫃買主檔發生過），解析失敗也重抓，最多 3 次。
+ */
 function fetchJson_(url) {
-  var res = fetchWithRetry_(url);
-  if (res.code !== 200) throw new Error('HTTP ' + (res.code || res.error) + ' ' + url);
-  return JSON.parse(res.text);
+  var lastErr;
+  for (var i = 0; i < 3; i++) {
+    var res = fetchWithRetry_(url);
+    if (res.code !== 200) throw new Error('HTTP ' + (res.code || res.error) + ' ' + url);
+    try {
+      return JSON.parse(res.text);
+    } catch (e) {
+      lastErr = e;
+      Utilities.sleep(3000);
+    }
+  }
+  throw new Error('JSON 解析失敗（重試 3 次）：' + lastErr + ' ' + url);
 }
 
 function jsonOut_(obj) {
