@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014j">
-<link rel="stylesheet" href="css/app.css?v=20261014j">
+<link rel="stylesheet" href="css/tokens.css?v=20261014k">
+<link rel="stylesheet" href="css/app.css?v=20261014k">
 </head>
 <body data-page="account" data-title="帳戶">
 <main>
@@ -17,13 +17,8 @@
 
   <div class="acct-grid">
     <div class="acct-left">
-      <!-- 列 A：黑色 Tier 主卡｜Need 計量圖｜Timing 計量圖｜迷你象限圖 -->
-      <section class="a-row" aria-label="分數摘要">
-        <div class="card dark tier-card" id="tier-card"></div>
-        <div class="card mini"><h2 class="mini-h">Need 需求強度</h2><div id="g-need" class="gauge"></div><p class="mini-note" id="g-need-note"></p></div>
-        <div class="card mini"><h2 class="mini-h">Timing 時機</h2><div id="g-timing" class="gauge"></div><p class="mini-note" id="g-timing-note"></p></div>
-        <div class="card mini"><h2 class="mini-h" id="q-title">帳戶池位置</h2><div id="mini-quad"></div><p class="mini-note" id="q-note"></p></div>
-      </section>
+      <!-- 列 A：Tier 主卡 -->
+      <section class="card dark tier-strip" id="tier-card" aria-label="帳戶摘要"></section>
 
       <!-- 列 B：Need 拆解｜Timing 拆解 -->
       <div class="b-legend" aria-label="圖例"><span><i class="i-over"></i>高於帳戶池中位數</span><span><i class="i-under"></i>未達中位數</span><span><i class="i-med"></i>帳戶池中位數</span><span><i class="i-miss"></i>無資料（不算 0 分）</span></div>
@@ -34,25 +29,25 @@
 
       <!-- 列 C：訊號時間軸 -->
       <section class="card">
-        <div class="card-head"><h2 id="c-title">訊號時間軸</h2><span class="hint">顏色＋形狀＝Play・大小＝得分・點擊看下方清單；背景色帶＝時間衰減</span></div>
+        <div class="card-head"><h2 id="c-title">訊號時間軸</h2><span class="hint">形狀＝Play・大小＝得分・點擊看清單</span></div>
         <div class="card-body chart-pad"><div id="swim"></div>
           <div class="legend" id="swim-legend"></div></div>
       </section>
 
       <!-- 列 D：營收動能 -->
       <section class="card">
-        <div class="card-head"><h2 id="d-title">營收動能</h2><span class="hint">上：年增率（虛線＝±15% 門檻）・下：月營收，最新 3 個月為 T3 判斷區間</span></div>
+        <div class="card-head"><h2 id="d-title">營收動能</h2><span class="hint">上：年增率（虛線＝±15%）・下：月營收</span></div>
         <div class="card-body chart-pad"><div id="control"></div></div>
       </section>
 
       <!-- 列 E：Play 組成｜同產業排名 -->
       <section class="e-row">
         <div class="card">
-          <div class="card-head"><h2 id="e-title">Play 組成</h2><span class="hint">各 Play 分數占比（含產業先驗各 +5）</span></div>
+          <div class="card-head"><h2 id="e-title">Play 組成</h2></div>
           <div class="card-body"><div id="stack"></div><p class="mini-note left" id="e-note"></p></div>
         </div>
         <div class="card">
-          <div class="card-head head-split"><div><h2 id="rank-title">同產業排名</h2><span class="hint">前 10 名＋本公司</span></div>
+          <div class="card-head head-split"><div><h2 id="rank-title">同產業排名</h2></div>
             <div class="seg-toggle" role="group" aria-label="排名依據"><button type="button" data-metric="need" aria-pressed="true">Need</button><button type="button" data-metric="timing" aria-pressed="false">Timing</button></div></div>
           <div class="card-body"><div id="rank"></div></div>
         </div>
@@ -71,13 +66,12 @@
     </aside>
   </div>
 </main>
-<footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261014j"></script>
-<script src="js/shell.js?v=20261014j"></script>
-<script src="js/charts.js?v=20261014j"></script>
-<script src="js/account-charts.js?v=20261014j"></script>
-<script src="js/copilot.js?v=20261014j"></script>
+<script src="js/api.js?v=20261014k"></script>
+<script src="js/shell.js?v=20261014k"></script>
+<script src="js/charts.js?v=20261014k"></script>
+<script src="js/account-charts.js?v=20261014k"></script>
+<script src="js/copilot.js?v=20261014k"></script>
 <script>
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, ageDays } = CL;
@@ -89,7 +83,6 @@
   const pool = d.pool || { median: {} };
   const fin = c.industry === '金融保險', otc = c.market === '上櫃';
   document.title = `${c.name} ${c.code}｜企業雲端商機洞察平台`;
-  Shell.setCrumbs([{ label: '總覽', href: 'index.html' }, { label: c.name + ' ' + c.code }]);
   const by = (type, cat) => sig.filter(x => x.type === type && (!cat || x.cat === cat));
   const rows = d.accounts.map(a => ({ code: a.code, name: a.name, industry: a.industry, need: Number(a.score.need) || 0, timing: Number(a.score.timing) || 0, play: a.score.play_primary }));
   const self = rows.find(r => r.code === code);
@@ -98,36 +91,19 @@
     <div><h1>${esc(c.name)} <span style="font-weight:400">${c.code}</span></h1>
       <div class="sub">${esc(c.full)}・${esc(c.industry)}・${c.market}・實收資本額 ${(c.capital / 1e8).toFixed(0)} 億元</div></div>
     <div class="tags">${tierBadge(String(s.tier))}
-      <span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>
-      <span class="badge cloud">資料完整度 ${Math.round(s.data_completeness * 100)}%</span></div>`;
+      ${s.cloud_status === 'unknown' ? '' : `<span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>`}</div>`;
 
-  // ---------- A 分數摘要 ----------
+  // ---------- A 帳戶摘要 ----------
   const maxOf = k => k === 'n4' && otc ? 15 : COMPONENTS.find(x => x.key === k).max;
-  const compose = axis => {
-    const parts = COMPONENTS.filter(x => x.axis === axis);
-    const have = parts.filter(x => s[x.key] !== ''), miss = parts.filter(x => s[x.key] === '');
-    const max = have.reduce((a, x) => a + maxOf(x.key), 0);
-    return `<b>${axis === 'need' ? 'Need' : 'Timing'} ${fmt(s[axis])}</b>` +
-      `= (${have.map(x => x.key.toUpperCase() + ' ' + fmt(s[x.key])).join(' + ')}) ÷ 可取得滿分 ${max} × 100` +
-      (miss.length ? `<br><span class="muted">${miss.map(x => x.key.toUpperCase()).join('、')} 無資料，已移出分母</span>` : '');
-  };
-  AC.gauge(document.getElementById('g-need'), { value: s.need === '' ? null : Number(s.need), pct: s.need_pct === '' ? null : Number(s.need_pct), cut: pool.need_cut, tipHtml: compose('need') });
-  AC.gauge(document.getElementById('g-timing'), { value: s.timing === '' ? null : Number(s.timing), pct: s.timing_pct === '' ? null : Number(s.timing_pct), cut: pool.timing_cut, tipHtml: compose('timing') });
-  const over = (v, cut) => cut === null || cut === undefined ? '' : (Number(v) >= cut ? `✔ 過前 30% 門檻` : `差門檻 ${fmt(cut - Number(v))} 分`);
-  document.getElementById('g-need-note').textContent = over(s.need, pool.need_cut);
-  document.getElementById('g-timing-note').textContent = over(s.timing, pool.timing_cut);
-  document.getElementById('q-title').textContent = '帳戶池位置';
-  document.getElementById('q-note').textContent = LABELS.tierLong[String(s.tier)];
   // 黑色 Tier 主卡：帳戶池排名（Need＋Timing 總分，同分並列）
   const poolRank = s.pool_rank || (rows.slice().sort((a, b) => (b.need + b.timing) - (a.need + a.timing)).findIndex(r => r.code === code) + 1);
   const tierName = LABELS.tierLong[String(s.tier)];
+  const tl = String(s.tier) === 'hold' ? '暫緩' : 'Tier ' + s.tier;
+  const playLine = s.play_primary === CL.NO_PLAY ? CL.NO_PLAY : esc(s.play_primary) + (s.play_secondary ? '・' + esc(s.play_secondary) : '');
   document.getElementById('tier-card').innerHTML = `
-    <div class="tc-label">帳戶池排名</div>
-    <div class="tc-rank">#${poolRank}</div>
-    <div class="tc-tier">${esc(String(s.tier) === 'hold' ? '暫緩' : 'Tier ' + s.tier)}・共 ${rows.length} 家</div>
-    <div class="tc-note">${esc(tierName.replace(/^Tier \d\s*/, ''))}${s.play_primary ? '・' + esc(s.play_primary) : ''}</div>`;
-  AC.miniQuad(document.getElementById('mini-quad'), { rows, self, needCut: pool.need_cut ?? 50, timingCut: pool.timing_cut ?? 50,
-    onClick: () => { location.href = 'index.html?focus=' + code; } });
+    <div class="ts-item"><span class="ts-label">帳戶池排名</span><span class="ts-big">#${poolRank}<span class="ts-of"> / ${rows.length}</span></span></div>
+    <div class="ts-item"><span class="ts-label">優先級</span><span class="ts-big">${tl}</span><span class="ts-note">${esc(tierName.replace(/^Tier \d\s*/, ''))}</span></div>
+    <div class="ts-item"><span class="ts-label">建議 Play</span><span class="ts-big">${playLine}</span></div>`;
   const peers = rows.filter(r => r.industry === c.industry);
   const drawRank = metric => {
     const rank = AC.lollipop(document.getElementById('rank'), { peers, selfCode: code, metric });
@@ -222,7 +198,7 @@
     const pc = p => Math.round(ps[p] / tot * 100);
     document.getElementById('e-title').innerHTML = `<span class="ln">主 Play：${esc(s.play_primary)}（${pc(s.play_primary)}%）</span>` + (s.play_secondary ? `<span class="ln">次 Play：${esc(s.play_secondary)}（${pc(s.play_secondary)}%）</span>` : '<span class="ln">無次 Play</span>');
     AC.playStack(document.getElementById('stack'), { scores: ps });
-    document.getElementById('e-note').textContent = s.play_from_signals ? '' : '這家公司沒有帶 Play 的訊號，比例只來自產業先驗（P3 將改標「訊號不足」）。';
+    document.getElementById('e-note').textContent = '';
   } else document.getElementById('stack').innerHTML = '<p class="empty">Play 分數將於下次 API 更新後顯示</p>';
 
   // ---------- F 訊號清單 ----------
@@ -231,10 +207,10 @@
   const SRC = { ann: '重大訊息', news: '新聞', esg: 'ESG 報告', revenue: '月營收' };
   function renderList() {
     const list = expanded ? byPts : byPts.slice(0, 5);
-    document.getElementById('f-hint').textContent = `依得分排序・${expanded ? '全部' : '前 5'} / ${docs.length} 份`;
+    document.getElementById('f-hint').textContent = `依得分排序・${expanded ? '全部' : '前 5'} / ${docs.length}`;
     document.getElementById('siglist').innerHTML = list.length ? list.map(x => {
       const ext = x.url && x.url[0] !== '#';
-      const label = x.src === 'ann' ? `${esc(x.title)}<span class="muted" style="font-size:12px">（公開資訊觀測站當月重訊）</span>` : esc(x.title);
+      const label = x.src === 'ann' ? `${esc(x.title)}` : esc(x.title);
       const title = x.url ? `<a href="${esc(x.url)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${label}</a>` : label;
       return `<li id="${x.ref}" data-ref="${x.ref}"><span class="pdot">${x.play && CL.PLAY_SHAPE[x.play] ? CL.shapeSvg(x.play, 10) : '<svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="var(--white)" stroke="var(--ink-500)" stroke-width="1.5"/></svg>'}</span>
         <span class="sid">${x.ref}</span><span class="date">${String(x.at).slice(0, 10)}</span><span class="type">${SRC[x.src] || x.src}</span>

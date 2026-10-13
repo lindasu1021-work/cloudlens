@@ -8,22 +8,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014j">
-<link rel="stylesheet" href="css/app.css?v=20261014j">
+<link rel="stylesheet" href="css/tokens.css?v=20261014k">
+<link rel="stylesheet" href="css/app.css?v=20261014k">
 </head>
 <body data-page="methodology" data-title="方法論">
 <main class="meth">
   <section class="hero-card" aria-label="方法論簡介">
     <h2>每一分，都對得到一則公開訊號</h2>
-    <p>以公開資料替台灣上市櫃企業打分數，標出切入劇本（Play），協助業務決定「先打誰、拿什麼去談」。</p>
-  </section>
+      </section>
 
   <section class="card dark" aria-label="30 秒摘要">
     <div class="band-head"><h2>30 秒摘要</h2><span class="band-sub" id="sum-sub"></span></div>
     <div class="band-grid four">
-      <div class="band-card"><div class="band-label">資料來源</div><div class="band-num" id="s-src">—</div><div class="band-note">證交所、櫃買、觀測站、新聞</div></div>
-      <div class="band-card"><div class="band-label">帳戶池</div><div class="band-num" id="s-pool">—</div><div class="band-note" id="s-pool-n">三產業上市櫃公司</div></div>
-      <div class="band-card"><div class="band-label">規則版本</div><div class="band-num" id="s-ver">—</div><div class="band-note" id="s-ver-n"></div></div>
+      <div class="band-card"><div class="band-label">資料來源</div><div class="band-num" id="s-src">—</div></div>
+      <div class="band-card"><div class="band-label">帳戶池</div><div class="band-num" id="s-pool">—</div></div>
+      <div class="band-card"><div class="band-label">規則版本</div><div class="band-num" id="s-ver">—</div></div>
       <div class="band-card"><div class="band-label">驗證 precision@20%</div><div class="band-num hot" id="s-prec">—</div><div class="band-note" id="s-prec-n"></div></div>
     </div>
   </section>
@@ -117,8 +116,7 @@
   <section class="card chapter" id="versions" aria-labelledby="h-versions">
     <h2 id="h-versions">6　規則版本紀錄</h2>
     <p class="lead" id="lead-versions"></p>
-    <div id="dumbbell"></div>
-    <details class="more" open><summary>每一版改了什麼</summary><ol class="vlist" id="vlist"></ol></details>
+    <ol class="vlist" id="vlist"></ol>
   </section>
 
   <!-- 7 覆蓋與限制 -->
@@ -131,9 +129,9 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
-<script src="js/api.js?v=20261014j"></script>
-<script src="js/shell.js?v=20261014j"></script>
-<script src="js/method-charts.js?v=20261014j"></script>
+<script src="js/api.js?v=20261014k"></script>
+<script src="js/shell.js?v=20261014k"></script>
+<script src="js/method-charts.js?v=20261014k"></script>
 <script>
 (async () => {
   const { esc } = CL;
@@ -148,8 +146,6 @@
   document.getElementById('s-pool').textContent = m.funnel[2].n;
   document.getElementById('s-pool-n').textContent = `資本額 ≥ ${m.capital_threshold / 1e8} 億・Tier 1 ${m.tier_counts['1']} 家`;
   document.getElementById('s-ver').textContent = 'v' + m.rule_version;
-  const lastV = m.rule_versions[m.rule_versions.length - 1];
-  document.getElementById('s-ver-n').textContent = lastV ? lastV.title : '';
   const prec = m.validation_precision;
   document.getElementById('s-prec').textContent = prec === null || prec === undefined ? '驗證中' : pctTxt(prec);
   const base = (m.validation.slice().reverse().find(v => /基準線/.test(v.note || '')) || {}).note || '';
@@ -262,7 +258,6 @@
   // ---------- 6 版本 ----------
   document.getElementById('lead-versions').textContent = m.rule_versions.length > 1
     ? `目前是 v${m.rule_version}，共 ${m.rule_versions.length} 版；每次調整權重或字典都會升版並重新驗證。` : 'v1 基準版；之後每次調整權重或字典都會升版並重新驗證。';
-  MC.dumbbell(document.getElementById('dumbbell'), m.rule_versions);
   document.getElementById('vlist').innerHTML = m.rule_versions.slice().reverse().map(v => `<li><b>v${v.v}　${esc(v.title)}</b><span class="muted">　${esc(v.date)}</span><br>${esc(v.note)}</li>`).join('');
 
   // ---------- 7 覆蓋與限制 ----------

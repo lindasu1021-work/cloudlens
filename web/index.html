@@ -8,27 +8,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014j">
-<link rel="stylesheet" href="css/app.css?v=20261014j">
+<link rel="stylesheet" href="css/tokens.css?v=20261014k">
+<link rel="stylesheet" href="css/app.css?v=20261014k">
 </head>
 <body data-page="overview" data-title="總覽">
 <main>
   <!-- 列 1：黑色 KPI 帶 -->
   <section class="card dark kpi-band" aria-labelledby="kpi-title">
     <div class="band-head"><h2 id="kpi-title">本週帳戶情報</h2><span class="band-sub" id="band-sub"></span></div>
-    <div class="band-grid">
-      <div class="band-card"><span class="band-ico" id="ic-pool"></span><div class="band-label">帳戶池</div><div class="band-num" id="k-accounts">—</div><div class="band-note">實收資本額 ≥ 10 億</div></div>
-      <div class="band-card"><span class="band-ico" id="ic-t1"></span><div class="band-label">Tier 1 立即開發</div><div class="band-num hot" id="k-tier1">—</div><div class="band-note" id="k-tier1-sub"></div></div>
-      <div class="band-card"><span class="band-ico" id="ic-ev"></span><div class="band-label">近 30 天觸發事件</div><div class="band-num" id="k-events">—</div><div class="band-note">併購、擴廠、資安事件等</div></div>
-      <div class="band-card"><span class="band-ico" id="ic-green"></span><div class="band-label">Greenfield 比例</div><div class="band-num" id="k-green">—</div><div class="band-note">未知＝新導入機會</div></div>
-      <div class="band-card"><span class="band-ico" id="ic-rule"></span><div class="band-label">規則版本</div><div class="band-num" id="k-rule">—</div><div class="band-note" id="k-rule-sub"></div></div>
+    <div class="band-grid four">
+      <div class="band-card"><div class="band-label">帳戶池</div><div class="band-num" id="k-accounts">—</div></div>
+      <div class="band-card"><div class="band-label">Tier 1 立即開發</div><div class="band-num hot" id="k-tier1">—</div></div>
+      <div class="band-card"><div class="band-label">近 30 天觸發事件</div><div class="band-num" id="k-events">—</div></div>
+      <div class="band-card"><div class="band-label">訊號不足</div><div class="band-num" id="k-nosig">—</div></div>
     </div>
   </section>
 
   <!-- 列 2：象限圖（8）＋鬆餅圖／本週動態（4） -->
   <section class="grid-12">
     <div class="card chart-wrap span-8" id="quad">
-      <div class="card-head"><h2>先打誰：Need × Timing 象限</h2><span class="hint">點選公司看分數拆解；虛線＝帳戶池前 30% 門檻；空心圓＝訊號不足</span></div>
+      <div class="card-head"><h2>先打誰：Need × Timing 象限</h2><span class="hint">點選公司看分數拆解；虛線為前 30% 門檻</span></div>
       <div class="card-body">
         <div class="chart"></div>
         <div class="legend" id="legend"></div>
@@ -36,15 +35,11 @@
       </div>
     </div>
     <div class="span-4 col-stack">
-      <div class="card chart-wrap" id="waffle-card">
-        <div class="card-head"><h2 id="waffle-title">Tier 分布</h2><span class="hint">每點一家公司，越橘越該先打</span></div>
-        <div class="card-body"><div id="waffle"></div><div class="legend" id="waffle-legend"></div><div class="tooltip" role="status"></div></div>
-      </div>
       <div class="card">
         <div class="card-head"><h2>本週動態</h2><span class="hint" id="dyn-hint"></span></div>
         <div class="card-body">
-          <h3 class="sub-h">分數變化前 5</h3>
-          <ul class="movers" id="movers"></ul>
+          <div id="movers-wrap"><h3 class="sub-h">分數變化前 5</h3>
+          <ul class="movers" id="movers"></ul></div>
           <h3 class="sub-h">最新觸發事件（近 30 天）</h3>
           <ul class="events" id="events"></ul>
         </div>
@@ -56,7 +51,7 @@
   <section class="grid-12">
     <div class="card chart-wrap span-8" id="cal-card">
       <div class="card-head head-split">
-        <div><h2 id="cal-title">觸發事件日曆</h2><span class="hint" id="cal-hint">近 26 週每日觸發事件數（重大訊息）</span></div>
+        <div><h2 id="cal-title">觸發事件日曆</h2><span class="hint" id="cal-hint">近 26 週重大訊息</span></div>
         <div class="seg-toggle" role="group" aria-label="產業範圍" id="cal-seg">
           <button type="button" data-g="n" aria-pressed="true">全部</button><button type="button" data-g="fin" aria-pressed="false">金融</button><button type="button" data-g="mfg" aria-pressed="false">製造</button>
         </div>
@@ -64,14 +59,14 @@
       <div class="card-body"><div id="cal"></div><div class="legend" id="cal-legend"></div><div class="tooltip" role="status"></div></div>
     </div>
     <div class="card span-4">
-      <div class="card-head"><h2 id="ind-title">各產業的 Tier 組成</h2><span class="hint">各產業內 Tier 的家數占比</span></div>
+      <div class="card-head"><h2 id="ind-title">各產業的 Tier 組成</h2></div>
       <div class="card-body"><div id="ind-stack"></div><div class="legend" id="ind-legend"></div></div>
     </div>
   </section>
 
   <!-- 列 4：帳戶清單 -->
   <section class="card" id="accounts" aria-labelledby="t-title">
-    <div class="card-head"><h2 id="t-title">帳戶清單</h2><span class="hint">點欄位標題排序；Need／Timing 條在帳戶池前 30% 時為橘色</span></div>
+    <div class="card-head"><h2 id="t-title">帳戶清單</h2><span class="hint">點欄位標題排序</span></div>
     <div class="card-body">
       <div class="filters">
         <label class="sr-only" for="f-q">搜尋公司</label>
@@ -93,14 +88,14 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
+      <button type="button" class="btn-more" id="more" hidden></button>
     </div>
   </section>
 </main>
-<footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261014j"></script>
-<script src="js/shell.js?v=20261014j"></script>
-<script src="js/charts.js?v=20261014j"></script>
+<script src="js/api.js?v=20261014k"></script>
+<script src="js/shell.js?v=20261014k"></script>
+<script src="js/charts.js?v=20261014k"></script>
 <script>
 (async () => {
   const { LABELS, fmt, esc, tierBadge, playTag, shapeSvg, ageDays } = CL;
@@ -121,24 +116,10 @@
   const eventDocs = new Set(recent.map(s => s.code + '|' + s.title + '|' + s.at));
 
   // ---------- KPI 帶 ----------
-  const ICON = {
-    pool: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
-    t1: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
-    ev: '<path d="M13 3L5 13h6l-1 8 8-10h-6z"/>',
-    green: '<path d="M5 19c0-8 5-13 14-14 0 9-5 14-14 14z"/><path d="M5 19c3-4 6-7 10-9"/>',
-    rule: '<path d="M4 7h16M4 12h10M4 17h6"/>'
-  };
-  Object.entries({ 'ic-pool': 'pool', 'ic-t1': 't1', 'ic-ev': 'ev', 'ic-green': 'green', 'ic-rule': 'rule' }).forEach(([id, k]) => {
-    document.getElementById(id).innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
-  });
   document.getElementById('k-accounts').textContent = S.rank_total || rows.length;
   document.getElementById('k-tier1').textContent = tierCounts['1'] || 0;
-  document.getElementById('k-tier1-sub').textContent = `占 ${Math.round((tierCounts['1'] || 0) / rows.length * 100)}%・兩軸皆前 30%`;
   document.getElementById('k-events').textContent = eventDocs.size;
-  document.getElementById('k-green').textContent = Math.round(rows.filter(r => r.cloud === 'unknown').length / rows.length * 100) + '%';
-  document.getElementById('k-rule').textContent = 'v' + d.rule_version;
-  const noPlay = rows.filter(r => r.play === CL.NO_PLAY).length;
-  document.getElementById('k-rule-sub').textContent = d.rule_version >= 2 ? `「訊號不足」${noPlay} 家` : '';
+  document.getElementById('k-nosig').textContent = rows.filter(r => r.play === CL.NO_PLAY).length;
   document.getElementById('band-sub').textContent = `${d.run_id}${d.source === 'live' ? '' : '・靜態快照'}`;
 
   // ---------- 象限圖 ----------
@@ -151,12 +132,9 @@
   document.getElementById('legend').innerHTML = playOrder
     .map(p => `<span>${shapeSvg(p, 11)}${p === CL.NO_PLAY ? CL.NO_PLAY : LABELS.play[p]}（${rows.filter(r => r.play === p).length}）</span>`).join('');
 
-  // ---------- 鬆餅圖 ----------
-  document.getElementById('waffle-title').textContent = `${tierCounts['1'] || 0} 家立即開發`;
-  Charts.waffle(document.getElementById('waffle'), rows, r => { location.href = 'account.html?code=' + r.code; });
+  // ---------- Tier 標示 ----------
   const TL = { '1': 'Tier 1', '2': 'Tier 2', '3': 'Tier 3', hold: '暫緩' };
   const dotSvg = t => `<svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="${Charts.TIER_VAR[t]}" stroke="var(--ink-900)" stroke-width="0.8"/></svg>`;
-  document.getElementById('waffle-legend').innerHTML = Charts.TIER_ORDER.map(t => `<span>${dotSvg(t)}${TL[t]} ${tierCounts[t] || 0}</span>`).join('');
 
   // ---------- 本週動態 ----------
   const prevRows = rows.filter(r => d.prev[r.code]).map(r => {
@@ -165,9 +143,8 @@
   });
   document.getElementById('dyn-hint').textContent = d.prev_run_id ? `與 ${d.prev_run_id} 比較` : '';
   const movers = prevRows.filter(r => r.delta !== 0 || r.tier !== r.tierFrom).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 5);
-  document.getElementById('movers').innerHTML = !d.prev_run_id
-    ? '<li class="muted">目前是第一次計分，下週起顯示與上週的比較。</li>'
-    : movers.length ? movers.map(r => `<li><a href="account.html?code=${r.code}">${esc(r.name)}</a>
+  if (!d.prev_run_id) document.getElementById('movers-wrap').remove();
+  else document.getElementById('movers').innerHTML = movers.length ? movers.map(r => `<li><a href="account.html?code=${r.code}">${esc(r.name)}</a>
         <span class="${r.delta > 0 ? 'up' : 'down'}"><span class="arr" aria-hidden="true">${r.delta > 0 ? '▲' : '▼'}</span> ${r.delta > 0 ? '上升' : '下降'} ${Math.abs(r.delta)}</span>
         ${r.tier !== r.tierFrom ? `<span class="muted">${LABELS.tier[r.tierFrom]} → </span>${tierBadge(r.tier)}` : ''}</li>`).join('')
     : '<li class="muted">與上週相比沒有變化。</li>';
@@ -190,8 +167,7 @@
     const f = ['var(--gray-100)', 'var(--heat-1)', 'var(--heat-2)', 'var(--heat-3)', 'var(--heat-4)'];
     document.getElementById('cal-legend').innerHTML = `<span class="muted">少</span>` + ['0', '1', '2–3', '4–6', '7+']
       .map((t, i) => `<span><svg width="14" height="14" aria-hidden="true"><rect width="14" height="14" rx="4" fill="${f[i]}" stroke="${i ? 'var(--ink-900)' : 'none'}" stroke-width="0.5"/></svg>${t}</span>`).join('') + `<span class="muted">多</span>`;
-    document.getElementById('cal-hint').textContent = '近 26 週每日觸發事件數（重大訊息）' +
-      (bf && bf.done_days < bf.total_days ? `・歷史回補 ${bf.done_days}／${bf.total_days} 天，較早日期可能不完整` : '');
+    document.getElementById('cal-hint').textContent = '近 26 週重大訊息' + (bf && bf.done_days < bf.total_days ? '・較早日期仍在回補' : '');
   };
   document.getElementById('cal-seg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     group = b.dataset.g;
@@ -236,7 +212,7 @@
   const cols = [
     { k: 'code', t: '代號' }, { k: 'name', t: '公司' }, { k: 'industry', t: '產業' },
     { k: 'need', t: 'Need', num: true }, { k: 'timing', t: 'Timing', num: true }, { k: 'tierOrder', t: 'Tier' },
-    { k: 'play', t: '主 Play' }, { k: 'play2', t: '次 Play' }, { k: 'cloud', t: '雲端現況' }, { k: 'comp', t: '資料完整度', num: true }
+    { k: 'play', t: '主 Play' }, { k: 'play2', t: '次 Play' }, { k: 'cloud', t: '雲端現況' }
   ];
   const tierOrder = { '1': 0, '2': 1, '3': 2, hold: 3 };
   rows.forEach(r => { r.tierOrder = tierOrder[r.tier]; });
@@ -265,6 +241,8 @@
     }));
   }
 
+  const PAGE = 30; let showAll = false;
+  document.getElementById('more').addEventListener('click', () => { showAll = true; render(); });
   function render() {
     const q = document.getElementById('f-q').value.trim();
     const f = id => document.getElementById(id).value;
@@ -279,16 +257,18 @@
     });
     thead.querySelectorAll('th').forEach(th => th.setAttribute('aria-sort', th.dataset.k === sort.k ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
     window.__shown = list;
-    document.getElementById('count').textContent = `顯示 ${list.length} / ${rows.length} 家`;
+    const cut = showAll || list.length <= PAGE ? list : list.slice(0, PAGE);
+    document.getElementById('count').textContent = `${list.length} 家`;
+    document.getElementById('more').hidden = cut.length === list.length;
+    document.getElementById('more').textContent = `顯示全部 ${list.length} 家`;
     chips();
-    document.getElementById('tbody').innerHTML = list.map(r => `
+    document.getElementById('tbody').innerHTML = cut.map(r => `
       <tr data-code="${r.code}" tabindex="0">
         <td>${r.code}</td><td><a href="account.html?code=${r.code}">${esc(r.name)}</a></td><td>${esc(r.industry)}</td>
         <td class="num">${fmt(r.need)}<span class="bar${r.need >= needCut ? ' hi' : ''}"><i style="width:${r.need}%"></i></span></td>
         <td class="num">${fmt(r.timing)}<span class="bar${r.timing >= timingCut ? ' hi' : ''}"><i style="width:${r.timing}%"></i></span></td>
         <td>${tierBadge(r.tier)}</td><td>${playTag(r.play)}</td><td>${playTag(r.play2)}</td>
-        <td><span class="badge cloud">${LABELS.cloudShort[r.cloud]}</span></td>
-        <td class="num muted">${Math.round(r.comp * 100)}%</td>
+        <td>${r.cloud === 'unknown' ? '' : `<span class="badge cloud">${LABELS.cloudShort[r.cloud]}</span>`}</td>
       </tr>`).join('');
   }
   document.getElementById('tbody').addEventListener('click', e => {
@@ -302,6 +282,7 @@
 
   // 從帳戶頁迷你象限圖點過來（?focus=代號）：捲到該公司並高亮
   const focus = new URLSearchParams(location.search).get('focus');
+  if (focus) showAll = true, render();
   const tr = focus && document.querySelector(`#tbody tr[data-code="${focus}"]`);
   if (tr) { tr.classList.add('focus'); tr.scrollIntoView({ block: 'center' }); }
 })();

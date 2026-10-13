@@ -61,7 +61,7 @@ const Shell = (() => {
           <kbd aria-hidden="true">⌘K</kbd>
           <ul id="gs-list" class="gs-list" role="listbox" hidden></ul>
         </div>
-        <button type="button" class="btn-dark export-btn" id="export-csv">${svg('download', 16)}<span>匯出 CSV</span></button>
+        ${page === 'overview' || page === 'account' ? `<button type="button" class="btn-dark export-btn" id="export-csv">${svg('download', 16)}<span>匯出 CSV</span></button>` : ''}
       </div>`;
 
     // 把導覽列以外的頁面內容搬進內容區（節點保留，頁面腳本以 id 取用不受影響）
@@ -88,7 +88,8 @@ const Shell = (() => {
     document.getElementById('side-toggle').addEventListener('click', () => setCollapsed(!app.classList.contains('collapsed'), true));
     setCrumbs([]);
     bindSearch();
-    document.getElementById('export-csv').addEventListener('click', exportCsv);
+    const ex = document.getElementById('export-csv');
+    if (ex) ex.addEventListener('click', exportCsv);
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('gsearch').focus(); }
     });

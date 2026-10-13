@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014j">
-<link rel="stylesheet" href="css/app.css?v=20261014j">
+<link rel="stylesheet" href="css/tokens.css?v=20261014k">
+<link rel="stylesheet" href="css/app.css?v=20261014k">
 </head>
 <body data-page="status" data-title="資料狀態">
 <main>
@@ -30,17 +30,16 @@
   </section>
 
   <section class="card" style="margin-top:20px" aria-labelledby="sch-title">
-    <div class="card-head"><h2 id="sch-title">排程與資料庫</h2><span class="hint" id="meta"></span></div>
+    <div class="card-head"><h2 id="sch-title">排程與資料庫</h2></div>
     <div class="card-body two-col">
       <ul class="sch-list" id="schedule"></ul>
       <div class="sch-tables" id="tables"></div>
     </div>
   </section>
 </main>
-<footer>排程失敗會自動寄送告警信，並於隔日自動重試；單一來源失敗不影響其他來源，計分以「缺資料不算 0 分」處理。</footer>
 
-<script src="js/api.js?v=20261014j"></script>
-<script src="js/shell.js?v=20261014j"></script>
+<script src="js/api.js?v=20261014k"></script>
+<script src="js/shell.js?v=20261014k"></script>
 <script>
 (async () => {
   const { esc } = CL;
@@ -58,17 +57,7 @@
   document.getElementById('lead').textContent = bad || stale
     ? `${cards.length} 個來源中 ${cards.length - bad - stale} 個正常${bad ? `、${bad} 個有失敗步驟（每日排程會自動重試）` : ''}${stale ? `、${stale} 個資料過期` : ''}。`
     : `${cards.length} 個來源全部正常。`;
-  document.getElementById('meta').textContent = '查詢時間 ' + String(st.server_time).replace('T', ' ').slice(0, 16);
 
-  // 近 8 週迷你長條：灰色，本週橘色
-  const spark = (counts, labels) => {
-    const W = 168, H = 44, n = counts.length, bw = W / n, max = Math.max(...counts, 1);
-    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="近 8 週筆數：${counts.join('、')}">` + counts.map((v, i) => {
-      const h = v ? Math.max(3, v / max * (H - 4)) : 1.5, last = i === n - 1;
-      return `<rect x="${i * bw + 2}" y="${H - h}" width="${bw - 4}" height="${h}" rx="3" fill="${last ? 'var(--chart-mark)' : 'var(--gray-300)'}"
-        data-tip="<b>${esc(labels[i] || '')}</b>${v.toLocaleString()} 筆"/>`;
-    }).join('') + '</svg>';
-  };
   const when = iso => iso ? String(iso).replace('T', ' ').slice(5, 16) : '—';
   const bf = st.backfill && st.backfill.announcements;
   document.getElementById('cards').innerHTML = cards.map(c => {
@@ -81,20 +70,8 @@
       <div class="src-top"><div><h2>${esc(c.name)}</h2><span class="src-from">${esc(c.src)}</span></div>
         <span class="st st-${s.cls}"><span aria-hidden="true">${s.icon}</span>${s.text}</span></div>
       <div class="src-num"><span class="stat-num">${Number(c.this_week).toLocaleString()}</span><span class="src-unit">${esc(c.unit)}</span></div>
-      ${spark(c.weekly_counts, st.week_labels || [])}
       <div class="src-foot">上次成功：${when(c.last_success_at)}</div>${extra}${err}</article>`;
   }).join('');
-
-  // 滑過長條的提示
-  let tipEl = null;
-  document.querySelectorAll('#cards rect[data-tip]').forEach(n => {
-    n.addEventListener('mousemove', e => {
-      if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'tooltip floating'; tipEl.setAttribute('role', 'status'); document.body.appendChild(tipEl); }
-      tipEl.innerHTML = n.dataset.tip; tipEl.style.display = 'block';
-      tipEl.style.left = Math.min(e.clientX + 14, innerWidth - 200) + 'px'; tipEl.style.top = (e.clientY + 14) + 'px';
-    });
-    n.addEventListener('mouseleave', () => { if (tipEl) tipEl.style.display = 'none'; });
-  });
 
   // 最近 10 筆錯誤
   const errs = st.recent_errors || [];
@@ -102,13 +79,13 @@
   document.getElementById('errors').innerHTML = errs.length ? errs.map(e => `<tr>
       <td>${when(e.at)}</td><td><code>${esc(e.step)}</code></td>
       <td><span class="st ${e.resolved ? 'st-ok' : 'st-err'}"><span aria-hidden="true">${e.resolved ? '✓' : '✕'}</span>${e.resolved ? '已恢復' : '待重試'}</span></td>
-      <td class="err">${esc(e.message)}</td></tr>`).join('')
+      <td class="err">${esc(String(e.message).slice(0, 90))}${String(e.message).length > 90 ? '…' : ''}</td></tr>`).join('')
     : '<tr><td colspan="4" class="empty">目前沒有錯誤紀錄</td></tr>';
 
   // 排程與資料庫
   const jobsRunning = (st.jobs || []).filter(j => j.in_progress).map(j => `${j.job}（${j.checkpoint}）`);
   document.getElementById('schedule').innerHTML = (st.schedule || []).map(s => `<li>${esc(s)}</li>`).join('') +
-    `<li class="muted">已安裝觸發器：${(st.triggers || []).map(esc).join('、') || '無'}${jobsRunning.length ? '　進行中：' + jobsRunning.join('、') : ''}</li>`;
+    '';
   const names = { companies: '公司主檔', company_aliases: '公司別名', raw_announcements: '重大訊息', raw_revenue: '月營收', raw_news: '新聞',
     raw_esg_security: 'ESG 資安', signals: '訊號', scores: '分數（含歷史）', config_keywords: '關鍵字字典', run_log: '執行紀錄', mail_log: '告警信紀錄' };
   document.getElementById('tables').innerHTML = `<div class="tbl-grid">${Object.entries(st.tables).map(([k, v]) =>

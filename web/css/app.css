@@ -507,3 +507,16 @@ p, li, .hint, .bul-sub, td { text-wrap: pretty; line-break: strict; }
 .ln { display: block; white-space: nowrap; }
 .nb { white-space: nowrap; }
 #e-title { line-height: 1.4; }
+
+/* 精簡：帳戶摘要條、隱藏次要裝飾 */
+.tier-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 20px 28px; margin-bottom: 0 !important; }
+.ts-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ts-item + .ts-item { border-left: 1px solid var(--on-dark-line); padding-left: 24px; }
+.ts-label { font-size: 13px; color: var(--on-dark-muted); }
+.ts-big { font-family: var(--font-num); font-weight: 600; font-size: 28px; line-height: 1.2; color: var(--on-dark); }
+.ts-item:first-child .ts-big { color: var(--orange-400); }
+.ts-of { font-size: 14px; font-weight: 400; color: var(--on-dark-muted); }
+.ts-note { font-size: 13px; color: var(--on-dark); }
+.side-group-title, .gsearch kbd, .crumbs { display: none; }
+.side-group { margin-bottom: 4px; }
+.band-grid.four .band-card { padding: 16px 20px; }
