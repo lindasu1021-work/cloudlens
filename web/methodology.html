@@ -8,196 +8,288 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014b">
-<link rel="stylesheet" href="css/app.css?v=20261014b">
-<style>
-  .hero { background: var(--gradient-brand); color: var(--ink-900); }
-  .hero-inner { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
-  .hero h1 { font-size: 26px; }
-  .hero p { margin: 6px 0 0; opacity: .92; max-width: 860px; }
-  .doc { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; }
-  .toc { position: sticky; top: 16px; align-self: start; font-size: 13px; }
-  .toc a { display: block; padding: 4px 0; color: var(--ink-600); }
-  .toc a:hover { color: var(--link-tint); }
-  .doc section { margin-bottom: 36px; }
-  .doc h2 { font-size: 18px; color: var(--ink-900); margin-bottom: 10px; }
-  .doc h3 { font-size: 15px; margin: 16px 0 6px; }
-  .doc p, .doc li { color: var(--ink-900); }
-  .doc table { margin: 8px 0; }
-  .doc td, .doc th { white-space: normal; vertical-align: top; }
-  .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; align-items: stretch; margin: 12px 0; }
-  .box { border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; background: var(--white); position: relative; margin-right: 22px; }
-  .box:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); color: var(--orange-700); font-weight: 700; }
-  .box b { display: block; color: var(--ink-900); margin-bottom: 4px; }
-  .box .muted { font-size: 12px; }
-  .callout { background: var(--orange-50); color: var(--ink-900); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; }
-  .callout b { color: var(--orange-800); }
-  .doc td a, .doc p a, .doc li a { text-decoration: underline; }
-  .info { background: var(--gray-100); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
-  .formula { font-family: ui-monospace, Menlo, monospace; background: var(--gray-100); padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
-</style>
+<link rel="stylesheet" href="css/tokens.css?v=20261014d">
+<link rel="stylesheet" href="css/app.css?v=20261014d">
 </head>
 <body data-page="methodology" data-title="方法論">
-<header class="hero">
-  <div class="hero-inner">
-    <h1>方法論</h1>
-    <p>以公開資料為台灣上市櫃企業打分數，標出切入劇本（Play），協助業務決定「先打誰、拿什麼去談」。每一分都能追溯到一則公開訊號。</p>
-  </div>
-</header>
-<main>
-  <div class="doc">
-    <nav class="toc" aria-label="本頁目錄">
-      <a href="#arch">1. 資料流架構</a>
-      <a href="#scope">2. 帳戶範圍</a>
-      <a href="#rules">3. 評分規則</a>
-      <a href="#dict">4. 關鍵字字典</a>
-      <a href="#valid">5. 驗證結果</a>
-      <a href="#versions">6. 規則版本紀錄</a>
-      <a href="#limits">7. 限制說明</a>
-    </nav>
-    <div>
-      <section id="arch">
-        <h2>1. 資料流架構</h2>
-        <div class="flow" aria-label="資料流：資料來源、排程、資料庫、API、網站">
-          <div class="box"><b>公開資料來源</b>證交所／櫃買 OpenAPI<br>公開資訊觀測站<br>Google News RSS</div>
-          <div class="box"><b>排程（Apps Script）</b>每日：重大訊息<br>每週：新聞、ESG、計分<br>每月：主檔、月營收</div>
-          <div class="box"><b>資料庫（Sheets）</b>原始資料只追加<br>→ 訊號 → 分數<br><span class="muted">字典與權重可直接修改</span></div>
-          <div class="box"><b>API（Web App）</b>JSON・快取 6 小時<br><span class="muted">只回傳由公開資料計算的結果</span></div>
-          <div class="box"><b>網站（GitHub Pages）</b>總覽・帳戶・方法論・資料狀態</div>
-        </div>
-        <h3>正式上線版在 AWS 上的對應架構</h3>
-        <table>
-          <thead><tr><th class="plain">層</th><th class="plain">本專案（零成本）</th><th class="plain">AWS 對應服務</th></tr></thead>
-          <tbody>
-            <tr><td>排程</td><td>Apps Script 時間觸發器</td><td>Amazon EventBridge Scheduler</td></tr>
-            <tr><td>運算</td><td>Apps Script</td><td>AWS Lambda（長任務：AWS Step Functions）</td></tr>
-            <tr><td>資料庫</td><td>Google Sheets</td><td>Amazon S3 ＋ Amazon Athena</td></tr>
-            <tr><td>AI（Copilot）</td><td>Gemini API 免費層</td><td>Amazon Bedrock</td></tr>
-            <tr><td>網站</td><td>GitHub Pages</td><td>Amazon S3 ＋ Amazon CloudFront</td></tr>
-            <tr><td>秘密管理</td><td>Script Properties</td><td>AWS Secrets Manager</td></tr>
-          </tbody>
-        </table>
-      </section>
+<main class="meth">
+  <section class="hero-card" aria-label="方法論簡介">
+    <h2>每一分，都對得到一則公開訊號</h2>
+    <p>以公開資料替台灣上市櫃企業打分數，標出切入劇本（Play），協助業務決定「先打誰、拿什麼去談」。</p>
+  </section>
 
-      <section id="scope">
-        <h2>2. 帳戶範圍</h2>
-        <p>上市櫃 <b>金融保險、電機機械、電子零組件</b> 三產業，實收資本額 <b id="threshold">≥ 10 億</b>，共 185 家。以 Greenfield（大型但尚未大量上雲）角度切入。不蒐集任何個人姓名或聯絡方式。</p>
-      </section>
-
-      <section id="rules">
-        <h2>3. 評分規則（規則 v<span id="rv">1</span>）</h2>
-        <p>兩軸＋兩個標籤：<b>Need 需求強度</b>（有沒有雲端／數據／AI 的需求與預算）× <b>Timing 時機</b>（現在是不是好時間點），加上 <b>Play 切入劇本</b> 與 <b>雲端現況</b>。</p>
-        <h3>Need 需求強度（0–100）</h3>
-        <table><thead><tr><th class="plain">項目</th><th class="plain">滿分</th><th class="plain">規則</th></tr></thead><tbody id="w-need"></tbody></table>
-        <h3>Timing 時機（0–100）</h3>
-        <table><thead><tr><th class="plain">項目</th><th class="plain">滿分</th><th class="plain">規則</th></tr></thead><tbody id="w-timing"></tbody></table>
-        <h3>通用規則</h3>
-        <ul>
-          <li><b>遞減報酬</b>：同類訊號 n 次，得分 <span class="formula">滿分 × (1 − 0.5ⁿ)</span>；避免新聞多的公司灌爆分數。強訊號計 1、弱訊號計 0.5。</li>
-          <li><b>時間衰減</b>（Timing）：0–30 天 ×1；31–90 天 ×0.5；超過 90 天不計。</li>
-          <li><b>缺資料不算 0 分</b>：該項移出分母，<span class="formula">分數 = 已取得項目得分 ÷ 已取得項目滿分 × 100</span>，並顯示資料完整度。</li>
-          <li><b>去重</b>：同一文件同一類別只計一次；同一週重訊與新聞命中同類別只計一次。</li>
-          <li><b>雜訊排除</b>：例行公告（股利、財報、自結損益…）與股市行情新聞（目標價、法人、接單…）整則不計；「AI 伺服器」等產品新聞不算 AI 策略意圖。</li>
-        </ul>
-        <h3>Tier（帳戶池內百分位）</h3>
-        <p>各軸前 <span id="tp">30</span>% 為「高」：Need 高＋Timing 高＝<b>Tier 1 立即開發</b>；只有 Need 高＝<b>Tier 2 培養</b>；只有 Timing 高＝<b>Tier 3 事件型輕觸</b>；皆低＝暫緩。用百分位而非固定分數，是因為規則尚未校準，絕對分數沒有意義，相對排序才有用。</p>
-        <h3>Play 切入劇本</h3>
-        <p>每則訊號帶有 Play 類別（Migration 遷移現代化、Data 數據平台、GenAI 生成式 AI、Security 資安）。各 Play 分數加總後，最高者為主 Play；第二名達主 Play 的 50% 列為次 Play。產業先驗（金融→Security、Data；電子零組件→Data、Migration；電機機械→Migration、Data）各 +5，只作平手依據。</p>
-        <h3>雲端現況</h3>
-        <p>公開來源證實使用 AWS → <b>已是 AWS 客戶（擴充）</b>；使用 Azure／Google Cloud 或新聞提及競品雲並有採用語境 → <b>用競品（替換）</b>；其他 → <b>未知（新導入）</b>。供應鏈新聞（「AWS 拉貨，某廠受惠」）不算。</p>
-      </section>
-
-      <section id="dict">
-        <h2>4. 關鍵字字典</h2>
-        <p>字典放在 Google Sheets 的 <span class="formula">config_keywords</span> 分頁，可直接修改不用改程式。英文詞整字比對；標示「金」「製」的詞只對該產業計分。</p>
-        <table><thead><tr><th class="plain">類別</th><th class="plain">用途</th><th class="plain">詞數</th></tr></thead><tbody id="kw"></tbody></table>
-      </section>
-
-      <section id="valid">
-        <h2>5. 驗證結果</h2>
-        <p><b>方法</b>：以「公開來源證實使用公有雲（AWS／Azure／Google Cloud）」的帳戶池公司為驗證集，檢查它們在 Need 排名中進入前 20% 的比例（precision@20%）。已上雲代表確實有需求，因此只驗證 Need 軸。</p>
-        <div id="valid-body" class="info">載入中…</div>
-        <h3>驗證集</h3>
-        <table><thead><tr><th class="plain">公司</th><th class="plain">雲端</th><th class="plain">來源</th></tr></thead><tbody id="vset"></tbody></table>
-      </section>
-
-      <section id="versions">
-        <h2>6. 規則版本紀錄</h2>
-        <table>
-          <thead><tr><th class="plain">版本</th><th class="plain">日期</th><th class="plain">內容</th></tr></thead>
-          <tbody>
-            <tr><td>v2</td><td>2026-10-13</td><td>
-              <b>「訊號不足」規則</b>：Play 分數只來自產業先驗（沒有任何帶 Play 的實際訊號）的公司，主 Play 改標「訊號不足」、次 Play 留空，不再預設為 Migration。
-              原因：v1 中 Migration 占 122／185 家，其中 91 家只是因為產業先驗加分，會讓「Migration 很多」變成假洞察。
-              影響：Migration 122 → 31 家；訊號不足 103 家（歷史重訊回補完成後會陸續減少）。分數與 Tier 不變。
-            </td></tr>
-            <tr><td>v1</td><td>2026-10-12</td><td>
-              初版。依實測資料調整：月營收改用公開資訊觀測站彙總表；就業通資料僅 1,000 筆且集中台北市而停用招募項目（N2、T4）；
-              新聞弱訊號須與「導入、建置」等動作詞同現；新增股市行情排除詞與產品類否定詞；「取得使用權資產」（多為集團內部租約）不列為觸發事件；
-              金融業營收受投資收益波動，營收動能（T3）不適用；驗證集改為公有雲客戶並加入營收規模基準線。
-            </td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="limits">
-        <h2>7. 限制說明</h2>
-        <ul>
-          <li><b>「訊號不足」的公司偏多（約 5–6 成）</b>：歷史重訊正逐週回補（每週 90 天），完成前部分公司的訊號被低估；這類公司的 Play 不應被解讀為「沒有需求」，而是「公開資料還不足以判斷切入方向」。</li>
-          <li><b>驗證尚無法證明優於「挑最大的公司」</b>：見上方基準線比較。驗證集 5 家中 4 家為金控，金控本身規模大且有監管基礎分。</li>
-          <li><b>新聞覆蓋有上限</b>：Google News 每次查詢約 100 則，新聞量極大的公司會被截斷；同一新聞多家媒體轉載會重複計算（遞減報酬下影響有限）。</li>
-          <li><b>招募訊號缺席</b>：公開職缺資料不足，N2、T4 停用，Need 與 Timing 由其餘項目重新正規化。</li>
-          <li><b>上櫃公司無 ESG 資安揭露</b>：N4 的 ESG 子項移出分母。</li>
-          <li><b>重大訊息歷史逐週回補</b>：首週涵蓋近 90 天（觸發事件所需），一年份約 4 週補齊；期間 N3 可能偏低。</li>
-          <li><b>關鍵字比對有雜訊</b>：例如電子零組件廠的 AI 產品新聞。字典持續校正並記錄版本。</li>
-          <li><b>雲端現況多為「未知」</b>：公開資料很少揭露企業使用哪家雲，「未知」不代表沒有上雲。</li>
-        </ul>
-      </section>
+  <section class="card dark" aria-label="30 秒摘要">
+    <div class="band-head"><h2>30 秒摘要</h2><span class="band-sub" id="sum-sub"></span></div>
+    <div class="band-grid four">
+      <div class="band-card"><div class="band-label">資料來源</div><div class="band-num" id="s-src">—</div><div class="band-note">證交所、櫃買、觀測站、新聞</div></div>
+      <div class="band-card"><div class="band-label">帳戶池</div><div class="band-num" id="s-pool">—</div><div class="band-note" id="s-pool-n">三產業上市櫃公司</div></div>
+      <div class="band-card"><div class="band-label">規則版本</div><div class="band-num" id="s-ver">—</div><div class="band-note" id="s-ver-n"></div></div>
+      <div class="band-card"><div class="band-label">驗證 precision@20%</div><div class="band-num hot" id="s-prec">—</div><div class="band-note" id="s-prec-n"></div></div>
     </div>
-  </div>
+  </section>
+
+  <nav class="chapters" id="chapters" aria-label="章節">
+    <a href="#arch">資料流</a><a href="#scope">帳戶範圍</a><a href="#rules">評分規則</a><a href="#dict">字典</a><a href="#valid">驗證</a><a href="#versions">版本</a><a href="#limits">限制</a>
+  </nav>
+
+  <!-- 1 資料流 -->
+  <section class="card chapter" id="arch" aria-labelledby="h-arch">
+    <h2 id="h-arch">1　資料從哪來、怎麼流動</h2>
+    <p class="lead" id="lead-arch">公開資料每日、每週、每月自動更新，經規則計分後呈現在這個網站。</p>
+    <div class="flow" id="flow"></div>
+    <h3 class="sub">正式上線版在 AWS 上的對應架構</h3>
+    <div class="pair" id="aws-pair"></div>
+  </section>
+
+  <!-- 2 帳戶範圍 -->
+  <section class="card chapter" id="scope" aria-labelledby="h-scope">
+    <h2 id="h-scope">2　帳戶範圍：逐層篩選後剩多少家</h2>
+    <p class="lead" id="lead-scope"></p>
+    <div id="funnel"></div>
+    <details class="more"><summary>看完整規則</summary>
+      <p>上市櫃 <b>金融保險、電機機械、電子零組件</b> 三產業，實收資本額達門檻者進入帳戶池，以 Greenfield（大型但尚未大量上雲）角度切入。不蒐集任何個人姓名或聯絡方式。「至少 1 則訊號」指近 365 天內有重大訊息、新聞或 ESG 命中任何字典。</p></details>
+  </section>
+
+  <!-- 3 評分規則 -->
+  <section class="card chapter" id="rules" aria-labelledby="h-rules">
+    <h2 id="h-rules">3　評分規則（規則 v<span id="rv">2</span>）</h2>
+    <p class="lead" id="lead-rules">兩軸看「有沒有需求」與「是不是現在」，再各取前 30% 分出四種優先度。</p>
+
+    <div class="two-col">
+      <div><h3 class="sub">3a　兩軸＋Tier</h3><div id="schema"></div></div>
+      <div><h3 class="sub">3b　分數由哪些項目組成（點任一段看規則）</h3><div id="weights"></div></div>
+    </div>
+
+    <h3 class="sub">3c　計分機制</h3>
+    <div class="two-col">
+      <div><div class="mini-cap">遞減報酬：同類訊號越多，邊際得分越小</div><div id="c-dim"></div></div>
+      <div><div class="mini-cap">時間衰減：訊號越舊，對「時機」的貢獻越低</div><div id="c-decay"></div></div>
+    </div>
+
+    <h3 class="sub">3d　分數分布與前 30% 門檻</h3>
+    <div class="two-col">
+      <div><div class="mini-cap" id="h-need"></div><div id="hist-need"></div></div>
+      <div><div class="mini-cap" id="h-timing"></div><div id="hist-timing"></div></div>
+    </div>
+
+    <details class="more"><summary>看完整規則</summary>
+      <ul class="rules">
+        <li><b>遞減報酬</b>：同類訊號 n 次，得分＝滿分 × (1 − 0.5ⁿ)；強訊號計 1、弱訊號計 0.5。</li>
+        <li><b>時間衰減</b>（Timing）：0–30 天 ×1；31–90 天 ×0.5；超過 90 天不計。</li>
+        <li><b>缺資料不算 0 分</b>：該項移出分母，分數＝已取得項目得分 ÷ 已取得項目滿分 × 100，並顯示資料完整度。</li>
+        <li><b>去重</b>：同一份文件同一類別只計一次；同週重訊與新聞命中同類別只計一次。</li>
+        <li><b>雜訊排除</b>：例行公告（股利、財報、自結損益…）與股市行情新聞（目標價、法人、接單…）整則不計；「AI 伺服器」等產品新聞不算 AI 策略意圖。</li>
+        <li><b>Tier</b>：各軸帳戶池內前 30% 為「高」。用百分位而非固定分數，因為規則尚未校準，絕對分數沒有意義，相對排序才有用。</li>
+        <li><b>Play</b>：每則訊號帶 Play 類別，各 Play 分數加總（含產業先驗各 +5）最高者為主 Play，第二名達 50% 為次 Play；<b>分數只來自產業先驗者標「訊號不足」</b>。</li>
+        <li><b>雲端現況</b>：公開來源證實用 AWS → 已是 AWS 客戶（擴充）；Azure／Google Cloud → 用競品（替換）；其他 → 未知（新導入）。供應鏈新聞不算。</li>
+      </ul></details>
+  </section>
+
+  <!-- 4 字典 -->
+  <section class="card chapter" id="dict" aria-labelledby="h-dict">
+    <h2 id="h-dict">4　關鍵字字典：命中了什麼</h2>
+    <p class="lead" id="lead-dict"></p>
+    <div class="two-col">
+      <div><div class="mini-cap">各類別命中次數（方塊大小＝次數，顏色＝Play）</div><div id="treemap"></div></div>
+      <div><div class="mini-cap">類別 × 產業（顏色越深＝命中越多）</div><div id="heat"></div></div>
+    </div>
+    <details class="more"><summary>看完整字典</summary>
+      <div class="dict-tools"><label class="sr-only" for="dict-q">搜尋關鍵字</label><input id="dict-q" type="search" placeholder="搜尋關鍵字或類別（例：AI、ERP、MIG）">
+        <span class="muted" id="dict-count"></span></div>
+      <div class="dict-list" id="dict-list"></div>
+      <p class="muted" style="font-size:12px">字典放在 Google Sheets 的 config_keywords 分頁，可直接修改不用改程式。英文詞整字比對；標示「金」「製」的詞只對該產業計分。</p></details>
+  </section>
+
+  <!-- 5 驗證 -->
+  <section class="card chapter" id="valid" aria-labelledby="h-valid">
+    <h2 id="h-valid">5　驗證：評分準不準</h2>
+    <p class="lead" id="lead-valid"></p>
+    <div class="two-col valid-grid">
+      <div class="donut-wrap"><div id="donut"></div></div>
+      <div id="valid-text"></div>
+    </div>
+    <details class="more"><summary>看驗證集與方法</summary>
+      <p>以「公開來源證實使用公有雲（AWS／Azure／Google Cloud）」的帳戶池公司為驗證集，檢查它們在 Need 排名中進入前 20% 的比例（precision@20%）。已上雲代表確實有需求，所以只驗證 Need 軸。</p>
+      <div class="table-wrap"><table><thead><tr><th class="plain">公司</th><th class="plain">雲端</th><th class="plain">來源</th></tr></thead><tbody id="vset"></tbody></table></div></details>
+  </section>
+
+  <!-- 6 版本 -->
+  <section class="card chapter" id="versions" aria-labelledby="h-versions">
+    <h2 id="h-versions">6　規則版本紀錄</h2>
+    <p class="lead" id="lead-versions"></p>
+    <div id="dumbbell"></div>
+    <details class="more" open><summary>每一版改了什麼</summary><ol class="vlist" id="vlist"></ol></details>
+  </section>
+
+  <!-- 7 覆蓋與限制 -->
+  <section class="card chapter" id="limits" aria-labelledby="h-limits">
+    <h2 id="h-limits">7　資料覆蓋與限制</h2>
+    <p class="lead" id="lead-limits"></p>
+    <div id="coverage"></div>
+    <div class="limit-cards" id="limit-cards"></div>
+  </section>
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
-<script src="js/api.js?v=20261014b"></script>
-<script src="js/shell.js?v=20261014b"></script>
+<script src="js/api.js?v=20261014d"></script>
+<script src="js/shell.js?v=20261014d"></script>
+<script src="js/method-charts.js?v=20261014d"></script>
 <script>
 (async () => {
   const { esc } = CL;
-  const RULES = {
-    N1: '近 12 個月營收在帳戶池內的百分位 × 25（無營收者以實收資本額代理）',
-    N2: '近 90 天技術職缺數（遞減報酬）',
-    N3: '近 365 天重大訊息＋新聞命中「遷移／數據／AI」字典的文件數（遞減報酬）',
-    N4: '金融業基礎 10；ESG 揭露資訊外洩事件 > 0 加 10；近 365 天資安事件重訊加 15；上限 25',
-    T1: '重大訊息主旨命中觸發事件，依類型給分 × 時間衰減，上限 50：資安事件 25、併購 20、擴廠／海外 20、資訊主管異動 20、系統／轉型 15、資本支出 10',
-    T2: '近 30 天命中新聞數 ÷ 過去 90 天月均：≥ 2 倍滿分、≥ 1.5 倍一半（至少 2 則）',
-    T3: '連 3 個月營收 YoY > +15% → 20（擴張）；< −15% → 15（降本）。金融業不適用',
-    T4: '近 30 天技術職缺 > 前 60 天月均 → 10'
-  };
-  const KW = { MIG: '遷移／現代化', DATA: '數據平台', AI: 'AI', SEC: '資安', TRIG: '觸發事件（重訊主旨）', VENDOR: '雲端廠商', CTX: '採用語境（弱訊號須同現）',
-    CTX_VENDOR: '雲端廠商語境', EXCLUDE: '重訊排除詞', EXCLUDE_NEWS: '新聞排除詞（股市行情）', NEG: '否定詞（產品、供應鏈）' };
+  const pctTxt = v => Math.round(v * 100) + '%';
   let m;
-  try { m = (await CL.gas('methodology', {}, 30000)).data; }
-  catch (e) { document.getElementById('valid-body').textContent = '目前無法連線後端，動態資料（權重、驗證結果）暫時無法顯示。'; return; }
+  try { m = (await CL.gas('methodology', {}, 60000)).data; }
+  catch (e) { document.querySelector('main').insertAdjacentHTML('afterbegin', `<p class="empty">目前無法連線後端，方法論的即時數字暫時無法顯示。（${esc(e.message)}）</p>`); return; }
 
+  // ---------- 30 秒摘要 ----------
+  const srcN = 6;
+  document.getElementById('s-src').textContent = srcN;
+  document.getElementById('s-pool').textContent = m.funnel[2].n;
+  document.getElementById('s-pool-n').textContent = `資本額 ≥ ${m.capital_threshold / 1e8} 億・Tier 1 ${m.tier_counts['1']} 家`;
+  document.getElementById('s-ver').textContent = 'v' + m.rule_version;
+  const lastV = m.rule_versions[m.rule_versions.length - 1];
+  document.getElementById('s-ver-n').textContent = lastV ? lastV.title : '';
+  const prec = m.validation_precision;
+  document.getElementById('s-prec').textContent = prec === null || prec === undefined ? '驗證中' : pctTxt(prec);
+  const base = (m.validation.slice().reverse().find(v => /基準線/.test(v.note || '')) || {}).note || '';
+  const baseHit = (base.match(/基準線（只看營收規模）命中 (\d+)\/(\d+)/) || []);
+  document.getElementById('s-prec-n').textContent = prec === null || prec === undefined ? '驗證集建置中'
+    : (baseHit.length ? `基準線也是 ${baseHit[1]}/${baseHit[2]}` : '驗證集進入 Need 前 20%');
   document.getElementById('rv').textContent = m.rule_version;
-  document.getElementById('tp').textContent = Math.round(m.tier_percentile * 100);
-  if (m.capital_threshold) document.getElementById('threshold').textContent = '≥ ' + (m.capital_threshold / 1e8) + ' 億';
-  const row = w => `<tr><td>${esc(w.component)}</td><td class="num">${w.max_points}</td><td>${esc(RULES[w.component] || '')}
-    ${String(w.enabled).toUpperCase() === 'FALSE' ? '<br><span class="muted">目前停用（缺資料）：' + esc(w.note) + '</span>' : ''}</td></tr>`;
-  document.getElementById('w-need').innerHTML = m.weights.filter(w => w.component[0] === 'N').map(row).join('');
-  document.getElementById('w-timing').innerHTML = m.weights.filter(w => w.component[0] === 'T').map(row).join('');
-  document.getElementById('kw').innerHTML = Object.entries(m.keyword_counts).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${KW[k] || ''}</td><td class="num">${n}</td></tr>`).join('');
 
-  const v = m.validation.slice().sort((a, b) => String(a.run_id).localeCompare(String(b.run_id))).filter(x => /^\d{4}-W\d\d$/.test(x.run_id)).pop();
-  const base = v ? (String(v.note).match(/基準線（只看營收規模）命中 (\d+)\/(\d+)/) || []) : [];
-  document.getElementById('valid-body').innerHTML = v ? `
-    <p style="margin:0">最新結果（${esc(v.run_id)}・規則 v${v.rule_version}）：驗證集 <b>${v.validation_set_size}</b> 家中 <b>${v.hits_top20pct}</b> 家落在 Need 前 20%，
-      precision@20% = <b>${Math.round(v.precision * 100)}%</b>。</p>
-    ${base.length ? `<p class="callout" style="margin:10px 0 0"><b>誠實揭露：</b>只看營收規模排名的基準線也命中 ${base[1]}/${base[2]}，
-      目前的驗證還無法證明評分優於「挑最大的公司」。下一步：擴充製造業驗證樣本、改看產業內排名。</p>` : ''}`
-    : '尚無驗證紀錄。';
+  // ---------- 1 資料流 ----------
+  const sc = m.source_counts;
+  const FL = [
+    { ico: 'M4 6h16M4 12h16M4 18h10', t: '公開資料來源', n: `${srcN} 個來源`, d: '證交所／櫃買 OpenAPI、公開資訊觀測站、Google News' },
+    { ico: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z', t: '自動排程', n: `近 7 天 ${(sc.announcements + sc.news + sc.esg + sc.revenue + sc.companies).toLocaleString()} 筆`, d: '每日重訊・每週新聞／ESG／計分・每月主檔／營收' },
+    { ico: 'M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7', t: '資料庫（Sheets）', n: `訊號 ${m.signal_total.toLocaleString()} 則`, d: '原始資料只追加；字典與權重可直接修改' },
+    { ico: 'M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12', t: 'API（Web App）', n: 'JSON・快取 6 小時', d: '只回傳由公開資料計算的結果' },
+    { ico: 'M3 5h18v11H3zM8 20h8M12 16v4', t: '網站（GitHub Pages）', n: '總覽・帳戶・方法論', d: 'Copilot 為唯一呼叫 Gemini 處' }
+  ];
+  document.getElementById('flow').innerHTML = FL.map((f, i) => `
+    <div class="flow-card"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${f.ico}"/></svg>
+      <b>${esc(f.t)}</b><span class="flow-n">${esc(f.n)}</span><span class="flow-d">${esc(f.d)}</span></div>${i < FL.length - 1 ? '<span class="flow-arrow" aria-hidden="true">→</span>' : ''}`).join('');
+  const AWS = [['排程', 'Apps Script 時間觸發器', 'Amazon EventBridge Scheduler'], ['運算', 'Apps Script', 'AWS Lambda（長任務：Step Functions）'],
+    ['資料庫', 'Google Sheets', 'Amazon S3 ＋ Amazon Athena'], ['AI（Copilot）', 'Gemini API 免費層', 'Amazon Bedrock'],
+    ['網站', 'GitHub Pages', 'Amazon S3 ＋ Amazon CloudFront'], ['秘密管理', 'Script Properties', 'AWS Secrets Manager']];
+  document.getElementById('aws-pair').innerHTML = `<div class="pair-h">本專案（零成本）</div><div></div><div class="pair-h">AWS 對應服務</div>` +
+    AWS.map(r => `<div class="pair-l"><span class="muted">${esc(r[0])}</span>${esc(r[1])}</div><div class="pair-a" aria-hidden="true">→</div><div class="pair-r">${esc(r[2])}</div>`).join('');
+
+  // ---------- 2 漏斗 ----------
+  const f = m.funnel;
+  document.getElementById('lead-scope').textContent =
+    `從 ${f[0].n.toLocaleString()} 家上市櫃公司，篩到 ${f[2].n} 家帳戶池，其中 ${f[4].n} 家是現在就該開發的 Tier 1（${Math.round(f[4].n / f[2].n * 100)}%）。`;
+  MC.funnel(document.getElementById('funnel'), f);
+
+  // ---------- 3 評分規則 ----------
+  MC.quadSchema(document.getElementById('schema'), m.tier_percentile);
+  const W = Object.fromEntries(m.weights.map(w => [w.component, w]));
+  const off = k => String(W[k].enabled).toUpperCase() === 'FALSE';
+  const part = (k, name, rule) => ({ key: k, name, max: Number(W[k].max_points), disabled: off(k), code: 'D18', rule });
+  MC.weights(document.getElementById('weights'), [
+    { name: 'Need 需求強度', parts: [
+      part('N1', '規模', '近 12 個月營收在帳戶池內的百分位 × 25；無營收者以實收資本額代理。'),
+      part('N2', '數位人才', '近 90 天技術職缺數（遞減報酬）。<b>目前停用</b>：台灣就業通公開職缺資料僅 1,000 筆且集中台北市（D18），移出分母。'),
+      part('N3', '策略意圖', '近 365 天重訊＋新聞命中「遷移／數據／AI」字典的文件數 n，得分 25 × (1 − 0.5ⁿ)。'),
+      part('N4', '資安合規', '金融業基礎 10；ESG 揭露資訊外洩 > 0 加 10；近 365 天資安事件重訊加 15；上限 25。上櫃公司無 ESG 揭露，該子項移出分母（D19）。')] },
+    { name: 'Timing 時機', parts: [
+      part('T1', '觸發事件', '重訊主旨命中觸發事件，依類型給分 × 時間衰減，上限 50：資安事件 25、併購 20、擴廠／海外 20、資訊主管異動 20、系統／轉型 15、資本支出 10。'),
+      part('T2', '新聞動能', '近 30 天命中新聞數 ÷ 過去 90 天月均：≥ 2 倍滿分、≥ 1.5 倍一半（至少 2 則）。'),
+      part('T3', '營收動能', '連 3 個月營收 YoY > +15% → 20（擴張）；< −15% → 15（降本）。金融保險業營收受投資收益波動，不適用（D27）。'),
+      part('T4', '招募加速', '近 30 天技術職缺 > 前 60 天月均 → 10。<b>目前停用</b>（D18）。')] }
+  ]);
+  const dimPts = [0, 1, 2, 3, 4, 5, 6].map(n => [n, 1 - Math.pow(0.5, n)]);
+  MC.curve(document.getElementById('c-dim'), { label: '遞減報酬曲線', x0: 0, x1: 6, points: dimPts,
+    marks: [1, 2, 3, 5].map(n => [n, 1 - Math.pow(0.5, n), `${n} 次訊號`, pctTxt(1 - Math.pow(0.5, n))]),
+    xticks: [[0, '0'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6']], xlabel: '同類訊號次數', ylabel: '得到滿分的比例' });
+  MC.curve(document.getElementById('c-decay'), { label: '時間衰減階梯', x0: 0, x1: 120, step: true,
+    points: [[0, 1], [30, 0.5], [90, 0], [120, 0]],
+    marks: [[15, 1, '0–30 天', '×1.0'], [60, 0.5, '31–90 天', '×0.5'], [105, 0, '超過 90 天', '×0（不計）']],
+    xticks: [[0, '0'], [30, '30'], [90, '90'], [120, '120 天']], xlabel: '訊號距今天數', ylabel: '計入 Timing 的比例' });
+  const nNeed = m.score_histogram.need.reduce((a, b) => a + b, 0);
+  document.getElementById('h-need').textContent = `Need 分數分布：${nNeed} 家，前 30% 門檻 ${m.threshold_need === null ? '—' : m.threshold_need.toFixed(1)} 分`;
+  const lowT = m.score_histogram.timing[0] + m.score_histogram.timing[1];
+  document.getElementById('h-timing').textContent = `Timing 分數分布：${lowT} 家低於 20 分，前 30% 門檻僅 ${m.threshold_timing === null ? '—' : m.threshold_timing.toFixed(1)} 分`;
+  MC.histogram(document.getElementById('hist-need'), m.score_histogram.need, m.threshold_need, 'Need');
+  MC.histogram(document.getElementById('hist-timing'), m.score_histogram.timing, m.threshold_timing, 'Timing');
+
+  // ---------- 4 字典 ----------
+  const HITS = m.keyword_hits, inds = m.industries;
+  const CAT = [
+    { k: 'MIG', label: 'MIG 遷移現代化', fill: 'var(--play-migration)', ink: 'var(--white)' },
+    { k: 'DATA', label: 'DATA 數據平台', fill: 'var(--play-data)', ink: 'var(--ink-900)' },
+    { k: 'AI', label: 'AI 生成式', fill: 'var(--play-genai)', ink: 'var(--ink-900)' },
+    { k: 'SEC', label: 'SEC 資安', fill: 'var(--play-security)', ink: 'var(--white)' },
+    { k: 'TRIG', label: 'TRIG 觸發事件', fill: 'var(--gray-300)', ink: 'var(--ink-900)' }
+  ];
+  const sum = k => Object.values(HITS[k] || {}).reduce((a, b) => a + b, 0);
+  const totalHits = CAT.reduce((a, c) => a + sum(c.k), 0);
+  const topCat = CAT.slice().sort((a, b) => sum(b.k) - sum(a.k))[0];
+  document.getElementById('lead-dict').textContent =
+    `近一年共 ${totalHits} 次字典命中，${topCat.label.split(' ')[0]} 最多（${sum(topCat.k)} 次）；字典共 ${Object.values(m.keyword_counts).reduce((a, b) => a + b, 0)} 個詞，可在 Google Sheets 直接修改。`;
+  MC.treemap(document.getElementById('treemap'), CAT.map(c => ({ ...c, value: sum(c.k) })));
+  MC.heatmap(document.getElementById('heat'), CAT, inds, (c, ind) => (HITS[c.k] || {})[ind] || 0);
+  const KINDS = { MIG: '遷移／現代化', DATA: '數據平台', AI: '生成式 AI', SEC: '資安', TRIG: '觸發事件', VENDOR: '雲端廠商', CTX: '採用語境', CTX_VENDOR: '廠商語境',
+    EXCLUDE: '重訊排除', EXCLUDE_NEWS: '新聞排除', NEG: '否定詞' };
+  const dictRender = () => {
+    const q = document.getElementById('dict-q').value.trim().toLowerCase();
+    const list = m.dictionary.filter(x => !q || x.k.toLowerCase().includes(q) || x.c.toLowerCase().includes(q) || (KINDS[x.c] || '').includes(q));
+    document.getElementById('dict-count').textContent = `${list.length} / ${m.dictionary.length} 個詞`;
+    const by = {};
+    list.forEach(x => { (by[x.c] = by[x.c] || []).push(x); });
+    document.getElementById('dict-list').innerHTML = Object.keys(by).map(c => `<div class="dict-group"><div class="dict-h">${esc(c)}<span class="muted"> ${KINDS[c] || ''}・${by[c].length}</span></div>
+      <div class="dict-words">${by[c].map(x => `<span class="word${x.s === 'weak' ? ' weak' : ''}">${esc(x.k)}${x.scope === 'fin' ? '<i>金</i>' : x.scope === 'mfg' ? '<i>製</i>' : ''}</span>`).join('')}</div></div>`).join('')
+      || '<p class="empty">沒有符合的詞</p>';
+  };
+  document.getElementById('dict-q').addEventListener('input', dictRender);
+  dictRender();
+
+  // ---------- 5 驗證 ----------
+  const latest = m.validation.filter(v => /^\d{4}-W\d\d$/.test(v.run_id)).slice(-1)[0];
+  const pv = prec === null || prec === undefined ? null : Number(prec);
+  MC.donut(document.getElementById('donut'), pv, 'precision@20%');
+  document.getElementById('lead-valid').textContent = pv === null ? '驗證集建置中，完成後會在這裡顯示。'
+    : `驗證集 ${latest ? latest.validation_set_size : '—'} 家中 ${latest ? latest.hits_top20pct : '—'} 家落在 Need 前 20%；但這還不能證明評分優於「挑最大的公司」。`;
+  const vNote = latest && Number(latest.rule_version) < Number(m.rule_version)
+    ? `<br><span class="muted">此為規則 v${latest.rule_version} 的驗證；v${m.rule_version} 只改 Play 標籤、不影響 Need 分數，結果沿用。</span>` : '';
+  document.getElementById('valid-text').innerHTML = pv === null ? '<p class="muted">尚無驗證紀錄。</p>' : `
+    <p style="margin:0 0 10px">${latest ? `最新結果（${esc(latest.run_id)}・規則 v${latest.rule_version}）：驗證集 <b>${latest.validation_set_size}</b> 家中 <b>${latest.hits_top20pct}</b> 家進入 Need 前 20%，precision@20% ＝ <b>${pctTxt(pv)}</b>。${vNote}` : ''}</p>
+    ${baseHit.length ? `<p class="callout"><b>誠實揭露：</b>只看營收規模排名的基準線也命中 ${baseHit[1]}/${baseHit[2]}。驗證集中多為金控，規模本來就大，所以目前還無法證明這套評分比「挑最大的公司」更好。下一步：擴充製造業驗證樣本、改看產業內排名。</p>` : ''}`;
   document.getElementById('vset').innerHTML = m.validation_set.map(x => `<tr><td>${esc(x.company_name)} ${esc(x.stock_code)}</td><td>${esc(String(x.cloud).toUpperCase())}</td>
     <td>${x.evidence_url ? `<a href="${esc(x.evidence_url)}" target="_blank" rel="noopener">${esc(x.source_type)}</a>` : esc(x.source_type)}　<span class="muted">${esc(x.note)}</span></td></tr>`).join('');
+
+  // ---------- 6 版本 ----------
+  document.getElementById('lead-versions').textContent = m.rule_versions.length > 1
+    ? `目前是 v${m.rule_version}，共 ${m.rule_versions.length} 版；每次調整權重或字典都會升版並重新驗證。` : 'v1 基準版；之後每次調整權重或字典都會升版並重新驗證。';
+  MC.dumbbell(document.getElementById('dumbbell'), m.rule_versions);
+  document.getElementById('vlist').innerHTML = m.rule_versions.slice().reverse().map(v => `<li><b>v${v.v}　${esc(v.title)}</b><span class="muted">　${esc(v.date)}</span><br>${esc(v.note)}</li>`).join('');
+
+  // ---------- 7 覆蓋與限制 ----------
+  const COMPS = [['N1', '規模'], ['N2', '數位人才'], ['N3', '策略意圖'], ['N4', '資安合規'], ['T1', '觸發事件'], ['T2', '新聞動能'], ['T3', '營收動能'], ['T4', '招募加速']].map(([key, name]) => ({ key, name }));
+  const offN = COMPS.filter(c => inds.every(i => (m.coverage[c.key] || {})[i] && m.coverage[c.key][i].s === 'disabled')).length;
+  document.getElementById('lead-limits').textContent = `8 個評分子項中 ${8 - offN} 項可用、${offN} 項因公開資料不足而停用（缺資料不算 0 分，移出分母）。`;
+  MC.coverage(document.getElementById('coverage'), COMPS, inds, m.coverage, {
+    D18: '台灣就業通公開職缺資料僅 1,000 筆且集中台北市，無法使用（決策 D18）',
+    D27: '金融保險業營收受投資收益波動，不代表擴張或降本，營收動能不納入計分（決策 D27）' });
+  const CARDS = [
+    ['驗證仍有限', '驗證集多為金控，基準線（只看營收規模）也同樣命中；尚無法證明優於「挑最大的公司」。'],
+    ['招募訊號缺席', '公開職缺資料不足，N2、T4 停用；Need 與 Timing 由其餘項目重新正規化。'],
+    ['歷史資料回補中', '重大訊息每週回補 90 天，約一個月補滿一年；期間 N3 可能偏低，「訊號不足」會偏多。'],
+    ['雲端現況多為「未知」', '公開資料很少揭露企業用哪家雲，「未知」不代表沒有上雲。新聞每次查詢上限約 100 則，轉載會重複計算。']
+  ];
+  document.getElementById('limit-cards').innerHTML = CARDS.map(c => `<div class="limit-card"><b>${esc(c[0])}</b><p>${esc(c[1])}</p></div>`).join('');
+
+  // ---------- 章節導覽：捲動時自動高亮 ----------
+  const links = [...document.querySelectorAll('#chapters a')];
+  const secs = links.map(a => document.querySelector(a.getAttribute('href')));
+  const setActive = id => links.forEach(a => a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + id)));
+  const io = new IntersectionObserver(es => {
+    const vis = es.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    if (vis) setActive(vis.target.id);
+  }, { rootMargin: '-120px 0px -60% 0px', threshold: 0 });
+  secs.forEach(s => s && io.observe(s));
+  setActive('arch');
 })();
 </script>
 </body>

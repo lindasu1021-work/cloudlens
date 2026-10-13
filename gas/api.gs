@@ -19,7 +19,7 @@ function doGet(e) {
     else if (action === 'snapshot') data = getSnapshot_(runId);
     else if (action === 'summary') data = apiSummary_(runId);
     else if (action === 'accounts') data = apiAccounts_(runId, p);
-    else if (action === 'methodology') data = apiMethodology_();
+    else if (action === 'methodology') data = apiMethodology_(runId);
     else if (action === 'phase0') data = readPhase0_();
     else return jsonOut_({ ok: false, error: 'unknown action: ' + action, run_id: runId });
     return jsonOut_({ ok: true, data: data, run_id: runId });
