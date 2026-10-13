@@ -131,46 +131,53 @@ const AC = (() => {
   function swimlane(host, { docs, refDate, onPick }) {
     host.innerHTML = '';
     const LANES = [['announcement', '重大訊息'], ['news', '新聞'], ['revenue', '月營收'], ['esg', 'ESG']];
-    const W = 600, laneH = 42, m = { t: 24, r: 14, b: 26, l: 62 }, iw = W - m.l - m.r, H = m.t + LANES.length * laneH + m.b;
+    const W = 600, m = { t: 26, r: 14, b: 28, l: 62 }, iw = W - m.l - m.r, MIN_LANE = 44, PAD = 10;
     const end = new Date(refDate + 'T23:59:59+08:00').getTime(), start = end - 365 * 864e5;
     const x = t => m.l + (t - start) / (end - start) * iw;
+    // 先排好每個泳道內的點（垂直錯開不重疊），再依需要的高度決定泳道高度
+    const lanes = LANES.map(([k]) => {
+      const placed = [];
+      docs.filter(d => d.lane === k && new Date(d.at).getTime() >= start).sort((a, b) => b.points - a.points).forEach(d => {
+        const r = Math.min(7.5, 3.5 + Math.sqrt(Math.max(0, d.points)) * 0.75), cx = x(new Date(d.at).getTime());
+        let off = 0, n = 0;
+        while (placed.some(p => Math.hypot(p.x - cx, p.y - off) < p.r + r + 1.5) && n < 60) { n++; off = (n % 2 ? -1 : 1) * Math.ceil(n / 2) * 4; }
+        placed.push({ d, x: cx, y: off, r });
+      });
+      const ext = placed.reduce((a, p) => Math.max(a, Math.abs(p.y) + p.r), 0);
+      return { placed, h: Math.max(MIN_LANE, Math.ceil(ext * 2) + PAD * 2) };
+    });
+    const bodyH = lanes.reduce((a, l) => a + l.h, 0), H = m.t + bodyH + m.b;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `近 365 天訊號 ${docs.length} 份，依來源分泳道` }, host);
     // 時間衰減色帶
     const d30 = end - 30 * 864e5, d90 = end - 90 * 864e5;
-    el('rect', { x: x(d30), y: m.t, width: x(end) - x(d30), height: LANES.length * laneH, fill: 'var(--orange-50)' }, svg);
-    el('rect', { x: x(d90), y: m.t, width: x(d30) - x(d90), height: LANES.length * laneH, fill: 'var(--gray-100)' }, svg);
+    el('rect', { x: x(d30), y: m.t, width: x(end) - x(d30), height: bodyH, fill: 'var(--orange-50)' }, svg);
+    el('rect', { x: x(d90), y: m.t, width: x(d30) - x(d90), height: bodyH, fill: 'var(--gray-100)' }, svg);
     txt(svg, (x(d30) + x(end)) / 2, m.t - 8, '×1.0', { 'text-anchor': 'middle', fill: 'var(--orange-800)', 'font-weight': 700 });
     txt(svg, (x(d90) + x(d30)) / 2, m.t - 8, '×0.5', { 'text-anchor': 'middle', fill: 'var(--ink-600)' });
     txt(svg, (m.l + x(d90)) / 2, m.t - 8, '超過 90 天：只計入 Need，不計入 Timing', { 'text-anchor': 'middle' });
+    let y0 = m.t;
     LANES.forEach(([k, name], i) => {
-      const yy = m.t + i * laneH;
-      el('line', { x1: m.l, x2: m.l + iw, y1: yy + laneH, y2: yy + laneH, stroke: 'var(--gray-300)' }, svg);
-      txt(svg, m.l - 8, yy + laneH / 2 + 4, name, { 'text-anchor': 'end', 'font-size': 12, fill: 'var(--ink-600)' });
+      const L = lanes[i], yc = y0 + L.h / 2;
+      el('line', { x1: m.l, x2: m.l + iw, y1: y0 + L.h, y2: y0 + L.h, stroke: 'var(--gray-300)' }, svg);
+      txt(svg, m.l - 8, yc + 4, name, { 'text-anchor': 'end', 'font-size': 12, fill: 'var(--ink-600)' });
+      L.yc = yc; y0 += L.h;
     });
     for (let mo = 0; mo <= 12; mo += 2) {
       const t = new Date(end); t.setMonth(t.getMonth() - mo); t.setDate(1);
       if (t.getTime() < start) continue;
-      el('line', { x1: x(t.getTime()), x2: x(t.getTime()), y1: m.t + LANES.length * laneH, y2: m.t + LANES.length * laneH + 4, stroke: 'var(--gray-400)' }, svg);
+      el('line', { x1: x(t.getTime()), x2: x(t.getTime()), y1: m.t + bodyH, y2: m.t + bodyH + 4, stroke: 'var(--gray-400)' }, svg);
       txt(svg, x(t.getTime()), H - 8, `${t.getFullYear() % 100}/${t.getMonth() + 1}`, { 'text-anchor': 'middle' });
     }
-    if (!docs.length) { txt(svg, W / 2, m.t + LANES.length * laneH / 2, '近 365 天沒有訊號', { 'text-anchor': 'middle', 'font-size': 13 }); return; }
-    // 同一泳道相近日期的點垂直錯開（beeswarm）
-    LANES.forEach(([k], li) => {
-      const yc = m.t + li * laneH + laneH / 2;
-      const placed = [];
-      docs.filter(d => d.lane === k && new Date(d.at).getTime() >= start).sort((a, b) => b.points - a.points).forEach(d => {
-        const r = Math.min(10, 3.5 + Math.sqrt(Math.max(0, d.points)) * 1.1), cx = x(new Date(d.at).getTime());
-        let off = 0, n = 0;
-        while (placed.some(p => Math.abs(p.x - cx) < p.r + r && Math.abs(p.y - (yc + off)) < p.r + r) && n < 12) { n++; off = (n % 2 ? -1 : 1) * Math.ceil(n / 2) * (r + 1.5); }
-        placed.push({ x: cx, y: yc + off, r });
-        const mk = playMark(svg, d.play, cx, yc + Math.max(-laneH / 2 + r, Math.min(laneH / 2 - r, off)), r, { tabindex: 0, role: 'button', class: 'swim-pt', 'data-pt': d.ref, 'aria-label': `${d.ref} ${String(d.at).slice(0, 10)} ${d.title}` });
-        mk.style.cursor = 'pointer';
-        hover(mk, `<b>${d.ref}・${String(d.at).slice(0, 10)}</b>${CL.esc(d.title)}<br><span class="muted">${d.kinds.join('、')}・得分 ${CL.fmt(d.points)}</span>`);
-        mk.addEventListener('click', () => onPick(d.ref));
-        mk.addEventListener('keydown', e => { if (e.key === 'Enter') onPick(d.ref); });
-      });
-    });
+    if (!docs.length) { txt(svg, W / 2, m.t + bodyH / 2, '近 365 天沒有訊號', { 'text-anchor': 'middle', 'font-size': 13 }); return; }
+    lanes.forEach(L => L.placed.forEach(({ d, x: cx, y, r }) => {
+      const mk = playMark(svg, d.play, Math.max(m.l + r, cx), L.yc + y, r, { tabindex: 0, role: 'button', class: 'swim-pt', 'data-pt': d.ref, 'aria-label': `${d.ref} ${String(d.at).slice(0, 10)} ${d.title}` });
+      mk.style.cursor = 'pointer';
+      hover(mk, `<b>${d.ref}・${String(d.at).slice(0, 10)}</b>${CL.esc(d.title)}<br><span class="muted">${d.kinds.join('、')}・得分 ${CL.fmt(d.points)}</span>`);
+      mk.addEventListener('click', () => onPick(d.ref));
+      mk.addEventListener('keydown', e => { if (e.key === 'Enter') onPick(d.ref); });
+    }));
   }
+
 
   // ---------- D 營收管制圖 ----------
   function control(host, { rows, applicable }) {
@@ -219,10 +226,9 @@ const AC = (() => {
       const fill = applicable ? 'var(--chart-mark)' : 'var(--gray-400)';
       if (v !== clamp(v)) {
         el('path', { d: v > 0 ? `M${px} ${py - 6}l5 8h-10Z` : `M${px} ${py + 6}l5 -8h-10Z`, fill, 'pointer-events': 'none' }, svg);
-        if (i === peak) txt(svg, px, py + (v > 0 ? -10 : 18), (v > 0 ? '+' : '') + Math.round(v) + '%', { 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--ink-900)', 'font-weight': 700 });
       } else el('circle', { cx: px, cy: py, r: out ? 4.5 : 2.5, fill, 'pointer-events': 'none' }, svg);
     });
-    if (clipped.length) txt(svg, m.l + iw, bot0 - 8, `▲▼ ${clipped.length} 個月超出 ±${CAP}%，畫在邊緣（滑過看實際值）`, { 'text-anchor': 'end', 'font-size': 10 });
+    if (clipped.length) txt(svg, m.l + iw, bot0 - 14, `▲▼ ${clipped.length} 個月超出 ±${CAP}%，畫在邊緣（最高 ${yoys[peak] > 0 ? '+' : ''}${Math.round(yoys[peak])}%）`, { 'text-anchor': 'end', 'font-size': 10 });
   }
 
   // ---------- E Play 組成 ----------
