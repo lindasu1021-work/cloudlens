@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014k">
-<link rel="stylesheet" href="css/app.css?v=20261014k">
+<link rel="stylesheet" href="css/tokens.css?v=20261014l">
+<link rel="stylesheet" href="css/app.css?v=20261014l">
 </head>
 <body data-page="overview" data-title="總覽">
 <main>
@@ -35,6 +35,10 @@
       </div>
     </div>
     <div class="span-4 col-stack">
+      <div class="card">
+        <div class="card-head"><h2>最優先 10 家</h2><span class="hint">Tier 1，依 Need＋Timing 總分</span></div>
+        <div class="card-body"><ol class="top-list" id="top10"></ol></div>
+      </div>
       <div class="card">
         <div class="card-head"><h2>本週動態</h2><span class="hint" id="dyn-hint"></span></div>
         <div class="card-body">
@@ -93,9 +97,9 @@
   </section>
 </main>
 
-<script src="js/api.js?v=20261014k"></script>
-<script src="js/shell.js?v=20261014k"></script>
-<script src="js/charts.js?v=20261014k"></script>
+<script src="js/api.js?v=20261014l"></script>
+<script src="js/shell.js?v=20261014l"></script>
+<script src="js/charts.js?v=20261014l"></script>
 <script>
 (async () => {
   const { LABELS, fmt, esc, tierBadge, playTag, shapeSvg, ageDays } = CL;
@@ -135,6 +139,10 @@
   // ---------- Tier 標示 ----------
   const TL = { '1': 'Tier 1', '2': 'Tier 2', '3': 'Tier 3', hold: '暫緩' };
   const dotSvg = t => `<svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="${Charts.TIER_VAR[t]}" stroke="var(--ink-900)" stroke-width="0.8"/></svg>`;
+
+  // ---------- 最優先 10 家 ----------
+  document.getElementById('top10').innerHTML = rows.filter(r => r.tier === '1').sort((a, b) => (b.need + b.timing) - (a.need + a.timing)).slice(0, 10)
+    .map((r, i) => `<li><span class="rk">${i + 1}</span><a href="account.html?code=${r.code}">${esc(r.name)}</a><span class="muted">${esc(r.industry)}</span><span class="tp">${playTag(r.play)}</span></li>`).join('');
 
   // ---------- 本週動態 ----------
   const prevRows = rows.filter(r => d.prev[r.code]).map(r => {
