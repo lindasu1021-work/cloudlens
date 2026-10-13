@@ -27,7 +27,7 @@ const Charts = (() => {
    * @param {{needCut:number,timingCut:number,onClick:Function}} opt
    */
   function quadrant(host, rows, opt) {
-    const W = 760, H = 460, m = { t: 16, r: 20, b: 44, l: 52 };
+    const W = 600, H = 460, m = { t: 14, r: 14, b: 44, l: 50 };
     const iw = W - m.l - m.r, ih = H - m.t - m.b;
     const x = v => m.l + (v / 100) * iw, y = v => m.t + ih - (v / 100) * ih;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Need 與 Timing 象限散佈圖，每點為一家公司' });

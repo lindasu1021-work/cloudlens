@@ -75,7 +75,7 @@ const AC = (() => {
     }
     txt(svg, cx - R, cy + 14, '0', { 'text-anchor': 'middle', 'font-size': 10 });
     txt(svg, cx + R, cy + 14, '100', { 'text-anchor': 'middle', 'font-size': 10 });
-    el('text', { x: cx, y: cy - 22, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 700, fill: 'var(--ink-900)' }, svg).textContent = value === null ? '—' : CL.fmt(value);
+    el('text', { x: cx, y: cy - 22, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 600, fill: 'var(--ink-900)', class: 'num-font' }, svg).textContent = value === null ? '—' : CL.fmt(value);
     txt(svg, cx, cy - 4, pct === null ? '無資料' : `帳戶池百分位 ${Math.round(pct * 100)}`, { 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-600)' });
     hover(svg, tipHtml);
   }
@@ -83,7 +83,7 @@ const AC = (() => {
   // ---------- A3 迷你象限圖 ----------
   function miniQuad(host, { rows, self, needCut, timingCut, onClick }) {
     host.innerHTML = '';
-    const W = 240, H = 176, m = { t: 6, r: 6, b: 22, l: 22 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const W = 200, H = 160, m = { t: 6, r: 6, b: 22, l: 22 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
     const x = v => m.l + v / 100 * iw, y = v => m.t + ih - v / 100 * ih;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `帳戶池 ${rows.length} 家的位置，本公司 Need ${self.need}、Timing ${self.timing}` }, host);
     el('rect', { x: x(timingCut), y: m.t, width: x(100) - x(timingCut), height: y(needCut) - m.t, fill: 'var(--orange-50)' }, svg);
@@ -111,7 +111,7 @@ const AC = (() => {
     const rank = sorted.findIndex(p => p.code === selfCode) + 1;
     let show = sorted.slice(0, 10);
     if (rank > 10) show = show.concat([sorted[rank - 1]]);
-    const rowH = 15, W = 260, L = 64, R = 30, H = show.length * rowH + 8 + (rank > 10 ? 8 : 0);
+    const rowH = 15, W = 200, L = 58, R = 28, H = show.length * rowH + 8 + (rank > 10 ? 8 : 0);
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `同產業 ${sorted.length} 家中排第 ${rank}` }, host);
     const x = v => L + v / 100 * (W - L - R);
     show.forEach((p, i) => {
@@ -131,7 +131,7 @@ const AC = (() => {
   function swimlane(host, { docs, refDate, onPick }) {
     host.innerHTML = '';
     const LANES = [['announcement', '重大訊息'], ['news', '新聞'], ['revenue', '月營收'], ['esg', 'ESG']];
-    const W = 820, laneH = 42, m = { t: 24, r: 16, b: 26, l: 70 }, iw = W - m.l - m.r, H = m.t + LANES.length * laneH + m.b;
+    const W = 600, laneH = 42, m = { t: 24, r: 14, b: 26, l: 62 }, iw = W - m.l - m.r, H = m.t + LANES.length * laneH + m.b;
     const end = new Date(refDate + 'T23:59:59+08:00').getTime(), start = end - 365 * 864e5;
     const x = t => m.l + (t - start) / (end - start) * iw;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `近 365 天訊號 ${docs.length} 份，依來源分泳道` }, host);
@@ -176,7 +176,7 @@ const AC = (() => {
   function control(host, { rows, applicable }) {
     host.innerHTML = '';
     if (!rows.length) return empty(host, '沒有月營收資料');
-    const W = 820, m = { l: 56, r: 16 }, iw = W - m.l - m.r, topH = 110, gap = 30, botH = 110, H = 14 + topH + gap + botH + 26;
+    const W = 600, m = { l: 52, r: 14 }, iw = W - m.l - m.r, topH = 110, gap = 30, botH = 110, H = 14 + topH + gap + botH + 26;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '近 15 個月營收與年增率管制圖' }, host);
     const bw = iw / rows.length, maxRev = Math.max(...rows.map(r => r[1])) || 1;
     const top0 = 14, bot0 = top0 + topH + gap;

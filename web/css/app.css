@@ -13,19 +13,11 @@ a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 h1, h2, h3 { margin: 0; font-weight: 700; }
+.kpi-value, .score, .num-font, .stat-num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 [hidden] { display: none !important; } /* 避免元件的 display 設定蓋過 hidden 屬性 */
 
-/* 導覽列 */
-.nav { background: var(--ink-950); color: var(--white); }
-.nav-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 32px; height: 56px; }
-.brand { font-weight: 700; font-size: 18px; letter-spacing: .5px; color: var(--white); }
-.brand span { background: var(--gradient-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.nav a { color: var(--white); opacity: .85; padding: 16px 0; border-bottom: 3px solid transparent; }
-.nav a:hover { opacity: 1; text-decoration: none; }
-.nav a[aria-current="page"] { opacity: 1; border-bottom-color: var(--orange-600); }
-.nav .soon { color: var(--white); opacity: .5; font-size: 13px; }
 
-main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 48px; }
+main { padding: 20px 28px 48px; }
 .notice { background: var(--white); border: 1px solid var(--gray-200); color: var(--ink-600); border-radius: var(--radius-sm); padding: 8px 14px; font-size: 13px; margin-bottom: 20px; }
 .notice b { color: var(--ink-900); }
 
@@ -38,10 +30,12 @@ main { max-width: 1280px; margin: 0 auto; padding: 20px 24px 48px; }
 .kpi-value.accent { color: var(--orange-700); }
 
 .card { border: 1px solid var(--gray-200); border-radius: var(--radius); background: var(--white); }
-.card-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px 0; }
-.card-head h2 { font-size: 16px; }
-.card-head .hint { color: var(--ink-500); font-size: 12px; }
-.card-body { padding: 12px 18px 18px; }
+.card { padding: 24px; }
+.card-head { display: block; padding: 0 0 14px; }
+.card-head h2 { font-size: 16px; font-weight: 500; }
+.card-head .hint { display: block; color: var(--ink-500); font-size: 12px; margin-top: 2px; }
+.card-body { padding: 0; }
+.card.mini { padding: 18px 20px; }
 
 .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; margin-bottom: 20px; }
 
@@ -101,8 +95,8 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 
 /* 帳戶頁 */
 .back { font-size: 13px; }
-.acct-head { display: flex; justify-content: space-between; align-items: flex-end; margin: 8px 0 18px; gap: 16px; }
-.acct-head h1 { font-size: 22px; color: var(--ink-900); }
+.acct-head { display: flex; justify-content: space-between; align-items: flex-end; margin: 0 0 18px; gap: 16px; }
+.acct-head h1 { font-size: 24px; color: var(--ink-900); }
 .acct-head .sub { color: var(--ink-500); font-size: 13px; }
 .acct-head .tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .acct-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
@@ -190,7 +184,6 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 
 /* ===== 帳戶頁 v2（05 檔第 2 節） ===== */
 .summary-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
-.card.mini { padding: 12px 14px; }
 .mini-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 4px; }
 .mini-h { font-size: 14px; margin-bottom: 4px; }
 .mini-note { font-size: 12px; color: var(--ink-600); margin: 2px 0 0; text-align: center; }
@@ -235,3 +228,57 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .siglist .sid { color: var(--link); font-weight: 700; }
 .siglist .date { color: var(--ink-500); font-size: 12px; white-space: nowrap; }
 .siglist .pdot svg { vertical-align: -1px; }
+
+/* ===== App 外殼（v3 第 3 節） ===== */
+.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+.sidebar { position: sticky; top: 0; height: 100vh; background: var(--white); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; padding: 22px 16px 16px; overflow-y: auto; }
+.side-brand { display: block; padding: 0 8px 22px; text-decoration: none; }
+.side-brand:hover { text-decoration: none; }
+.side-mark { font-weight: 700; font-size: 17px; letter-spacing: .3px; color: var(--ink-900); white-space: nowrap; }
+.side-mark span { background: var(--gradient-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.side-group { margin-bottom: 18px; }
+.side-group-title { font-size: 12px; color: var(--ink-500); padding: 0 12px 6px; }
+.side-item { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--radius-pill); color: var(--ink-600); text-decoration: none; font-size: 14px; margin-bottom: 2px; }
+.side-item:hover { background: var(--gray-100); text-decoration: none; }
+.side-item[aria-current="page"] { background: var(--ink-950); color: var(--white); font-weight: 500; }
+.side-ico { display: inline-flex; flex: none; }
+.side-label { flex: 1; white-space: nowrap; }
+.side-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange-600); flex: none; }
+.update-card { margin-top: auto; background: var(--gray-100); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 12px; color: var(--ink-600); }
+.uc-title { font-weight: 500; color: var(--ink-900); font-size: 12px; margin-bottom: 4px; }
+.uc-title.uc-warn { color: var(--orange-800); }
+.uc-main { font-family: var(--font-num); font-weight: 600; font-size: 14px; color: var(--ink-900); margin-bottom: 4px; }
+.uc-line { line-height: 1.6; }
+
+.shell-main { min-width: 0; }
+.topbar { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; padding: 24px 28px 0; }
+.top-title h1 { font-size: 28px; font-weight: 700; line-height: 1.25; }
+.crumbs { font-size: 12px; color: var(--ink-500); margin-top: 2px; min-height: 18px; }
+.crumbs a { color: var(--link-tint); }
+.top-actions { display: flex; align-items: center; gap: 12px; flex: none; }
+.gsearch { position: relative; display: flex; align-items: center; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-pill); padding: 0 14px; width: 320px; height: 40px; }
+.gsearch:focus-within { border-color: var(--orange-600); }
+.gs-ico { color: var(--ink-500); display: inline-flex; margin-right: 8px; }
+.gsearch input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-900); height: 100%; }
+.gsearch input::placeholder { color: var(--ink-500); }
+.gsearch kbd { font-family: var(--font-num); font-size: 11px; color: var(--ink-500); border: 1px solid var(--gray-200); border-radius: 6px; padding: 1px 6px; background: var(--gray-100); }
+.gs-list { position: absolute; top: 46px; left: 0; right: 0; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); box-shadow: 0 8px 24px var(--shadow); list-style: none; margin: 0; padding: 6px; z-index: 40; }
+.gs-list li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; cursor: pointer; font-size: 13px; }
+.gs-list li[aria-selected="true"], .gs-list li:hover { background: var(--orange-50); }
+.gs-name { font-weight: 500; }
+.gs-meta { color: var(--ink-500); font-size: 12px; flex: 1; }
+.gs-empty { color: var(--ink-500); cursor: default !important; }
+.btn-dark.export-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; }
+.btn-dark:hover { background: var(--ink-900); }
+
+@media (max-width: 1279px) {
+  .app { grid-template-columns: 72px minmax(0, 1fr); }
+  .sidebar { padding: 22px 10px 16px; align-items: center; }
+  .side-mark { display: none; }
+  .side-brand { padding-bottom: 14px; }
+  .side-brand::before { content: "企"; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ink-950); color: var(--white); font-weight: 700; }
+  .side-group-title, .side-label, .update-card { display: none; }
+  .side-item { justify-content: center; padding: 10px; position: relative; }
+  .side-dot { position: absolute; right: 6px; top: 6px; }
+  .gsearch { width: 220px; }
+}

@@ -7,9 +7,9 @@
 <meta name="description" content="各資料來源最後成功時間、筆數與錯誤">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261013b">
-<link rel="stylesheet" href="css/app.css?v=20261013b">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261013e">
+<link rel="stylesheet" href="css/app.css?v=20261013e">
 <style>
   /* 成功／錯誤狀態色只在本頁使用（03 檔第 3 節第 7 條） */
   .st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
@@ -24,17 +24,8 @@
   td.wrap { white-space: normal; }
 </style>
 </head>
-<body>
-<nav class="nav" aria-label="主要導覽">
-  <div class="nav-inner">
-    <span class="brand">企業雲端<span>商機洞察</span></span>
-    <a href="index.html">總覽</a>
-    <a href="methodology.html">方法論</a>
-    <a href="status.html" aria-current="page">資料狀態</a>
-  </div>
-</nav>
+<body data-page="status" data-title="資料狀態">
 <main>
-  <h1 style="font-size:22px;color:var(--ink-900);margin-bottom:4px">資料狀態</h1>
   <p class="muted" id="meta" style="margin:0 0 16px">載入中…</p>
 
   <section class="card">
@@ -65,7 +56,8 @@
 </main>
 <footer>排程失敗會自動寄送告警信；單一來源失敗不影響其他來源，計分會以「缺資料不算 0 分」處理。</footer>
 
-<script src="js/api.js?v=20261013b"></script>
+<script src="js/api.js?v=20261013e"></script>
+<script src="js/shell.js?v=20261013e"></script>
 <script>
 (async () => {
   const { esc } = CL;

@@ -7,21 +7,12 @@
 <meta name="description" content="帳戶分數、訊號證據、營收動能與 Copilot">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261013b">
-<link rel="stylesheet" href="css/app.css?v=20261013b">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261013e">
+<link rel="stylesheet" href="css/app.css?v=20261013e">
 </head>
-<body>
-<nav class="nav" aria-label="主要導覽">
-  <div class="nav-inner">
-    <span class="brand">企業雲端<span>商機洞察</span></span>
-    <a href="index.html">總覽</a>
-    <a href="methodology.html">方法論</a>
-    <a href="status.html">資料狀態</a>
-  </div>
-</nav>
+<body data-page="account" data-title="帳戶">
 <main>
-  <a class="back" href="index.html">← 回總覽</a> <span class="muted" id="src" style="font-size:12px;margin-left:12px"></span>
   <header class="acct-head" id="head"></header>
 
   <!-- A 分數摘要列 -->
@@ -68,15 +59,15 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261013b"></script>
-<script src="js/charts.js?v=20261013b"></script>
-<script src="js/account-charts.js?v=20261013b"></script>
-<script src="js/copilot.js?v=20261013b"></script>
+<script src="js/api.js?v=20261013e"></script>
+<script src="js/shell.js?v=20261013e"></script>
+<script src="js/charts.js?v=20261013e"></script>
+<script src="js/account-charts.js?v=20261013e"></script>
+<script src="js/copilot.js?v=20261013e"></script>
 <script>
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, ageDays } = CL;
   const d = await CL.load();
-  document.getElementById('src').innerHTML = CL.sourceNote(d);
   const code = new URLSearchParams(location.search).get('code');
   const c = d.byCode[code];
   if (!c || !c.score) { document.getElementById('head').innerHTML = '<h1>查無此帳戶</h1>'; return; }
@@ -84,6 +75,7 @@
   const pool = d.pool || { median: {} };
   const fin = c.industry === '金融保險', otc = c.market === '上櫃';
   document.title = `${c.name} ${c.code}｜企業雲端商機洞察平台`;
+  Shell.setCrumbs([{ label: '總覽', href: 'index.html' }, { label: c.name + ' ' + c.code }]);
   const by = (type, cat) => sig.filter(x => x.type === type && (!cat || x.cat === cat));
   const rows = d.accounts.map(a => ({ code: a.code, name: a.name, industry: a.industry, need: Number(a.score.need) || 0, timing: Number(a.score.timing) || 0, play: a.score.play_primary }));
   const self = rows.find(r => r.code === code);

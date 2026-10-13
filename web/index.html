@@ -7,22 +7,13 @@
 <meta name="description" content="企業雲端商機洞察平台：以公開資料為台灣上市櫃企業評分，標出 AWS 的切入劇本">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261013b">
-<link rel="stylesheet" href="css/app.css?v=20261013b">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261013e">
+<link rel="stylesheet" href="css/app.css?v=20261013e">
 </head>
-<body>
-<nav class="nav" aria-label="主要導覽">
-  <div class="nav-inner">
-    <span class="brand">企業雲端<span>商機洞察</span></span>
-    <a href="index.html" aria-current="page">總覽</a>
-    <a href="methodology.html">方法論</a>
-    <a href="status.html">資料狀態</a>
-  </div>
-</nav>
+<body data-page="overview" data-title="總覽">
 <main>
-  <p class="notice" id="notice">載入中…</p>
-
+  
   <section class="kpis" aria-label="關鍵指標">
     <div class="kpi"><div class="kpi-label">帳戶池</div><div class="kpi-value" id="k-accounts">—</div><div class="kpi-sub">三產業・實收資本額 ≥ 10 億</div></div>
     <div class="kpi"><div class="kpi-label">Tier 1 立即開發</div><div class="kpi-value accent" id="k-tier1">—</div><div class="kpi-sub" id="k-tier1-sub"></div></div>
@@ -50,7 +41,7 @@
     </div>
   </section>
 
-  <section class="card" aria-labelledby="t-title">
+  <section class="card" id="accounts" aria-labelledby="t-title">
     <div class="card-head"><h2 id="t-title">帳戶清單</h2><span class="hint">點欄位標題排序</span></div>
     <div class="card-body">
       <div class="filters">
@@ -75,8 +66,9 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261013b"></script>
-<script src="js/charts.js?v=20261013b"></script>
+<script src="js/api.js?v=20261013e"></script>
+<script src="js/shell.js?v=20261013e"></script>
+<script src="js/charts.js?v=20261013e"></script>
 <script>
 (async () => {
   const { LABELS, fmt, esc, tierBadge, playTag, shapeSvg, ageDays } = CL;
@@ -84,7 +76,6 @@
   try { d = await CL.load(); }
   catch (e) { document.getElementById('notice').textContent = e.message; return; }
 
-  document.getElementById('notice').innerHTML = CL.sourceNote(d);
 
   const rows = d.accounts.map(c => ({
     code: c.code, name: c.name, industry: c.industry, market: c.market,
@@ -174,6 +165,7 @@
       return (c || (b.need + b.timing) - (a.need + a.timing)) * (c ? sort.dir : 1);
     });
     thead.querySelectorAll('th').forEach(th => th.setAttribute('aria-sort', th.dataset.k === sort.k ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
+    window.__shown = list;
     document.getElementById('count').textContent = `顯示 ${list.length} / ${rows.length} 家`;
     document.getElementById('tbody').innerHTML = list.map(r => `
       <tr data-code="${r.code}" tabindex="0">
@@ -191,6 +183,7 @@
   document.getElementById('tbody').addEventListener('keydown', e => {
     const tr = e.target.closest('tr'); if (tr && e.key === 'Enter') location.href = 'account.html?code=' + tr.dataset.code;
   });
+  Shell.setExport(() => window.__shown || rows);
   render();
 
   // 從帳戶頁迷你象限圖點過來（?focus=代號）：清掉篩選、捲到該公司並高亮

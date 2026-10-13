@@ -56,6 +56,7 @@
   --play-none: var(--gray-400);
 
   --font: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-num: "Outfit", "Noto Sans TC", system-ui, sans-serif;   /* 大數字、英文標題；一律 tabular-nums */
   --radius: 20px;          /* 卡片 */
   --radius-sm: 16px;       /* 卡片內的卡 */
   --radius-pill: 999px;
