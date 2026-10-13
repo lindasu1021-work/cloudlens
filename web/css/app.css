@@ -536,7 +536,7 @@ p, li, .hint, .bul-sub, td { text-wrap: pretty; line-break: strict; }
 #weights { justify-content: stretch; gap: 16px; }
 #weights .wt-axis { flex: 1; display: flex; flex-direction: column; margin: 0; }
 #weights .wt-bar { flex: 1; }
-#weights .wt-seg { justify-content: space-between; }
+#weights .wt-seg { justify-content: flex-start; gap: 2px; }
 #treemap { justify-content: stretch; }
 #treemap .treemap { flex: 1; aspect-ratio: auto; min-height: 340px; }
 #heat { justify-content: stretch; }
