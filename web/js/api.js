@@ -54,8 +54,8 @@ const CL = (() => {
     }
   };
   const PLAY_COLOR = { Migration: 'var(--play-migration)', Data: 'var(--play-data)', GenAI: 'var(--play-genai)', Security: 'var(--play-security)' };
-  // 亮色（琥珀、淺杏）對白底不足 3:1，依 v3 第 1.3 節加 1px ink-900 外框；深色用白色細框與底色分開
-  const PLAY_STROKE = { Migration: 'var(--white)', Security: 'var(--white)', GenAI: 'var(--ink-900)', Data: 'var(--ink-900)' };
+  // 四種 Play 標記一律加 1px ink-900 外框（Verna 2026-10-13：統一有框線；亮色對白底不足 3:1 也靠它補足）
+  const PLAY_STROKE = { Migration: 'var(--ink-900)', Security: 'var(--ink-900)', GenAI: 'var(--ink-900)', Data: 'var(--ink-900)' };
   const PLAY_SHAPE = { Migration: 'circle', Data: 'square', GenAI: 'triangle', Security: 'diamond' };
   const COMPONENTS = [
     { key: 'n1', axis: 'need', name: 'N1 規模', max: 25 },

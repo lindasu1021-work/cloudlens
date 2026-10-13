@@ -227,7 +227,7 @@ const AC = (() => {
 
   // ---------- E Play 組成 ----------
   /** 段內文字顏色：深色段用白字、亮橘段用黑字；對比不足 4.5:1 的段（GenAI）把標籤放到長條下方 */
-  const LABEL_INK = { Migration: 'var(--white)', Security: 'var(--ink-900)', Data: 'var(--ink-900)', GenAI: 'var(--ink-900)' };
+  const LABEL_INK = { Migration: 'var(--white)', Security: 'var(--white)', Data: 'var(--ink-900)', GenAI: 'var(--ink-900)' };
   function playStack(host, { scores }) {
     host.innerHTML = '';
     const total = Object.values(scores).reduce((a, b) => a + b, 0);
@@ -237,7 +237,7 @@ const AC = (() => {
     const p1 = order[0];
     const bar = order.map(p => {
       const w = share(p), inside = LABEL_INK[p] && w >= 9;
-      return `<div class="seg" style="width:${w}%;background:${CL.PLAY_COLOR[p]};box-shadow:inset 0 0 0 1px ${CL.PLAY_STROKE[p] === 'var(--white)' ? 'transparent' : 'var(--ink-900)'};color:${inside ? LABEL_INK[p] : 'transparent'}"
+      return `<div class="seg" style="width:${w}%;background:${CL.PLAY_COLOR[p]};box-shadow:inset 0 0 0 1px var(--ink-900);color:${inside ? LABEL_INK[p] : 'transparent'}"
         data-tip="<b>${p}</b>${Math.round(w)}%（分數 ${Math.round(scores[p])}）">${inside ? Math.round(w) + '%' : ''}</div>`;
     }).join('');
     const mark = Math.min(100, share(p1) * 1.5);

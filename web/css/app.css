@@ -92,7 +92,7 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 /* 標章 */
 .badge { display: inline-block; font-size: 12px; padding: 1px 10px; border-radius: var(--radius-pill); line-height: 1.6; white-space: nowrap; }
 .tier-1, .tier-2, .tier-3, .tier-hold { color: var(--ink-900); font-weight: 700; border-radius: var(--radius-pill); }
-.tier-1 { background: var(--tier-1); }
+.tier-1 { background: var(--tier-1); color: var(--white); } /* 白字在 #FF5A06 上 3.1:1（Verna 堅持白字）；Tier 2／3 底色太淺，白字不可讀，維持黑字 */
 .tier-2 { background: var(--tier-2); }
 .tier-3 { background: var(--tier-3); }
 .tier-hold { background: var(--tier-hold); }
@@ -153,7 +153,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 /* Copilot（奶油色面板＝AI 產生；v3 第 5.3 節） */
 .cp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .cp-mode { font-size: 12px; display: flex; gap: 8px; align-items: center; }
-.copilot .tag-live { background: var(--orange-600); color: var(--ink-900); font-weight: 700; }
+.copilot .tag-live { background: var(--orange-600); color: var(--white); font-weight: 700; }
 .linklike { all: unset; color: var(--orange-800); cursor: pointer; font-size: 12px; text-decoration: underline; }
 .linklike:focus-visible { outline: 3px solid var(--focus); }
 .cp-login { display: flex; gap: 6px; margin-bottom: 10px; }
@@ -163,14 +163,14 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .cp-ask { margin: 8px 0; }
 .cp-ask textarea { width: 100%; resize: vertical; margin-bottom: 6px; }
 .btn-primary { font: inherit; font-size: 13px; font-weight: 700; background: var(--orange-700); color: var(--white); border: 0; border-radius: var(--radius-pill); padding: 6px 16px; cursor: pointer; }
-.btn-primary:hover { background: var(--orange-600); color: var(--ink-900); }
+.btn-primary:hover { background: var(--orange-600); color: var(--white); }
 .btn-dark { font: inherit; font-size: 13px; font-weight: 700; background: var(--ink-950); color: var(--white); border: 0; border-radius: var(--radius-pill); padding: 6px 16px; cursor: pointer; }
 .btn-secondary { font: inherit; font-size: 12px; background: var(--white); color: var(--ink-900); border: 1px solid var(--gray-200); border-radius: var(--radius-pill); padding: 4px 12px; cursor: pointer; margin-top: 8px; }
 .btn-secondary:hover { background: var(--gray-100); }
 .cp-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .cp-btn, .cp-lang button { font: inherit; font-size: 12px; background: var(--white); color: var(--ink-900); border: 1px solid var(--gray-200); border-radius: var(--radius-pill); padding: 3px 12px; cursor: pointer; }
 .cp-btn:hover, .cp-lang button:hover { border-color: var(--orange-600); }
-.cp-btn[aria-pressed="true"], .cp-lang button[aria-pressed="true"] { background: var(--orange-600); color: var(--ink-900); border-color: var(--orange-600); font-weight: 700; }
+.cp-btn[aria-pressed="true"], .cp-lang button[aria-pressed="true"] { background: var(--orange-600); color: var(--white); border-color: var(--orange-600); font-weight: 700; }
 .cp-lang { display: flex; gap: 6px; margin-top: 8px; }
 .cp-out { margin-top: 14px; font-size: 13px; min-height: 40px; color: var(--ink-900); background: var(--white); border-radius: var(--radius-sm); padding: 14px 16px; }
 .cp-out h3.cp-h { font-size: 13px; margin: 12px 0 2px; color: var(--orange-800); }

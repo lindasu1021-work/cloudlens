@@ -90,7 +90,7 @@ function runJob_(job, makeRunId, makeTasks, continueHandler) {
       rows_in: tasks.length, rows_out: tasks.length - failures.length,
       status: failures.length ? 'partial' : 'success', error: failures.join(', ') }]);
     if (failures.length) {
-      sendAlert_(runId, job + '_failure', '[CloudLens] ' + job + ' 排程有 ' + failures.length + ' 個步驟失敗',
+      sendAlert_(runId, job + '_failure', '[企業雲端商機洞察平台] ' + job + ' 排程有 ' + failures.length + ' 個步驟失敗',
         '失敗步驟：\n' + failures.join('\n') + '\n\n詳細錯誤請看 Sheets 的 run_log 分頁（run_id = ' + runId + '）。');
     }
     Logger.log(job + ' 完成：' + (tasks.length - failures.length) + '/' + tasks.length + ' 成功');
@@ -124,7 +124,7 @@ function checkWeeklyFreshness_(runId) {
   var last = done.map(function (r) { return String(r.ended_at); }).sort().pop();
   var days = (Date.now() - new Date(last).getTime()) / 864e5;
   if (days > 8) {
-    sendAlert_(runId, 'weekly_stale', '[CloudLens] 每週排程已 ' + Math.floor(days) + ' 天未成功',
+    sendAlert_(runId, 'weekly_stale', '[企業雲端商機洞察平台] 每週排程已 ' + Math.floor(days) + ' 天未成功',
       '最後一次成功：' + last + '\n請到 Apps Script 的「執行作業」查看錯誤。');
     return { status: 'warning', note: '每週排程 ' + Math.floor(days) + ' 天未成功' };
   }

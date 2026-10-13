@@ -9,6 +9,7 @@
   --orange-400: #FD9832;   /* Tier 2、熱度圖第 3 階、黑卡上的關鍵數字 */
   --amber-400: #F2A722;    /* 琥珀：GenAI、漸層終點 */
   --orange-200: #F8CB9F;   /* Tier 3、熱度圖第 2 階、淡色系列 */
+  --cream-100: #FFF1DA;    /* Data（Play）：比 orange-200 更淡，與琥珀拉開一般視覺分辨度；必須加外框 */
   --orange-50: #FAEADE;    /* 奶油底：Copilot（＝AI 產生）、hover／選取列、提示框 */
 
   /* 衍生色（為文字對比補的，不得省略） */
@@ -47,11 +48,11 @@
   --tier-3: var(--orange-200);
   --tier-hold: var(--gray-300);
 
-  /* Play（第 1.3 節）：四色明度差距大，再加形狀；亮色加 1px ink-900 外框 */
+  /* Play（第 1.3 節）：四色明度差距大，再加形狀；四色一律加 1px ink-900 外框（統一） */
   --play-migration: var(--ink-900);
   --play-security: var(--orange-600);
   --play-genai: var(--amber-400);
-  --play-data: var(--orange-200);
+  --play-data: var(--cream-100);
   --play-none: var(--gray-400);
 
   --font: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;

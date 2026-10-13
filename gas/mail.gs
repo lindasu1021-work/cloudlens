@@ -10,7 +10,7 @@ function sendAlert_(runId, type, subject, body) {
     Logger.log('未設定 ALERT_EMAIL，告警只寫 log：' + subject);
     return false;
   }
-  MailApp.sendEmail(to, subject, body + '\n\n— CloudLens 自動通知');
+  MailApp.sendEmail(to, subject, body + '\n\n— 企業雲端商機洞察平台 自動通知');
   appendObjects_('mail_log', [{ mail_key: key, sent_at: nowIso_() }]);
   return true;
 }
