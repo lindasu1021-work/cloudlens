@@ -229,6 +229,37 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .siglist .date { color: var(--ink-500); font-size: 12px; white-space: nowrap; }
 .siglist .pdot svg { vertical-align: -1px; }
 
+/* ===== 總覽頁 v3（S3） ===== */
+.grid-12 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; align-items: stretch; }
+.span-8 { grid-column: span 8; } .span-4 { grid-column: span 4; }
+.col-stack { display: grid; gap: 20px; align-content: start; }
+.card.dark { background: var(--ink-950); color: var(--on-dark); border-color: var(--ink-950); margin-bottom: 20px; }
+.card.dark h2 { color: var(--on-dark); }
+.band-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+.band-sub { font-size: 12px; color: var(--on-dark-muted); font-family: var(--font-num); }
+.band-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.band-card { background: var(--on-dark-card); border: 1px solid var(--on-dark-line); border-radius: var(--radius-sm); padding: 14px 16px; position: relative; }
+.band-ico { position: absolute; top: 14px; right: 14px; color: var(--on-dark-muted); display: inline-flex; }
+.band-label { font-size: 12px; color: var(--on-dark-muted); }
+.band-num { font-family: var(--font-num); font-weight: 600; font-size: 36px; line-height: 1.2; color: var(--on-dark); font-variant-numeric: tabular-nums; }
+.band-num.hot { color: var(--orange-400); }
+.band-note { font-size: 12px; color: var(--on-dark-muted); margin-top: 2px; }
+.head-split { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.head-split .seg-toggle button { font-size: 12px; padding: 3px 12px; }
+.pdot-s { display: inline-flex; margin-right: 2px; }
+#waffle svg { display: block; width: 100%; height: auto; max-width: 330px; margin: 0 auto; }
+.ind-row { margin-bottom: 14px; }
+.ind-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.ind-bar { display: flex; gap: 2px; height: 28px; }
+.ind-seg { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--ink-900); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--ink-900); min-width: 3px; cursor: help; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.chips:empty { display: none; }
+.chip { font: inherit; font-size: 12px; background: var(--white); border: 1px solid var(--gray-300); border-radius: var(--radius-pill); padding: 2px 10px; color: var(--ink-900); cursor: pointer; }
+.chip:hover { border-color: var(--orange-600); }
+.table-wrap { overflow-x: auto; }
+.filters input, .filters select { border-radius: var(--radius-pill); padding: 7px 14px; border-color: var(--gray-300); }
+@media (max-width: 1279px) { .span-8, .span-4 { grid-column: span 12; } .band-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
 /* ===== App 外殼（v3 第 3 節） ===== */
 .app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; background: var(--white); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; padding: 22px 16px 16px; overflow-y: auto; }

@@ -46,7 +46,7 @@ var DEFAULT_SETTINGS = [
   ['copilot_precompute_max', '40', '每週預先生成 Copilot 的 Tier 1 公司數上限（依 Need＋Timing 排序）'],
   ['tier_percentile', '0.30', '各軸前 30% 為高'],
   ['gemini_model', 'gemini-3.8-flash,gemini-flash-latest', '候選模型，依序嘗試（Phase 0：免費層會暫時 503）'],
-  ['rule_version', '1', '調整權重或字典時 +1'],
+  ['rule_version', '2', '調整權重或字典時 +1（v2：Play 只來自產業先驗者改標「訊號不足」）'],
   ['current_run_id', '', '網站目前顯示的計分 run_id']
 ];
 

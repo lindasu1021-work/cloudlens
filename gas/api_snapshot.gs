@@ -9,7 +9,7 @@
 var SNAP_TTL = 6 * 60 * 60;
 var SNAP_CHUNK = 90000;
 
-function snapKey_(runId) { return 'snap:v2:' + runId; } // v2：加入 pool、play_scores、訊號 points/lane
+function snapKey_(runId) { return 'snap:v3:' + runId; } // v3：加入 summary（總覽頁）與規則 v2 的訊號不足
 
 function getSnapshot_(runId) {
   var cache = CacheService.getScriptCache();
@@ -72,6 +72,10 @@ function buildSnapshot_(runId) {
     var ps = playScores_(byCode[String(r.stock_code)] || [], ind[String(r.stock_code)], now);
     r.play_scores = ps.scores;
     r.play_from_signals = Math.round(ps.fromSignals * 10) / 10;
+    // 規則 v2 立即生效（不必等下一次計分）：與 computeScores_ 共用 pickPlays_
+    var pp = pickPlays_(ps.scores, ps.fromSignals);
+    r.play_primary = pp.primary;
+    r.play_secondary = pp.secondary;
   });
   // 帳戶池中位數（缺資料不計入）與 Tier 門檻（前 30%）
   var median = function (vals) {
@@ -96,7 +100,8 @@ function buildSnapshot_(runId) {
   return {
     generated_at: Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'),
     updated_at: scoreLog ? String(scoreLog.ended_at) : '',
-    run_id: runId, prev_run_id: prevRun, rule_version: Number(setting_('rule_version', 1)),
+    run_id: runId, prev_run_id: prevRun, rule_version: Math.max(Number(setting_('rule_version', 1)), RULE_VERSION),
+    summary: buildSummary_(companies, scores, signals, validation),
     note: 'GAS 每週排程正式資料',
     companies: companies.map(function (c) {
       return { code: String(c.stock_code), name: c.name_short, full: c.name_full, market: c.market, industry: c.industry_name, capital: Number(c.capital) };
@@ -160,5 +165,42 @@ function apiMethodology_() {
     keyword_counts: kw,
     validation: readTable_('validation'),
     validation_set: readTable_('config_validation')
+  };
+}
+
+/**
+ * 總覽頁用的彙總（06 檔第 8 節）：Tier 家數、產業 × Tier、近 182 天每日觸發事件（含各產業與前 3 則標題）、驗證 precision、回補進度。
+ * 觸發事件以「文件」計（同一則重訊同時命中多個規則只算一次）。
+ */
+function buildSummary_(companies, scores, signals, validation) {
+  var info = {};
+  companies.forEach(function (c) { info[String(c.stock_code)] = { name: c.name_short, industry: String(c.industry_name) }; });
+  var tierCounts = { '1': 0, '2': 0, '3': 0, hold: 0 }, matrix = {};
+  scores.forEach(function (r) {
+    var t = String(r.tier), ind = (info[String(r.stock_code)] || {}).industry || '';
+    tierCounts[t] = (tierCounts[t] || 0) + 1;
+    matrix[ind] = matrix[ind] || { '1': 0, '2': 0, '3': 0, hold: 0 };
+    matrix[ind][t]++;
+  });
+  var group = function (ind) { return ind === '金融保險' ? 'fin' : 'mfg'; };
+  var cutoff = Date.now() - 182 * 864e5, seen = {}, days = {};
+  signals.filter(function (s) { return s.type === 'T1' && new Date(s.at).getTime() >= cutoff; }).forEach(function (s) {
+    var key = s.code + '|' + s.title + '|' + s.at;
+    if (seen[key]) return;
+    seen[key] = true;
+    var d = Utilities.formatDate(new Date(s.at), TZ, 'yyyy-MM-dd');
+    var e = days[d] = days[d] || { d: d, n: 0, fin: 0, mfg: 0, titles: [] };
+    var ind = (info[s.code] || {}).industry || '';
+    e.n++; e[group(ind)]++;
+    e.titles.push({ code: s.code, name: (info[s.code] || {}).name || s.code, title: s.title, ind: group(ind) });
+  });
+  var hist = JSON.parse(getProp_('ANN_HIST', 'null') || 'null');
+  return {
+    rank_total: scores.length,
+    tier_counts: tierCounts,
+    industry_tier_matrix: matrix,
+    trigger_calendar: Object.keys(days).sort().map(function (d) { var e = days[d]; e.titles = e.titles.slice(0, 20); return e; }),
+    validation_precision: validation && validation.precision !== '' ? Number(validation.precision) : null,
+    announcement_backfill: hist ? { done_days: Object.keys(hist.done).length, total_days: Math.round((hist.end - hist.start) / 864e5) + 1 } : null
   };
 }

@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261013f">
-<link rel="stylesheet" href="css/app.css?v=20261013f">
+<link rel="stylesheet" href="css/tokens.css?v=20261013i">
+<link rel="stylesheet" href="css/app.css?v=20261013i">
 <style>
   .hero { background: var(--gradient-brand); color: var(--ink-900); }
   .hero-inner { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
@@ -126,6 +126,11 @@
         <table>
           <thead><tr><th class="plain">版本</th><th class="plain">日期</th><th class="plain">內容</th></tr></thead>
           <tbody>
+            <tr><td>v2</td><td>2026-10-13</td><td>
+              <b>「訊號不足」規則</b>：Play 分數只來自產業先驗（沒有任何帶 Play 的實際訊號）的公司，主 Play 改標「訊號不足」、次 Play 留空，不再預設為 Migration。
+              原因：v1 中 Migration 占 122／185 家，其中 91 家只是因為產業先驗加分，會讓「Migration 很多」變成假洞察。
+              影響：Migration 122 → 31 家；訊號不足 103 家（歷史重訊回補完成後會陸續減少）。分數與 Tier 不變。
+            </td></tr>
             <tr><td>v1</td><td>2026-10-12</td><td>
               初版。依實測資料調整：月營收改用公開資訊觀測站彙總表；就業通資料僅 1,000 筆且集中台北市而停用招募項目（N2、T4）；
               新聞弱訊號須與「導入、建置」等動作詞同現；新增股市行情排除詞與產品類否定詞；「取得使用權資產」（多為集團內部租約）不列為觸發事件；
@@ -138,6 +143,7 @@
       <section id="limits">
         <h2>7. 限制說明</h2>
         <ul>
+          <li><b>「訊號不足」的公司偏多（約 5–6 成）</b>：歷史重訊正逐週回補（每週 90 天），完成前部分公司的訊號被低估；這類公司的 Play 不應被解讀為「沒有需求」，而是「公開資料還不足以判斷切入方向」。</li>
           <li><b>驗證尚無法證明優於「挑最大的公司」</b>：見上方基準線比較。驗證集 5 家中 4 家為金控，金控本身規模大且有監管基礎分。</li>
           <li><b>新聞覆蓋有上限</b>：Google News 每次查詢約 100 則，新聞量極大的公司會被截斷；同一新聞多家媒體轉載會重複計算（遞減報酬下影響有限）。</li>
           <li><b>招募訊號缺席</b>：公開職缺資料不足，N2、T4 停用，Need 與 Timing 由其餘項目重新正規化。</li>
@@ -152,8 +158,8 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
-<script src="js/api.js?v=20261013f"></script>
-<script src="js/shell.js?v=20261013f"></script>
+<script src="js/api.js?v=20261013i"></script>
+<script src="js/shell.js?v=20261013i"></script>
 <script>
 (async () => {
   const { esc } = CL;

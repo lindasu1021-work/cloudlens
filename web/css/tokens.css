@@ -42,6 +42,18 @@
   --focus: var(--orange-700);
   --shadow: rgba(26, 26, 26, .08);
 
+  /* 黑色主卡上的文字與子卡（06 檔第 3.4 節） */
+  --on-dark: var(--white);
+  --on-dark-muted: rgba(255, 255, 255, .65);
+  --on-dark-card: rgba(255, 255, 255, .06);
+  --on-dark-line: rgba(255, 255, 255, .12);
+
+  /* 熱度圖階梯（0 件＝gray-100） */
+  --heat-1: var(--orange-50);
+  --heat-2: var(--orange-200);
+  --heat-3: var(--orange-400);
+  --heat-4: var(--orange-600);
+
   /* Tier 階梯：越橘越該先打 */
   --tier-1: var(--orange-600);
   --tier-2: var(--orange-400);

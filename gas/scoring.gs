@@ -5,6 +5,8 @@
  */
 
 var PLAYS = ['Migration', 'Data', 'GenAI', 'Security'];
+var NO_PLAY = '訊號不足';   // 規則 v2（D36）：Play 分數只來自產業先驗、沒有任何實際訊號時的主 Play
+var RULE_VERSION = 2;
 var INDUSTRY_PRIOR = { '17': ['Security', 'Data'], '28': ['Data', 'Migration'], '05': ['Migration', 'Data'] };
 
 function dimReturn_(max, n) { return max * (1 - Math.pow(0.5, n)); }
@@ -41,7 +43,16 @@ function highSet_(rows, field, p) {
   return function (v) { return v !== '' && v > 0 && v >= cut; };
 }
 
+/** 主 Play／次 Play 判定（規則 v2）：沒有任何帶 Play 的實際訊號 → 訊號不足、次 Play 留空。 */
+function pickPlays_(scores, fromSignals) {
+  if (!fromSignals) return { primary: NO_PLAY, secondary: '' };
+  var ranked = PLAYS.slice().sort(function (a, b) { return scores[b] - scores[a]; });
+  var sec = scores[ranked[1]] >= scores[ranked[0]] * 0.5 && scores[ranked[1]] > 0 ? ranked[1] : '';
+  return { primary: ranked[0], secondary: sec };
+}
+
 function computeScores_(runId) {
+  if (Number(setting_('rule_version', 1)) < RULE_VERSION) setSetting_('rule_version', RULE_VERSION);
   // D28 的驗證集分頁在 setupPhase2 之後才加入：不存在時自動建立並寫入預設清單
   if (!ss().getSheetByName('config_validation')) { setupSheets(); seedValidation_(); }
   var now = Date.now();
@@ -148,10 +159,10 @@ function computeScores_(runId) {
     r.timing = avail.timing ? Math.round(got.timing / avail.timing * 1000) / 10 : '';
     r.data_completeness = total ? Math.round((avail.need + avail.timing) / total * 100) / 100 : '';
 
-    var play = playScores_(list, String(c.industry_code), now).scores;
-    var ranked = PLAYS.slice().sort(function (a, b) { return play[b] - play[a]; });
-    r.play_primary = ranked[0];
-    r.play_secondary = play[ranked[1]] >= play[ranked[0]] * 0.5 && play[ranked[1]] > 0 ? ranked[1] : '';
+    var ps = playScores_(list, String(c.industry_code), now);
+    var pp = pickPlays_(ps.scores, ps.fromSignals);
+    r.play_primary = pp.primary;
+    r.play_secondary = pp.secondary;
 
     // 雲端現況：AWS 案例 → aws；競品 → competitor；提及 AWS → aws；其他 → unknown
     var vendors = list.filter(function (s) { return s.signal_type === 'VENDOR'; }).map(function (s) { return s.category; });

@@ -5,7 +5,7 @@
 const CL = (() => {
   // Web App 網址本來就公開在前端，不是秘密
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzb32r6vAc54inssIjGO3ol0FNmevyKkDvp_QMmpNYguGhz4C6k5fNk8Nmc3izW_7fo/exec';
-  const CACHE_KEY = 'cl:snapshot:v2', CACHE_MS = 30 * 60 * 1000;
+  const CACHE_KEY = 'cl:snapshot:v3', CACHE_MS = 30 * 60 * 1000;
 
   async function gas(action, params = {}, timeoutMs = 20000) {
     const qs = new URLSearchParams({ action, ...params }).toString();
@@ -37,8 +37,8 @@ const CL = (() => {
   }
 
   const LABELS = {
-    play: { Migration: 'Migration 遷移現代化', Data: 'Data 數據平台', GenAI: 'GenAI 生成式 AI', Security: 'Security 資安' },
-    playShort: { Migration: 'Migration', Data: 'Data', GenAI: 'GenAI', Security: 'Security' },
+    play: { Migration: 'Migration 遷移現代化', Data: 'Data 數據平台', GenAI: 'GenAI 生成式 AI', Security: 'Security 資安', '訊號不足': '訊號不足' },
+    playShort: { Migration: 'Migration', Data: 'Data', GenAI: 'GenAI', Security: 'Security', '訊號不足': '訊號不足' },
     cloud: { aws: '已是 AWS 客戶（擴充）', competitor: '用競品（替換）', unknown: '未知（新導入）' },
     cloudShort: { aws: 'AWS 客戶', competitor: '用競品', unknown: '未知' },
     tier: { '1': 'Tier 1', '2': 'Tier 2', '3': 'Tier 3', hold: '暫緩' },
@@ -53,10 +53,11 @@ const CL = (() => {
       aws: '提及 AWS', competitor: '提及競品雲', onprem: '地端線索'
     }
   };
-  const PLAY_COLOR = { Migration: 'var(--play-migration)', Data: 'var(--play-data)', GenAI: 'var(--play-genai)', Security: 'var(--play-security)' };
+  const NO_PLAY = '訊號不足';
+  const PLAY_COLOR = { Migration: 'var(--play-migration)', Data: 'var(--play-data)', GenAI: 'var(--play-genai)', Security: 'var(--play-security)', [NO_PLAY]: 'var(--white)' };
   // 四種 Play 標記一律加 1px ink-900 外框（Verna 2026-10-13：統一有框線；亮色對白底不足 3:1 也靠它補足）
-  const PLAY_STROKE = { Migration: 'var(--ink-900)', Security: 'var(--ink-900)', GenAI: 'var(--ink-900)', Data: 'var(--ink-900)' };
-  const PLAY_SHAPE = { Migration: 'circle', Data: 'square', GenAI: 'triangle', Security: 'diamond' };
+  const PLAY_STROKE = { Migration: 'var(--ink-900)', Security: 'var(--ink-900)', GenAI: 'var(--ink-900)', Data: 'var(--ink-900)', [NO_PLAY]: 'var(--gray-400)' };
+  const PLAY_SHAPE = { Migration: 'circle', Data: 'square', GenAI: 'triangle', Security: 'diamond', [NO_PLAY]: 'circle' }; // 訊號不足＝空心圓
   const COMPONENTS = [
     { key: 'n1', axis: 'need', name: 'N1 規模', max: 25 },
     { key: 'n2', axis: 'need', name: 'N2 數位人才招募', max: 25 },
@@ -151,5 +152,5 @@ const CL = (() => {
     return `<b>目前無法連線後端，顯示靜態快照</b>（${d.generated_at}・${esc(d.note)}）`;
   }
 
-  return { load, gas, GAS_URL, sourceNote, LABELS, PLAY_COLOR, PLAY_STROKE, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
+  return { load, gas, GAS_URL, sourceNote, NO_PLAY, LABELS, PLAY_COLOR, PLAY_STROKE, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
 })();

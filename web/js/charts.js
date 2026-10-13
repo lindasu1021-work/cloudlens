@@ -27,7 +27,7 @@ const Charts = (() => {
    * @param {{needCut:number,timingCut:number,onClick:Function}} opt
    */
   function quadrant(host, rows, opt) {
-    const W = 600, H = 460, m = { t: 14, r: 14, b: 44, l: 50 };
+    const W = 600, H = 600, m = { t: 14, r: 14, b: 44, l: 50 };
     const iw = W - m.l - m.r, ih = H - m.t - m.b;
     const x = v => m.l + (v / 100) * iw, y = v => m.t + ih - (v / 100) * ih;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Need 與 Timing 象限散佈圖，每點為一家公司' });
@@ -59,15 +59,18 @@ const Charts = (() => {
     ql(m.l + 6, m.t + ih - 8, 'start', '暫緩');
 
     // 點（相同座標的公司以小幅水平錯開，避免完全重疊）
+    // 同座標的點：依代號做固定的 ±0.8（資料單位）抖動，並依序水平錯開，避免疊成一條線
     const seen = {};
+    const jit = code => { let h = 0; for (const ch of String(code)) h = (h * 31 + ch.charCodeAt(0)) % 997; return (h / 997 * 2 - 1) * 0.8; };
     const g = el('g', {}, svg);
     const marks = rows.map(r => {
       const key = r.timing + '|' + r.need;
       const n = (seen[key] = (seen[key] || 0) + 1) - 1;
-      const cx = x(r.timing) + (n ? ((n % 2 ? 1 : -1) * Math.ceil(n / 2) * 3) : 0), cy = y(r.need);
+      const cx = x(Math.max(0, Math.min(100, r.timing + jit(r.code)))) + (n ? ((n % 2 ? 1 : -1) * Math.ceil(n / 2) * 3) : 0);
+      const cy = y(Math.max(0, Math.min(100, r.need + jit(r.code + 'n'))));
       const p = el('path', {
         d: markPath(CL.PLAY_SHAPE[r.play], cx, cy, 5.5), fill: CL.PLAY_COLOR[r.play],
-        stroke: CL.PLAY_STROKE[r.play], 'stroke-width': 1, opacity: 0.85, tabindex: 0, role: 'link',
+        stroke: CL.PLAY_STROKE[r.play], 'stroke-width': r.play === CL.NO_PLAY ? 1.5 : 1, opacity: 0.7, tabindex: 0, role: 'link',
         'aria-label': `${r.name}，Need ${r.need}，Timing ${r.timing}，${CL.LABELS.tier[r.tier]}，主 Play ${r.play}`
       }, g);
       p.style.cursor = 'pointer';
@@ -89,7 +92,7 @@ const Charts = (() => {
       if (left + 200 > box.width) left = p.__x * k - 214;
       tip.style.left = left + 'px'; tip.style.top = top + 'px';
     };
-    const hide = () => { marks.forEach(o => { o.style.opacity = 0.85; }); tip.style.display = 'none'; };
+    const hide = () => { marks.forEach(o => { o.style.opacity = 0.7; }); tip.style.display = 'none'; };
     marks.forEach(p => {
       p.addEventListener('mouseenter', () => show(p));
       p.addEventListener('focus', () => show(p));
@@ -134,5 +137,79 @@ const Charts = (() => {
     });
   }
 
-  return { quadrant, revenueBars };
+  // ---------- 總覽頁新增圖表 ----------
+  const TIER_ORDER = ['1', '2', '3', 'hold'];
+  const TIER_VAR = { '1': 'var(--tier-1)', '2': 'var(--tier-2)', '3': 'var(--tier-3)', hold: 'var(--tier-hold)' };
+
+  /** Tier 分布鬆餅圖：每家公司一個圓點，依 Tier 階梯上色（淺色點以 ink-900 外框補足對比） */
+  function waffle(host, rows, onClick) {
+    const cols = 15, cell = 22, r = 8, n = rows.length, rowsN = Math.ceil(n / cols);
+    const W = cols * cell, H = rowsN * cell;
+    host.innerHTML = '';
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `帳戶池 ${n} 家的 Tier 分布，每點一家公司` }, host);
+    const sorted = rows.slice().sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || (b.need + b.timing) - (a.need + a.timing));
+    const tip = host.parentElement.querySelector('.tooltip');
+    sorted.forEach((c, i) => {
+      const cx = (i % cols) * cell + cell / 2, cy = Math.floor(i / cols) * cell + cell / 2;
+      const dot = el('circle', { cx, cy, r, fill: TIER_VAR[c.tier], stroke: 'var(--ink-900)', 'stroke-width': 0.8, tabindex: 0, role: 'link',
+        'aria-label': `${c.name}，${CL.LABELS.tier[c.tier]}` }, svg);
+      dot.style.cursor = 'pointer';
+      const show = () => {
+        tip.innerHTML = `<b>${CL.esc(c.name)} ${c.code}</b><span class="muted">${CL.esc(c.industry)}</span><br>${CL.tierBadge(c.tier)}`;
+        tip.style.display = 'block';
+        const k = svg.getBoundingClientRect().width / W;
+        tip.style.left = Math.min(cx * k + 14, svg.getBoundingClientRect().width - 170) + 'px';
+        tip.style.top = (cy * k - 10) + 'px';
+      };
+      dot.addEventListener('mouseenter', show); dot.addEventListener('focus', show);
+      dot.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+      dot.addEventListener('click', () => onClick(c));
+      dot.addEventListener('keydown', e => { if (e.key === 'Enter') onClick(c); });
+    });
+  }
+
+  /** 觸發事件日曆熱圖：近 26 週 × 週一至週日；格子顏色＝當日觸發事件數 */
+  function calendar(host, days, opt) {
+    const WEEKS = 26, cell = 16, gap = 3, step = cell + gap, L = 30, T = 18;
+    const end = new Date(opt.endDate + 'T00:00:00');
+    const dow = (end.getDay() + 6) % 7;                       // 週一＝0
+    const start = new Date(end); start.setDate(end.getDate() - dow - (WEEKS - 1) * 7);
+    const byDay = {}; days.forEach(d => { byDay[d.d] = d; });
+    const W = L + WEEKS * step, H = T + 7 * step + 4;
+    host.innerHTML = '';
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `近 ${WEEKS} 週每日觸發事件數` }, host);
+    ['一', '二', '三', '四', '五', '六', '日'].forEach((t, i) => {
+      if (i % 2 === 0) { const x = el('text', { x: L - 8, y: T + i * step + cell - 3, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--ink-500)' }, svg); x.textContent = t; }
+    });
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const level = n => n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 6 ? 3 : 4;
+    const FILL = ['var(--gray-100)', 'var(--heat-1)', 'var(--heat-2)', 'var(--heat-3)', 'var(--heat-4)'];
+    const tip = host.parentElement.querySelector('.tooltip');
+    let lastMonth = -1;
+    for (let w = 0; w < WEEKS; w++) {
+      const monday = new Date(start); monday.setDate(start.getDate() + w * 7);
+      if (monday.getMonth() !== lastMonth) {
+        lastMonth = monday.getMonth();
+        const t = el('text', { x: L + w * step, y: 10, 'font-size': 10, fill: 'var(--ink-500)' }, svg); t.textContent = `${lastMonth + 1}月`;
+      }
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(monday); day.setDate(monday.getDate() + d);
+        if (day > end) continue;
+        const key = fmt(day), rec = byDay[key], n = rec ? rec[opt.group] : 0;
+        const rect = el('rect', { x: L + w * step, y: T + d * step, width: cell, height: cell, rx: 4, fill: FILL[level(n)], stroke: level(n) ? 'var(--ink-900)' : 'none', 'stroke-width': 0.5 }, svg);
+        rect.addEventListener('mouseenter', () => {
+          const titles = (rec ? rec.titles.filter(t => opt.group === 'n' || t.ind === opt.group) : []).slice(0, 3);
+          tip.innerHTML = `<b>${key}</b>${n ? n + ' 件觸發事件' : '沒有觸發事件'}` + titles.map(t => `<br><span class="muted">${CL.esc(t.name)}：${CL.esc(t.title.slice(0, 26))}${t.title.length > 26 ? '…' : ''}</span>`).join('');
+          tip.style.display = 'block';
+          const k = svg.getBoundingClientRect().width / W;
+          tip.style.left = Math.min(Math.max(0, (L + w * step) * k - 60), svg.getBoundingClientRect().width - 250) + 'px';
+          tip.style.top = ((T + d * step) * k + 26) + 'px';
+        });
+        rect.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+      }
+    }
+    return { FILL };
+  }
+
+  return { quadrant, revenueBars, waffle, calendar, TIER_ORDER, TIER_VAR };
 })();

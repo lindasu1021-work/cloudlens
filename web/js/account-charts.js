@@ -55,8 +55,8 @@ const AC = (() => {
   }
   /** Play 標記：有 Play 依色＋形狀；沒有 Play（營收、新聞動能證據）用灰色空心圓 */
   function playMark(parent, play, x, y, r, extra = {}) {
-    if (!play || !CL.PLAY_SHAPE[play]) return el('path', { d: markPath('circle', x, y, r), fill: 'var(--white)', stroke: 'var(--ink-500)', 'stroke-width': 1.5, ...extra }, parent);
-    return el('path', { d: markPath(CL.PLAY_SHAPE[play], x, y, r), fill: CL.PLAY_COLOR[play], stroke: CL.PLAY_STROKE[play], 'stroke-width': 1, ...extra }, parent);
+    if (!play || !CL.PLAY_SHAPE[play]) return el('path', { d: markPath('circle', x, y, r), fill: 'var(--white)', stroke: 'var(--gray-400)', 'stroke-width': 1.5, ...extra }, parent);
+    return el('path', { d: markPath(CL.PLAY_SHAPE[play], x, y, r), fill: CL.PLAY_COLOR[play], stroke: CL.PLAY_STROKE[play], 'stroke-width': play === CL.NO_PLAY ? 1.5 : 1, ...extra }, parent);
   }
 
   // ---------- A1/A2 計量圖 ----------

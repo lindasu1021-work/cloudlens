@@ -99,3 +99,14 @@ function seedValidation_() {
       source_type: '媒體報導', checked_at: '2026-10-12', note: '天下雜誌：宏庭科技助大同於 Google Cloud 完成 33TB SAP 系統轉型' }
   ]);
 }
+
+/**
+ * 只重算訊號與分數（不重新抓資料，約 1 分鐘）：改了字典或規則（例：規則 v2「訊號不足」）後手動執行一次，
+ * 網站就會立刻套用，不必等週一排程。
+ */
+function rescoreNow() {
+  var runId = weeklyRunId_();
+  runStep_(runId, 'signals', function () { return buildSignals_(runId); });
+  runStep_(runId, 'scores', function () { return computeScores_(runId); });
+  Logger.log(JSON.stringify(readTable_('run_log').filter(function (r) { return r.step === 'scores'; }).pop()));
+}
