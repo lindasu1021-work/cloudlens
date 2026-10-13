@@ -75,9 +75,9 @@ const MC = (() => {
       const tot = ax.parts.reduce((a, p) => a + p.max, 0);
       return `<div class="wt-axis"><div class="wt-title"><b>${esc(ax.name)}</b><span class="muted">滿分 ${tot}</span></div>
         <div class="wt-bar" role="group" aria-label="${esc(ax.name)}權重">${ax.parts.map(p => `
-          <button type="button" class="wt-seg${p.disabled ? ' off' : ''}" style="flex:${p.max} 1 0" data-key="${p.key}" aria-expanded="false" aria-controls="wt-rule-${p.key}"
+          <button type="button" title="${esc(p.key + ' ' + p.name)}" class="wt-seg${p.disabled ? ' off' : ''}" style="flex:${p.max} 1 0" data-key="${p.key}" aria-expanded="false" aria-controls="wt-rule-${p.key}"
             data-tip="<b>${esc(p.key)} ${esc(p.name)}</b>滿分 ${p.max}${p.disabled ? '（目前停用：' + esc(p.code) + '）' : ''}">
-            <span class="wt-k">${p.key}</span><span class="wt-n">${esc(p.name)}</span><span class="wt-m">${p.max}${p.disabled ? '・' + esc(p.code) : ''}</span>
+            <span class="wt-k">${p.key}</span><span class="wt-n">${p.max <= 10 ? '&nbsp;' : esc(p.name)}</span><span class="wt-m">${p.max}${p.disabled ? '・' + esc(p.code) : ''}</span>
           </button>`).join('')}</div>
         ${ax.parts.map(p => `<div class="wt-rule" id="wt-rule-${p.key}" hidden><b>${p.key} ${esc(p.name)}</b>（${p.max} 分${p.disabled ? '，目前停用' : ''}）<br>${p.rule}</div>`).join('')}</div>`;
     }).join('');

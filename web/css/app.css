@@ -526,3 +526,22 @@ p, li, .hint, .bul-sub, td { text-wrap: pretty; line-break: strict; }
 .top-list .muted { font-size: 13px; }
 .ts-item:nth-child(3) .ts-big { font-size: 22px; white-space: nowrap; }
 .tier-strip + .b-legend { margin-top: 4px; }
+
+/* 方法論：雙欄圖表上緣、下緣對齊（兩欄等高，圖表撐滿） */
+.two-col { align-items: stretch; }
+.two-col > div { display: flex; flex-direction: column; min-width: 0; }
+.two-col > div > h3.sub { margin-top: 0; min-height: 22px; }
+.two-col > div > .mini-cap { margin: 0 0 10px; min-height: 18px; }
+.two-col > div > [id]:not(.mini-cap) { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+#weights { justify-content: stretch; gap: 16px; }
+#weights .wt-axis { flex: 1; display: flex; flex-direction: column; margin: 0; }
+#weights .wt-bar { flex: 1; }
+#weights .wt-seg { justify-content: space-between; }
+#treemap { justify-content: stretch; }
+#treemap .treemap { flex: 1; aspect-ratio: auto; min-height: 340px; }
+#heat { justify-content: stretch; }
+#heat .heat { flex: 1; align-items: stretch; grid-template-rows: auto; grid-auto-rows: 1fr; }
+#heat .heat-h { align-self: end; padding-bottom: 6px; }
+#heat .heat-r { align-self: center; }
+#heat .heat-c { display: flex; align-items: center; justify-content: center; padding: 4px; }
+.valid-grid { align-items: center; }
