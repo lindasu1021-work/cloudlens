@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014o">
-<link rel="stylesheet" href="css/app.css?v=20261014o">
+<link rel="stylesheet" href="css/tokens.css?v=20261014p">
+<link rel="stylesheet" href="css/app.css?v=20261014p">
 </head>
 <body data-page="methodology" data-title="方法論">
 <main class="meth">
@@ -129,9 +129,9 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
-<script src="js/api.js?v=20261014o"></script>
-<script src="js/shell.js?v=20261014o"></script>
-<script src="js/method-charts.js?v=20261014o"></script>
+<script src="js/api.js?v=20261014p"></script>
+<script src="js/shell.js?v=20261014p"></script>
+<script src="js/method-charts.js?v=20261014p"></script>
 <script>
 (async () => {
   const { esc } = CL;
@@ -144,7 +144,6 @@
   const srcN = 6;
   document.getElementById('s-src').textContent = srcN;
   document.getElementById('s-pool').textContent = m.funnel[2].n;
-  document.getElementById('s-pool-n').textContent = `資本額 ≥ ${m.capital_threshold / 1e8} 億・Tier 1 ${m.tier_counts['1']} 家`;
   document.getElementById('s-ver').textContent = 'v' + m.rule_version;
   const prec = m.validation_precision;
   document.getElementById('s-prec').textContent = prec === null || prec === undefined ? '驗證中' : pctTxt(prec);
