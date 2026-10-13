@@ -22,7 +22,7 @@ main { padding: 20px 28px 48px; }
 .notice b { color: var(--ink-900); }
 
 /* KPI */
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
 .kpi { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px 18px; }
 .kpi-label { color: var(--ink-500); font-size: 13px; }
 .kpi-value { font-size: 30px; font-weight: 700; color: var(--ink-900); line-height: 1.3; }
@@ -37,7 +37,7 @@ main { padding: 20px 28px 48px; }
 .card-body { padding: 0; }
 .card.mini { padding: 18px 20px; }
 
-.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; margin-bottom: 20px; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; margin-bottom: 20px; }
 
 /* 象限圖 */
 .chart-wrap { position: relative; }
@@ -130,7 +130,7 @@ tbody tr:nth-child(even) .bar { background: var(--white); }
 .copilot .muted { color: var(--ink-500); }
 .copilot .ref { color: var(--orange-800); }
 .copilot .tag { display: inline-block; background: var(--white); color: var(--ink-900); font-size: 12px; padding: 1px 10px; border-radius: var(--radius-pill); }
-.side-stack { display: grid; gap: 16px; }
+.side-stack { display: grid; gap: 20px; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24px; }
@@ -183,7 +183,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .cp-foot { font-size: 12px; color: var(--ink-500); margin: 12px 0 0; }
 
 /* ===== 帳戶頁 v2（05 檔第 2 節） ===== */
-.summary-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.summary-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; }
 .mini-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 4px; }
 .mini-h { font-size: 14px; margin-bottom: 4px; }
 .mini-note { font-size: 12px; color: var(--ink-600); margin: 2px 0 0; text-align: center; }
@@ -237,7 +237,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .card.dark h2 { color: var(--on-dark); }
 .band-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
 .band-sub { font-size: 12px; color: var(--on-dark-muted); font-family: var(--font-num); }
-.band-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.band-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
 .band-card { background: var(--on-dark-card); border: 1px solid var(--on-dark-line); border-radius: var(--radius-sm); padding: 14px 16px; position: relative; }
 .band-ico { position: absolute; top: 14px; right: 14px; color: var(--on-dark-muted); display: inline-flex; }
 .band-label { font-size: 12px; color: var(--on-dark-muted); }
@@ -306,7 +306,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 
 /* ===== 帳戶頁 v3（S4） ===== */
 .acct-left { display: grid; gap: 20px; min-width: 0; }
-.a-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.a-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .a-row .card { padding: 14px; min-width: 0; }
 .a-row .mini-h { font-size: 13px; font-weight: 500; }
 .a-row .gauge svg, .a-row #mini-quad svg { max-width: none; }
@@ -494,3 +494,7 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background:
 .b-legend .i-miss { background: repeating-linear-gradient(45deg, var(--gray-200) 0 4px, var(--white) 4px 6px); box-shadow: inset 0 0 0 1px var(--gray-300); }
 .bul-track { margin-bottom: 0 !important; }
 .bul-line .mid { color: var(--ink-500); margin-left: 6px; white-space: nowrap; }
+
+/* 卡片垂直間距：相鄰卡片至少隔 20px，圖例與下方卡片留白 */
+main > .card + .card, main > section + section { margin-top: 20px; }
+.acct-left > .b-legend { padding: 2px 4px 4px; }
