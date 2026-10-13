@@ -9,7 +9,7 @@
 var SNAP_TTL = 6 * 60 * 60;
 var SNAP_CHUNK = 90000;
 
-function snapKey_(runId) { return 'snap:v3:' + runId; } // v3：加入 summary（總覽頁）與規則 v2 的訊號不足
+function snapKey_(runId) { return 'snap:v4:' + runId; } // v3：加入 summary（總覽頁）與規則 v2 的訊號不足
 
 function getSnapshot_(runId) {
   var cache = CacheService.getScriptCache();
@@ -76,6 +76,14 @@ function buildSnapshot_(runId) {
     var pp = pickPlays_(ps.scores, ps.fromSignals);
     r.play_primary = pp.primary;
     r.play_secondary = pp.secondary;
+  });
+  // 帳戶池排名：依 Need＋Timing 總分由高到低（同分並列）
+  var order = scores.slice().sort(function (a, b) { return (Number(b.need) || 0) + (Number(b.timing) || 0) - (Number(a.need) || 0) - (Number(a.timing) || 0); });
+  var last = null, rk = 0;
+  order.forEach(function (r, i) {
+    var t = (Number(r.need) || 0) + (Number(r.timing) || 0);
+    if (t !== last) { rk = i + 1; last = t; }
+    r.pool_rank = rk;
   });
   // 帳戶池中位數（缺資料不計入）與 Tier 門檻（前 30%）
   var median = function (vals) {

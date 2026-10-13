@@ -62,7 +62,7 @@ const AC = (() => {
   // ---------- A1/A2 計量圖 ----------
   function gauge(host, { value, pct, cut, tipHtml }) {
     host.innerHTML = '';
-    const W = 220, H = 128, cx = 110, cy = 112, R = 88, SW = 16;
+    const W = 132, H = 88, cx = 66, cy = 74, R = 50, SW = 11;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `${value === null ? '無資料' : value + ' 分'}` }, host);
     const pt = v => { const a = Math.PI * (1 - v / 100); return [cx + R * Math.cos(a), cy - R * Math.sin(a)]; };
     const arc = (a, b) => { const [x1, y1] = pt(a), [x2, y2] = pt(b); return `M${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}`; };
@@ -73,17 +73,17 @@ const AC = (() => {
       el('line', { x1: cx + r1 * Math.cos(a), y1: cy - r1 * Math.sin(a), x2: cx + r2 * Math.cos(a), y2: cy - r2 * Math.sin(a), stroke: 'var(--ink-900)', 'stroke-width': 2 }, svg);
       // 門檻數值寫在計量圖下方的說明（標籤放弧上容易壓到中央數字）
     }
-    txt(svg, cx - R, cy + 14, '0', { 'text-anchor': 'middle', 'font-size': 10 });
-    txt(svg, cx + R, cy + 14, '100', { 'text-anchor': 'middle', 'font-size': 10 });
-    el('text', { x: cx, y: cy - 22, 'text-anchor': 'middle', 'font-size': 30, 'font-weight': 600, fill: 'var(--ink-900)', class: 'num-font' }, svg).textContent = value === null ? '—' : CL.fmt(value);
-    txt(svg, cx, cy - 4, pct === null ? '無資料' : `帳戶池百分位 ${Math.round(pct * 100)}`, { 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-600)' });
+    txt(svg, cx - R, cy + 11, '0', { 'text-anchor': 'middle', 'font-size': 9 });
+    txt(svg, cx + R, cy + 11, '100', { 'text-anchor': 'middle', 'font-size': 9 });
+    el('text', { x: cx, y: cy - 14, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 600, fill: 'var(--ink-900)', class: 'num-font' }, svg).textContent = value === null ? '—' : CL.fmt(value);
+    txt(svg, cx, cy + 1, pct === null ? '無資料' : `百分位 ${Math.round(pct * 100)}`, { 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--ink-600)' });
     hover(svg, tipHtml);
   }
 
   // ---------- A3 迷你象限圖 ----------
   function miniQuad(host, { rows, self, needCut, timingCut, onClick }) {
     host.innerHTML = '';
-    const W = 200, H = 160, m = { t: 6, r: 6, b: 22, l: 22 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const W = 150, H = 130, m = { t: 6, r: 6, b: 20, l: 20 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
     const x = v => m.l + v / 100 * iw, y = v => m.t + ih - v / 100 * ih;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `帳戶池 ${rows.length} 家的位置，本公司 Need ${self.need}、Timing ${self.timing}` }, host);
     el('rect', { x: x(timingCut), y: m.t, width: x(100) - x(timingCut), height: y(needCut) - m.t, fill: 'var(--orange-50)' }, svg);
@@ -111,7 +111,7 @@ const AC = (() => {
     const rank = sorted.findIndex(p => p.code === selfCode) + 1;
     let show = sorted.slice(0, 10);
     if (rank > 10) show = show.concat([sorted[rank - 1]]);
-    const rowH = 15, W = 200, L = 58, R = 28, H = show.length * rowH + 8 + (rank > 10 ? 8 : 0);
+    const rowH = 17, W = 300, L = 70, R = 34, H = show.length * rowH + 8 + (rank > 10 ? 8 : 0);
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `同產業 ${sorted.length} 家中排第 ${rank}` }, host);
     const x = v => L + v / 100 * (W - L - R);
     show.forEach((p, i) => {
@@ -163,7 +163,7 @@ const AC = (() => {
         let off = 0, n = 0;
         while (placed.some(p => Math.abs(p.x - cx) < p.r + r && Math.abs(p.y - (yc + off)) < p.r + r) && n < 12) { n++; off = (n % 2 ? -1 : 1) * Math.ceil(n / 2) * (r + 1.5); }
         placed.push({ x: cx, y: yc + off, r });
-        const mk = playMark(svg, d.play, cx, yc + Math.max(-laneH / 2 + r, Math.min(laneH / 2 - r, off)), r, { tabindex: 0, role: 'button', 'aria-label': `${d.ref} ${String(d.at).slice(0, 10)} ${d.title}` });
+        const mk = playMark(svg, d.play, cx, yc + Math.max(-laneH / 2 + r, Math.min(laneH / 2 - r, off)), r, { tabindex: 0, role: 'button', class: 'swim-pt', 'data-pt': d.ref, 'aria-label': `${d.ref} ${String(d.at).slice(0, 10)} ${d.title}` });
         mk.style.cursor = 'pointer';
         hover(mk, `<b>${d.ref}・${String(d.at).slice(0, 10)}</b>${CL.esc(d.title)}<br><span class="muted">${d.kinds.join('、')}・得分 ${CL.fmt(d.points)}</span>`);
         mk.addEventListener('click', () => onPick(d.ref));

@@ -8,50 +8,63 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261013i">
-<link rel="stylesheet" href="css/app.css?v=20261013i">
+<link rel="stylesheet" href="css/tokens.css?v=20261014b">
+<link rel="stylesheet" href="css/app.css?v=20261014b">
 </head>
 <body data-page="account" data-title="帳戶">
 <main>
   <header class="acct-head" id="head"></header>
 
-  <!-- A 分數摘要列 -->
-  <section class="summary-row" aria-label="分數摘要">
-    <div class="card mini"><h2 class="mini-h">Need 需求強度</h2><div id="g-need" class="gauge"></div><p class="mini-note" id="g-need-note"></p></div>
-    <div class="card mini"><h2 class="mini-h">Timing 時機</h2><div id="g-timing" class="gauge"></div><p class="mini-note" id="g-timing-note"></p></div>
-    <div class="card mini"><h2 class="mini-h" id="q-title">在帳戶池的位置</h2><div id="mini-quad"></div></div>
-    <div class="card mini">
-      <div class="mini-head"><h2 class="mini-h" id="rank-title">同產業排名</h2>
-        <div class="seg-toggle" role="group" aria-label="排名依據"><button type="button" data-metric="need" aria-pressed="true">Need</button><button type="button" data-metric="timing" aria-pressed="false">Timing</button></div></div>
-      <div id="rank"></div>
-    </div>
-  </section>
-
   <div class="acct-grid">
-    <div class="side-stack">
-      <section class="card">
-        <div class="card-head"><h2 id="b-title">分數拆解</h2><span class="hint">橘條＝得分・黑刻度＝帳戶池中位數・斜線＝無資料（不算 0 分）</span></div>
-        <div class="card-body" id="breakdown"></div>
+    <div class="acct-left">
+      <!-- 列 A：黑色 Tier 主卡｜Need 計量圖｜Timing 計量圖｜迷你象限圖 -->
+      <section class="a-row" aria-label="分數摘要">
+        <div class="card dark tier-card" id="tier-card"></div>
+        <div class="card mini"><h2 class="mini-h">Need 需求強度</h2><div id="g-need" class="gauge"></div><p class="mini-note" id="g-need-note"></p></div>
+        <div class="card mini"><h2 class="mini-h">Timing 時機</h2><div id="g-timing" class="gauge"></div><p class="mini-note" id="g-timing-note"></p></div>
+        <div class="card mini"><h2 class="mini-h" id="q-title">帳戶池位置</h2><div id="mini-quad"></div><p class="mini-note" id="q-note"></p></div>
       </section>
+
+      <!-- 列 B：Need 拆解｜Timing 拆解 -->
+      <section class="b-row">
+        <div class="card" id="b-need"></div>
+        <div class="card" id="b-timing"></div>
+      </section>
+
+      <!-- 列 C：訊號時間軸 -->
       <section class="card">
-        <div class="card-head"><h2 id="c-title">訊號時間軸</h2><span class="hint">顏色＋形狀＝Play・大小＝得分・點擊看下方清單</span></div>
+        <div class="card-head"><h2 id="c-title">訊號時間軸</h2><span class="hint">顏色＋形狀＝Play・大小＝得分・點擊看下方清單；背景色帶＝時間衰減</span></div>
         <div class="card-body chart-pad"><div id="swim"></div>
           <div class="legend" id="swim-legend"></div></div>
       </section>
+
+      <!-- 列 D：營收動能 -->
       <section class="card">
-        <div class="card-head"><h2 id="d-title">營收動能</h2><span class="hint">近 15 個月・上：月營收（億元）・下：年增率（虛線＝±15% 門檻）</span></div>
+        <div class="card-head"><h2 id="d-title">營收動能</h2><span class="hint">上：年增率（虛線＝±15% 門檻）・下：月營收，最新 3 個月為 T3 判斷區間</span></div>
         <div class="card-body chart-pad"><div id="control"></div></div>
       </section>
-      <section class="card">
-        <div class="card-head"><h2 id="e-title">Play 組成</h2><span class="hint">各 Play 分數占比（含產業先驗各 +5）</span></div>
-        <div class="card-body"><div id="stack"></div><p class="mini-note" id="e-note"></p></div>
+
+      <!-- 列 E：Play 組成｜同產業排名 -->
+      <section class="e-row">
+        <div class="card">
+          <div class="card-head"><h2 id="e-title">Play 組成</h2><span class="hint">各 Play 分數占比（含產業先驗各 +5）</span></div>
+          <div class="card-body"><div id="stack"></div><p class="mini-note left" id="e-note"></p></div>
+        </div>
+        <div class="card">
+          <div class="card-head head-split"><div><h2 id="rank-title">同產業排名</h2><span class="hint">前 10 名＋本公司</span></div>
+            <div class="seg-toggle" role="group" aria-label="排名依據"><button type="button" data-metric="need" aria-pressed="true">Need</button><button type="button" data-metric="timing" aria-pressed="false">Timing</button></div></div>
+          <div class="card-body"><div id="rank"></div></div>
+        </div>
       </section>
+
+      <!-- 列 F：訊號清單 -->
       <section class="card">
         <div class="card-head"><h2>訊號清單</h2><span class="hint" id="f-hint"></span></div>
         <div class="card-body"><ul class="siglist" id="siglist"></ul>
           <button type="button" class="btn-secondary" id="toggle-all"></button></div>
       </section>
     </div>
+
     <aside class="copilot-col">
       <section class="copilot" aria-label="Copilot" id="copilot"></section>
     </aside>
@@ -59,11 +72,11 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261013i"></script>
-<script src="js/shell.js?v=20261013i"></script>
-<script src="js/charts.js?v=20261013i"></script>
-<script src="js/account-charts.js?v=20261013i"></script>
-<script src="js/copilot.js?v=20261013i"></script>
+<script src="js/api.js?v=20261014b"></script>
+<script src="js/shell.js?v=20261014b"></script>
+<script src="js/charts.js?v=20261014b"></script>
+<script src="js/account-charts.js?v=20261014b"></script>
+<script src="js/copilot.js?v=20261014b"></script>
 <script>
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, ageDays } = CL;
@@ -99,10 +112,19 @@
   };
   AC.gauge(document.getElementById('g-need'), { value: s.need === '' ? null : Number(s.need), pct: s.need_pct === '' ? null : Number(s.need_pct), cut: pool.need_cut, tipHtml: compose('need') });
   AC.gauge(document.getElementById('g-timing'), { value: s.timing === '' ? null : Number(s.timing), pct: s.timing_pct === '' ? null : Number(s.timing_pct), cut: pool.timing_cut, tipHtml: compose('timing') });
-  const over = (v, cut) => cut === null || cut === undefined ? '' : (Number(v) >= cut ? `✔ 已過前 30% 門檻（刻度＝${fmt(cut)} 分）` : `距前 30% 門檻（${fmt(cut)} 分）還差 ${fmt(cut - Number(v))} 分`);
+  const over = (v, cut) => cut === null || cut === undefined ? '' : (Number(v) >= cut ? `✔ 已過前 30%（≥ ${fmt(cut)}）` : `距前 30%（${fmt(cut)}）差 ${fmt(cut - Number(v))}`);
   document.getElementById('g-need-note').textContent = over(s.need, pool.need_cut);
   document.getElementById('g-timing-note').textContent = over(s.timing, pool.timing_cut);
-  document.getElementById('q-title').textContent = `位置：${LABELS.tierLong[String(s.tier)]}`;
+  document.getElementById('q-title').textContent = '帳戶池位置';
+  document.getElementById('q-note').textContent = LABELS.tierLong[String(s.tier)];
+  // 黑色 Tier 主卡：帳戶池排名（Need＋Timing 總分，同分並列）
+  const poolRank = s.pool_rank || (rows.slice().sort((a, b) => (b.need + b.timing) - (a.need + a.timing)).findIndex(r => r.code === code) + 1);
+  const tierName = LABELS.tierLong[String(s.tier)];
+  document.getElementById('tier-card').innerHTML = `
+    <div class="tc-label">帳戶池排名</div>
+    <div class="tc-rank">#${poolRank}</div>
+    <div class="tc-tier">${esc(String(s.tier) === 'hold' ? '暫緩' : 'Tier ' + s.tier)}・共 ${rows.length} 家</div>
+    <div class="tc-note">${esc(tierName)}${s.play_primary ? '・' + esc(s.play_primary) : ''}</div>`;
   AC.miniQuad(document.getElementById('mini-quad'), { rows, self, needCut: pool.need_cut ?? 50, timingCut: pool.timing_cut ?? 50,
     onClick: () => { location.href = 'index.html?focus=' + code; } });
   const peers = rows.filter(r => r.industry === c.industry);
@@ -167,9 +189,13 @@
       <div class="bul-line">${miss ? '' : esc(line(x.key))} ${miss ? '' : refs(evid[x.key] || [])}</div>
     </div>`;
   };
-  document.getElementById('breakdown').innerHTML = ['need', 'timing'].map(ax => `
-    <div class="axis-title"><h3>${ax === 'need' ? 'Need 需求強度' : 'Timing 時機'}</h3><span class="score">${fmt(s[ax])}<span class="muted" style="font-size:13px;font-weight:400"> / 100</span></span></div>
-    ${COMPONENTS.filter(x => x.axis === ax).map(bullet).join('')}`).join('<div style="height:10px"></div>');
+  const axisCard = ax => `
+    <div class="axis-title"><div><h2>${ax === 'need' ? 'Need 需求強度' : 'Timing 時機'}</h2>
+      <span class="hint">橘＝高於中位數・淡橘＝未達・黑刻度＝中位數</span></div>
+      <span class="score">${fmt(s[ax])}<span class="muted" style="font-size:13px;font-weight:400"> / 100</span></span></div>
+    ${COMPONENTS.filter(x => x.axis === ax).map(bullet).join('')}`;
+  document.getElementById('b-need').innerHTML = axisCard('need');
+  document.getElementById('b-timing').innerHTML = axisCard('timing');
 
   // ---------- C 泳道點圖 ----------
   const recent = docs.filter(x => ageDays(x.at, d.generated_at) <= 365);
@@ -223,6 +249,8 @@
 
   // [S#] 互動：hover 高亮、點擊捲到清單（清單收合時自動展開）
   const setOn = (ref, on) => document.querySelectorAll(`[data-ref="${ref}"]`).forEach(n => n.classList.toggle('on', on));
+  // 同步高亮泳道圖上對應的點（放大並加外框）
+  const swimPt = (ref, on) => document.querySelectorAll(`#swim [data-pt="${ref}"]`).forEach(n => n.classList.toggle('pt-on', on));
   function pick(ref) {
     if (!document.getElementById(ref)) { expanded = true; renderList(); }
     const t = document.getElementById(ref);
@@ -234,8 +262,8 @@
   function hookRefs(scope) {
     scope.querySelectorAll('[data-ref]').forEach(n => {
       if (n.__hooked) return; n.__hooked = true;
-      n.addEventListener('mouseenter', () => setOn(n.dataset.ref, true));
-      n.addEventListener('mouseleave', () => setOn(n.dataset.ref, false));
+      n.addEventListener('mouseenter', () => { setOn(n.dataset.ref, true); swimPt(n.dataset.ref, true); });
+      n.addEventListener('mouseleave', () => { setOn(n.dataset.ref, false); swimPt(n.dataset.ref, false); });
     });
     scope.querySelectorAll('.ref').forEach(n => {
       if (n.__click) return; n.__click = true;
@@ -245,7 +273,8 @@
   }
   renderList();
   hookRefs(document);
-  AC.bindTips(document.getElementById('breakdown'));
+  AC.bindTips(document.getElementById('b-need'));
+  AC.bindTips(document.getElementById('b-timing'));
   Copilot.mount(document.getElementById('copilot'), c.code, hookRefs);
 })();
 </script>
