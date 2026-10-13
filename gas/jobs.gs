@@ -14,7 +14,7 @@ function dailyJob() {
     // 主檔還沒建立時先抓（第一次部署）
     if (readColumn_('companies', 'stock_code').length === 0) tasks.push('companies:twse', 'companies:tpex', 'aliases_universe');
     // Copilot 預生成：每週一次做不完（Gemini 免費層額度有限），每天接著補；已生成的沿用快取
-    return tasks.concat(['ann:twse', 'ann:tpex', 'weekly_check'], copilotTasks_());
+    return tasks.concat(['ann:twse', 'ann:tpex'], retryFailedTasks_(tasks), ['weekly_check'], copilotTasks_());
   }, 'continueDailyJob');
 }
 
@@ -22,6 +22,19 @@ function monthlyJob() {
   runJob_('monthly', function () { return todayStr_().slice(0, 7) + '-monthly'; }, function () {
     return ['companies:twse', 'companies:tpex', 'aliases_universe'].concat(revenueTasks_());
   }, 'continueMonthlyJob');
+}
+
+/**
+ * 自動重試：run_log 中「最近一次狀態仍為 error」的步驟（單次網路／回應異常），每日最多重試 5 個。
+ * 成功後該步驟的最新狀態變為 success，資料狀態頁的錯誤就會轉為「已恢復」。
+ */
+function retryFailedTasks_(exclude) {
+  var SUPPORTED = { companies: 1, revenue: 1, ann: 1, annhist: 1, news: 1, esg: 1 };
+  var last = {};
+  readTable_('run_log').forEach(function (r) { if (String(r.step).indexOf('_done') < 0) last[r.step] = r.status; });
+  return Object.keys(last).filter(function (st) {
+    return last[st] === 'error' && SUPPORTED[st.split(':')[0]] && (exclude || []).indexOf(st) < 0 && st !== 'ann:twse' && st !== 'ann:tpex';
+  }).slice(0, 5);
 }
 
 function weeklyJob() {

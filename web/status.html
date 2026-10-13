@@ -4,113 +4,115 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>資料狀態｜企業雲端商機洞察平台</title>
-<meta name="description" content="各資料來源最後成功時間、筆數與錯誤">
+<meta name="description" content="各資料來源的最後成功時間、本週筆數、近 8 週趨勢與最近錯誤">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014d">
-<link rel="stylesheet" href="css/app.css?v=20261014d">
-<style>
-  /* 成功／錯誤狀態色只在本頁使用（03 檔第 3 節第 7 條） */
-  .st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
-  .st-ok { color: var(--status-ok); background: var(--white); border: 1px solid currentColor; }
-  .st-err { color: var(--status-error); background: var(--white); border: 1px solid currentColor; }
-  .st-warn { color: var(--ink-900); background: var(--gray-300); }
-  .st-skip { color: var(--ink-600); background: var(--gray-100); }
-  .err { color: var(--ink-600); font-size: 12px; white-space: normal; max-width: 420px; }
-  .progress { height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; margin-top: 6px; }
-  .progress i { display: block; height: 100%; background: var(--chart-mark); }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-  td.wrap { white-space: normal; }
-</style>
+<link rel="stylesheet" href="css/tokens.css?v=20261014f">
+<link rel="stylesheet" href="css/app.css?v=20261014f">
 </head>
 <body data-page="status" data-title="資料狀態">
 <main>
-  <p class="muted" id="meta" style="margin:0 0 16px">載入中…</p>
+  <p class="status-lead" id="lead">載入中…</p>
 
-  <section class="card">
-    <div class="card-head"><h2>資料來源</h2><span class="hint">超過預期更新週期 1.5 倍未成功＝資料過期</span></div>
+  <section class="src-grid" id="cards" aria-label="資料來源狀態"></section>
+
+  <section class="card" aria-labelledby="err-title">
+    <div class="card-head"><h2 id="err-title">最近 10 筆錯誤</h2><span class="hint" id="err-hint"></span></div>
     <div class="card-body">
-      <table>
-        <thead><tr><th scope="col" class="plain">來源</th><th scope="col" class="plain">更新頻率</th><th scope="col" class="plain">最後成功</th><th scope="col" class="plain">最近筆數</th><th scope="col" class="plain">狀態</th><th scope="col" class="plain">最近錯誤</th></tr></thead>
-        <tbody id="sources"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="plain">時間</th><th class="plain">步驟</th><th class="plain">狀態</th><th class="plain">錯誤訊息</th></tr></thead>
+          <tbody id="errors"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <div class="two">
-    <section class="card">
-      <div class="card-head"><h2>歷史資料回補</h2></div>
-      <div class="card-body" id="backfill"></div>
-    </section>
-    <section class="card">
-      <div class="card-head"><h2>資料表筆數</h2></div>
-      <div class="card-body"><table><tbody id="tables"></tbody></table></div>
-    </section>
-  </div>
-
-  <section class="card" style="margin-top:16px">
-    <div class="card-head"><h2>排程</h2></div>
-    <div class="card-body" id="schedule"></div>
+  <section class="card" style="margin-top:20px" aria-labelledby="sch-title">
+    <div class="card-head"><h2 id="sch-title">排程與資料庫</h2><span class="hint" id="meta"></span></div>
+    <div class="card-body two-col">
+      <ul class="sch-list" id="schedule"></ul>
+      <div class="sch-tables" id="tables"></div>
+    </div>
   </section>
 </main>
-<footer>排程失敗會自動寄送告警信；單一來源失敗不影響其他來源，計分會以「缺資料不算 0 分」處理。</footer>
+<footer>排程失敗會自動寄送告警信，並於隔日自動重試；單一來源失敗不影響其他來源，計分以「缺資料不算 0 分」處理。</footer>
 
-<script src="js/api.js?v=20261014d"></script>
-<script src="js/shell.js?v=20261014d"></script>
+<script src="js/api.js?v=20261014f"></script>
+<script src="js/shell.js?v=20261014f"></script>
 <script>
 (async () => {
   const { esc } = CL;
   let st;
-  try { st = (await CL.gas('status', {}, 30000)).data; }
-  catch (e) { document.getElementById('meta').textContent = '目前無法連線後端：' + e.message; return; }
+  try { st = (await CL.gas('status', {}, 60000)).data; }
+  catch (e) { document.getElementById('lead').textContent = '目前無法連線後端：' + e.message; return; }
 
-  const now = new Date(st.server_time);
-  document.getElementById('meta').textContent = '查詢時間 ' + st.server_time.replace('T', ' ').slice(0, 16);
+  const STATE = {
+    ok: { cls: 'ok', icon: '✓', text: '正常' },
+    error: { cls: 'err', icon: '✕', text: '失敗' },
+    stale: { cls: 'stale', icon: '!', text: '資料過期' }
+  };
+  const cards = st.cards || [];
+  const bad = cards.filter(c => c.state === 'error').length, stale = cards.filter(c => c.state === 'stale').length;
+  document.getElementById('lead').textContent = bad || stale
+    ? `${cards.length} 個來源中 ${cards.length - bad - stale} 個正常${bad ? `、${bad} 個有失敗步驟（每日排程會自動重試）` : ''}${stale ? `、${stale} 個資料過期` : ''}。`
+    : `${cards.length} 個來源全部正常。`;
+  document.getElementById('meta').textContent = '查詢時間 ' + String(st.server_time).replace('T', ' ').slice(0, 16);
 
-  // 依 step 前綴彙總（revenue:sii、annhist:20260810、news:0 …）
-  const groups = [
-    { key: 'companies', name: '公司主檔（證交所＋櫃買）', every: '每月', days: 31 },
-    { key: 'revenue', name: '月營收（公開資訊觀測站）', every: '每月', days: 31 },
-    { key: 'ann', name: '重大訊息（每日）', every: '每日', days: 1 },
-    { key: 'annhist', name: '重大訊息（歷史回補）', every: '每週', days: 7 },
-    { key: 'news', name: '新聞（Google News）', every: '每週', days: 7 },
-    { key: 'esg', name: 'ESG 資訊安全（證交所）', every: '每週', days: 7 },
-    { key: 'signals', name: '訊號產生', every: '每週', days: 7 },
-    { key: 'scores', name: '計分', every: '每週', days: 7 }
-  ];
-  const badge = (cls, icon, text) => `<span class="st ${cls}"><span aria-hidden="true">${icon}</span>${text}</span>`;
-  document.getElementById('sources').innerHTML = groups.map(g => {
-    const list = st.sources.filter(s => s.source.split(':')[0] === g.key);
-    if (!list.length) return `<tr><td>${g.name}</td><td>${g.every}</td><td class="muted">尚未執行</td><td></td><td>${badge('st-skip', '–', '未執行')}</td><td></td></tr>`;
-    const lastOk = list.map(s => s.last_success_at).filter(Boolean).sort().pop() || '';
-    const okRow = list.filter(s => s.last_success_at === lastOk)[0];
-    const errs = list.filter(s => s.last_status === 'error');
-    const stale = !lastOk || (now - new Date(lastOk)) / 864e5 > g.days * 1.5;
-    const status = errs.length ? badge('st-err', '✕', `錯誤 ${errs.length}`) : stale ? badge('st-warn', '!', '資料過期') : badge('st-ok', '✓', '正常');
-    const err = errs.length ? `${esc(errs[0].source)}：${esc(errs[0].last_error.split('\n')[0].slice(0, 140))}` : '';
-    return `<tr><td>${g.name}</td><td>${g.every}</td><td>${lastOk ? lastOk.replace('T', ' ').slice(5, 16) : '—'}</td>
-      <td class="num">${okRow ? okRow.last_rows_out : ''}</td><td>${status}</td><td class="err">${err}</td></tr>`;
+  // 近 8 週迷你長條：灰色，本週橘色
+  const spark = (counts, labels) => {
+    const W = 168, H = 44, n = counts.length, bw = W / n, max = Math.max(...counts, 1);
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="近 8 週筆數：${counts.join('、')}">` + counts.map((v, i) => {
+      const h = v ? Math.max(3, v / max * (H - 4)) : 1.5, last = i === n - 1;
+      return `<rect x="${i * bw + 2}" y="${H - h}" width="${bw - 4}" height="${h}" rx="3" fill="${last ? 'var(--chart-mark)' : 'var(--gray-300)'}"
+        data-tip="<b>${esc(labels[i] || '')}</b>${v.toLocaleString()} 筆"/>`;
+    }).join('') + '</svg>';
+  };
+  const when = iso => iso ? String(iso).replace('T', ' ').slice(5, 16) : '—';
+  const bf = st.backfill && st.backfill.announcements;
+  document.getElementById('cards').innerHTML = cards.map(c => {
+    const s = STATE[c.state] || STATE.ok;
+    const extra = c.key === 'annhist' && bf
+      ? `<div class="src-extra">已回補 <b>${bf.done_days}</b> / ${bf.total_days} 天<div class="progress"><i style="width:${bf.done_days / bf.total_days * 100}%"></i></div></div>`
+      : c.key === 'news' && st.backfill ? `<div class="src-extra">已完成首次回補 <b>${st.backfill.news_companies}</b> 家</div>` : '';
+    const err = c.error_count ? `<div class="src-err">${c.error_count} 個步驟失敗：${c.error_steps.map(esc).join('、')}</div>` : '';
+    return `<article class="card src-card" data-state="${c.state}">
+      <div class="src-top"><div><h2>${esc(c.name)}</h2><span class="src-from">${esc(c.src)}</span></div>
+        <span class="st st-${s.cls}"><span aria-hidden="true">${s.icon}</span>${s.text}</span></div>
+      <div class="src-num"><span class="stat-num">${Number(c.this_week).toLocaleString()}</span><span class="src-unit">${esc(c.unit)}</span></div>
+      ${spark(c.weekly_counts, st.week_labels || [])}
+      <div class="src-foot">上次成功：${when(c.last_success_at)}</div>${extra}${err}</article>`;
   }).join('');
 
-  const bf = st.backfill || {};
-  const a = bf.announcements;
-  document.getElementById('backfill').innerHTML = `
-    <p style="margin:0">重大訊息：<b>${a ? a.done_days : 0}</b> / ${a ? a.total_days : 365} 天
-      <span class="muted">（每週回補 90 天，由新到舊；觸發事件只需近 90 天）</span></p>
-    <div class="progress" role="progressbar" aria-label="重大訊息回補進度" aria-valuemin="0" aria-valuemax="${a ? a.total_days : 365}" aria-valuenow="${a ? a.done_days : 0}">
-      <i style="width:${a ? a.done_days / a.total_days * 100 : 0}%"></i></div>
-    <p style="margin:14px 0 0">新聞：<b>${bf.news_companies || 0}</b> 家已完成首次回補 <span class="muted">（之後每週抓最近 8 天）</span></p>`;
+  // 滑過長條的提示
+  let tipEl = null;
+  document.querySelectorAll('#cards rect[data-tip]').forEach(n => {
+    n.addEventListener('mousemove', e => {
+      if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'tooltip floating'; tipEl.setAttribute('role', 'status'); document.body.appendChild(tipEl); }
+      tipEl.innerHTML = n.dataset.tip; tipEl.style.display = 'block';
+      tipEl.style.left = Math.min(e.clientX + 14, innerWidth - 200) + 'px'; tipEl.style.top = (e.clientY + 14) + 'px';
+    });
+    n.addEventListener('mouseleave', () => { if (tipEl) tipEl.style.display = 'none'; });
+  });
 
+  // 最近 10 筆錯誤
+  const errs = st.recent_errors || [];
+  document.getElementById('err-hint').textContent = errs.length ? `${errs.filter(e => !e.resolved).length} 筆待重試、${errs.filter(e => e.resolved).length} 筆已恢復` : '';
+  document.getElementById('errors').innerHTML = errs.length ? errs.map(e => `<tr>
+      <td>${when(e.at)}</td><td><code>${esc(e.step)}</code></td>
+      <td><span class="st ${e.resolved ? 'st-ok' : 'st-err'}"><span aria-hidden="true">${e.resolved ? '✓' : '✕'}</span>${e.resolved ? '已恢復' : '待重試'}</span></td>
+      <td class="err">${esc(e.message)}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty">目前沒有錯誤紀錄</td></tr>';
+
+  // 排程與資料庫
+  const jobsRunning = (st.jobs || []).filter(j => j.in_progress).map(j => `${j.job}（${j.checkpoint}）`);
+  document.getElementById('schedule').innerHTML = (st.schedule || []).map(s => `<li>${esc(s)}</li>`).join('') +
+    `<li class="muted">已安裝觸發器：${(st.triggers || []).map(esc).join('、') || '無'}${jobsRunning.length ? '　進行中：' + jobsRunning.join('、') : ''}</li>`;
   const names = { companies: '公司主檔', company_aliases: '公司別名', raw_announcements: '重大訊息', raw_revenue: '月營收', raw_news: '新聞',
     raw_esg_security: 'ESG 資安', signals: '訊號', scores: '分數（含歷史）', config_keywords: '關鍵字字典', run_log: '執行紀錄', mail_log: '告警信紀錄' };
-  document.getElementById('tables').innerHTML = Object.entries(st.tables)
-    .map(([k, v]) => `<tr><td>${names[k] || k}</td><td class="num">${Number(v).toLocaleString()}</td></tr>`).join('');
-
-  const jobsRunning = (st.jobs || []).filter(j => j.in_progress).map(j => `${j.job}（${j.checkpoint}）`);
-  document.getElementById('schedule').innerHTML = `<ul style="margin:0;padding-left:18px">${(st.schedule || []).map(s => `<li>${esc(s)}</li>`).join('')}</ul>
-    <p class="muted" style="margin:10px 0 0;font-size:13px">已安裝觸發器：${(st.triggers || []).map(esc).join('、') || '無'}
-    ${jobsRunning.length ? '　進行中：' + jobsRunning.join('、') : ''}</p>`;
+  document.getElementById('tables').innerHTML = `<div class="tbl-grid">${Object.entries(st.tables).map(([k, v]) =>
+    `<div class="tbl-item"><span>${names[k] || k}</span><b class="stat-num">${Number(v).toLocaleString()}</b></div>`).join('')}</div>`;
 })();
 </script>
 </body>

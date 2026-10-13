@@ -67,12 +67,14 @@ function apiStatus_() {
     var st = getProp_('JOB_' + j, '');
     return { job: j, in_progress: !!st, checkpoint: st ? JSON.parse(st).idx + '/' + JSON.parse(st).tasks.length : '' };
   });
+  var cards = statusCards_(log);
   var hist = JSON.parse(getProp_('ANN_HIST', 'null') || 'null');
   var backfill = {
     announcements: hist ? { done_days: Object.keys(hist.done).length, total_days: Math.round((hist.end - hist.start) / 864e5) + 1 } : null,
     news_companies: Object.keys(JSON.parse(getProp_('NEWS_BACKFILLED', '{}'))).length
   };
-  return { sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs, backfill: backfill,
+  return { cards: cards.cards, week_labels: cards.week_labels, recent_errors: cards.recent_errors,
+           sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs, backfill: backfill,
            schedule: ['每日 22:00–23:00 重大訊息', '每週一 05:00–06:00 新聞・ESG・訊號・計分', '每月 15 日 05:00–06:00 公司主檔・月營收'],
            server_time: nowIso_(),
            ai_recent: readTable_('ai_log').slice(-10).reverse().map(function (r) {
@@ -95,4 +97,58 @@ function apiAccount_(code, runId) {
     .map(function (r) { return { year_month: r.year_month, revenue: r.revenue, yoy_pct: r.yoy_pct }; })
     .sort(function (a, b) { return String(a.year_month).localeCompare(String(b.year_month)); });
   return { company: company, score: score, signals: signals, revenue: revenue };
+}
+
+/** 資料狀態頁（06 檔第 7 節）的來源群組。days＝預期更新週期，超過 1.5 倍未成功視為過期。 */
+var STATUS_GROUPS = [
+  { key: 'companies', name: '公司主檔', src: '證交所＋櫃買 OpenAPI', prefixes: ['companies', 'aliases_universe'], days: 31, unit: '最近一次筆數' },
+  { key: 'revenue', name: '月營收', src: '公開資訊觀測站', prefixes: ['revenue'], days: 31, unit: '最近一次筆數' },
+  { key: 'ann', name: '重大訊息（每日）', src: '證交所＋櫃買 OpenAPI', prefixes: ['ann'], days: 1, unit: '本週新增' },
+  { key: 'annhist', name: '重大訊息（歷史回補）', src: '公開資訊觀測站', prefixes: ['annhist'], days: 7, unit: '本週新增' },
+  { key: 'news', name: '新聞', src: 'Google News', prefixes: ['news'], days: 7, unit: '本週新增' },
+  { key: 'esg', name: 'ESG 資訊安全', src: '證交所 OpenAPI', prefixes: ['esg'], days: 7, unit: '本週新增' },
+  { key: 'scoring', name: '訊號與計分', src: '規則引擎（Apps Script）', prefixes: ['signals', 'scores'], days: 7, unit: '本週產生' },
+  { key: 'copilot', name: 'Copilot 預生成', src: 'Gemini API', prefixes: ['copilot'], days: 7, unit: '本週新增' }
+];
+
+/** 各來源：狀態、最後成功時間、本週筆數、近 8 週筆數（每個 7 天為一週，最後一格＝最近 7 天）；另附最近 10 筆錯誤。 */
+function statusCards_(log) {
+  var now = Date.now(), WEEK = 7 * 864e5, tz = TZ;
+  var fmtD = function (t) { return Utilities.formatDate(new Date(t), tz, 'MM/dd'); };
+  var weekLabels = [];
+  for (var w = 7; w >= 0; w--) weekLabels.push(fmtD(now - (w + 1) * WEEK + 864e5) + '–' + fmtD(now - w * WEEK));
+  var okStatus = function (s) { return s !== 'error'; };
+  var lastByStep = {};
+  log.forEach(function (r) { if (String(r.step).indexOf('_done') < 0) lastByStep[r.step] = r; });
+  var cards = STATUS_GROUPS.map(function (g) {
+    var rows = log.filter(function (r) { return g.prefixes.indexOf(String(r.step).split(':')[0]) >= 0; });
+    var counts = [0, 0, 0, 0, 0, 0, 0, 0], lastOk = null, lastRows = '';
+    rows.forEach(function (r) {
+      var t = new Date(r.ended_at).getTime();
+      if (isNaN(t)) return;
+      if (okStatus(r.status)) {
+        var idx = Math.floor((now - t) / WEEK);
+        if (idx >= 0 && idx < 8) counts[7 - idx] += Number(r.rows_out) || 0;
+        if (r.status !== 'skipped' && (!lastOk || t > lastOk)) { lastOk = t; lastRows = Number(r.rows_out) || 0; }
+      }
+    });
+    var errSteps = Object.keys(lastByStep).filter(function (st) {
+      return g.prefixes.indexOf(st.split(':')[0]) >= 0 && lastByStep[st].status === 'error';
+    });
+    var stale = !lastOk || (now - lastOk) / 864e5 > g.days * 1.5;
+    return { key: g.key, name: g.name, src: g.src, unit: g.unit, cycle_days: g.days,
+             state: errSteps.length ? 'error' : stale ? 'stale' : 'ok',
+             error_steps: errSteps.slice(0, 5), error_count: errSteps.length,
+             last_success_at: lastOk ? Utilities.formatDate(new Date(lastOk), tz, "yyyy-MM-dd'T'HH:mm:ssXXX") : '',
+             this_week: g.days <= 7 ? counts[7] : lastRows, weekly_counts: counts };
+  });
+  var errors = [];
+  for (var i = log.length - 1; i >= 0 && errors.length < 10; i--) {
+    var r = log[i];
+    if (r.status !== 'error') continue;
+    var resolved = log.slice(i + 1).some(function (x) { return x.step === r.step && x.status !== 'error'; });
+    errors.push({ at: String(r.ended_at), step: String(r.step), run_id: String(r.run_id),
+                  message: String(r.error).split('\n')[0].slice(0, 240), resolved: resolved });
+  }
+  return { cards: cards, week_labels: weekLabels, recent_errors: errors };
 }
