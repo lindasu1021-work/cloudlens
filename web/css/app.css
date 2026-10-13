@@ -302,8 +302,6 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .btn-dark.export-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; }
 .btn-dark:hover { background: var(--ink-900); }
 
-}
-
 /* ===== 帳戶頁 v3（S4） ===== */
 .acct-left { display: grid; gap: 20px; min-width: 0; }
 .a-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
