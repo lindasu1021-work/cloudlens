@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261012c">
-<link rel="stylesheet" href="css/app.css?v=20261012c">
+<link rel="stylesheet" href="css/tokens.css?v=20261013a">
+<link rel="stylesheet" href="css/app.css?v=20261013a">
 </head>
 <body>
 <nav class="nav" aria-label="主要導覽">
@@ -68,10 +68,10 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261012c"></script>
-<script src="js/charts.js?v=20261012c"></script>
-<script src="js/account-charts.js?v=20261012c"></script>
-<script src="js/copilot.js?v=20261012c"></script>
+<script src="js/api.js?v=20261013a"></script>
+<script src="js/charts.js?v=20261013a"></script>
+<script src="js/account-charts.js?v=20261013a"></script>
+<script src="js/copilot.js?v=20261013a"></script>
 <script>
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, ageDays } = CL;
@@ -168,7 +168,7 @@
     return `<div class="bul">
       <div class="bul-name">${x.name}${x.key === 'n4' && otc ? ` <span class="code" data-tip="${esc(REASON.D19)}" tabindex="0">D19</span>` : ''}</div>
       <div class="bul-track${miss ? ' missing' : ''}" data-tip="${esc(miss ? REASON[reason] || '無資料' : RULE[x.key] || '')}">
-        ${miss ? '' : `<i style="width:${Number(v) / mx * 100}%"></i>`}
+        ${miss ? '' : `<i class="${med !== null && med !== undefined && Number(v) >= med ? 'over' : ''}" style="width:${Number(v) / mx * 100}%"></i>`}
         ${!miss && medPct !== null ? `<b class="med" style="left:${medPct}%"></b><span class="med-l${medPct < 8 ? ' edge-l' : medPct > 92 ? ' edge-r' : ''}" style="left:${medPct}%">中位 ${fmt(med)}</span>` : ''}
       </div>
       <div class="bul-val">${miss ? `<span class="muted">無資料</span> <span class="code" data-tip="${esc(REASON[reason] || '')}" tabindex="0">${reason}</span>` : `<b>${fmt(v)}</b> <span class="muted">/ ${mx}</span>`}</div>

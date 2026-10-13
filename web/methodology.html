@@ -8,17 +8,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261012c">
-<link rel="stylesheet" href="css/app.css?v=20261012c">
+<link rel="stylesheet" href="css/tokens.css?v=20261013a">
+<link rel="stylesheet" href="css/app.css?v=20261013a">
 <style>
-  .hero { background: linear-gradient(90deg, var(--orange-500), var(--orange-300)); color: var(--ink-900); }
+  .hero { background: var(--gradient-brand); color: var(--ink-900); }
   .hero-inner { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
   .hero h1 { font-size: 26px; }
   .hero p { margin: 6px 0 0; opacity: .92; max-width: 860px; }
   .doc { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; }
   .toc { position: sticky; top: 16px; align-self: start; font-size: 13px; }
   .toc a { display: block; padding: 4px 0; color: var(--ink-600); }
-  .toc a:hover { color: var(--link); }
+  .toc a:hover { color: var(--link-tint); }
   .doc section { margin-bottom: 36px; }
   .doc h2 { font-size: 18px; color: var(--ink-900); margin-bottom: 10px; }
   .doc h3 { font-size: 15px; margin: 16px 0 6px; }
@@ -27,14 +27,14 @@
   .doc td, .doc th { white-space: normal; vertical-align: top; }
   .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; align-items: stretch; margin: 12px 0; }
   .box { border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; background: var(--white); position: relative; margin-right: 22px; }
-  .box:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); color: var(--orange-600); font-weight: 700; }
+  .box:not(:last-child)::after { content: "→"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%); color: var(--orange-700); font-weight: 700; }
   .box b { display: block; color: var(--ink-900); margin-bottom: 4px; }
   .box .muted { font-size: 12px; }
-  .callout { background: var(--orange-100); color: var(--orange-800); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
+  .callout { background: var(--orange-50); color: var(--ink-900); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; }
   .callout b { color: var(--orange-800); }
   .doc td a, .doc p a, .doc li a { text-decoration: underline; }
-  .info { background: var(--gray-50); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
-  .formula { font-family: ui-monospace, Menlo, monospace; background: var(--gray-50); padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
+  .info { background: var(--gray-100); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; }
+  .formula { font-family: ui-monospace, Menlo, monospace; background: var(--gray-100); padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
 </style>
 </head>
 <body>
@@ -160,7 +160,7 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
-<script src="js/api.js?v=20261012c"></script>
+<script src="js/api.js?v=20261013a"></script>
 <script>
 (async () => {
   const { esc } = CL;

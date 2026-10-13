@@ -54,6 +54,8 @@ const CL = (() => {
     }
   };
   const PLAY_COLOR = { Migration: 'var(--play-migration)', Data: 'var(--play-data)', GenAI: 'var(--play-genai)', Security: 'var(--play-security)' };
+  // 亮色（琥珀、淺杏）對白底不足 3:1，依 v3 第 1.3 節加 1px ink-900 外框；深色用白色細框與底色分開
+  const PLAY_STROKE = { Migration: 'var(--white)', Security: 'var(--white)', GenAI: 'var(--ink-900)', Data: 'var(--ink-900)' };
   const PLAY_SHAPE = { Migration: 'circle', Data: 'square', GenAI: 'triangle', Security: 'diamond' };
   const COMPONENTS = [
     { key: 'n1', axis: 'need', name: 'N1 規模', max: 25 },
@@ -131,14 +133,14 @@ const CL = (() => {
     return `<span class="play">${shapeSvg(p, 10)}${LABELS.playShort[p]}</span>`;
   }
   function shapeSvg(play, size) {
-    const s = size, h = s / 2, c = PLAY_COLOR[play];
+    const s = size, h = s / 2, c = PLAY_COLOR[play], sk = PLAY_STROKE[play];
     const shape = {
       circle: `<circle cx="${h}" cy="${h}" r="${h - 0.5}"/>`,
       square: `<rect x="1" y="1" width="${s - 2}" height="${s - 2}" rx="1.5"/>`,
       triangle: `<path d="M${h} 0.5 L${s - 0.5} ${s - 0.5} L0.5 ${s - 0.5} Z"/>`,
       diamond: `<path d="M${h} 0 L${s} ${h} L${h} ${s} L0 ${h} Z"/>`
     }[PLAY_SHAPE[play]];
-    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-hidden="true" style="fill:${c}">${shape}</svg>`;
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-hidden="true" style="fill:${c};stroke:${sk};stroke-width:1">${shape}</svg>`;
   }
 
   /** 頁首資料來源說明 */
@@ -149,5 +151,5 @@ const CL = (() => {
     return `<b>目前無法連線後端，顯示靜態快照</b>（${d.generated_at}・${esc(d.note)}）`;
   }
 
-  return { load, gas, GAS_URL, sourceNote, LABELS, PLAY_COLOR, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
+  return { load, gas, GAS_URL, sourceNote, LABELS, PLAY_COLOR, PLAY_STROKE, PLAY_SHAPE, COMPONENTS, ageDays, fmt, esc, tierBadge, playTag, shapeSvg };
 })();

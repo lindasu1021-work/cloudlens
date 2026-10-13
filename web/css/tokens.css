@@ -1,50 +1,61 @@
 /*
- * 色票 v2.1（docs/05_UI改版需求_v2.md 第 1 節＋2026-10-12 Verna 回饋）：
- * 橘色為主（提高飽和度）、黑灰白為基底；紫色只用於圖表的 Data／GenAI 系列，不做大面積底色。
- * 全站顏色只能從這裡引用，其他檔案不得寫死色碼。
+ * 色票 v3（docs/06_UI改版需求_v3.md 第 1 節）：橘色家族＋黑灰白，不再使用靛紫。
+ * 全站顏色、圓角只能從這裡引用，其他檔案不得寫死色碼。
  */
 :root {
-  /* 中性色（約 75%） */
+  /* 品牌橘（Verna 指定） */
+  --orange-600: #FF5A06;   /* 品牌主色：本公司／重點、Tier 1、選取狀態、圖表主系列（白底 3.1:1，只當圖形與大字） */
+  --orange-500: #FD7632;   /* 次一階強調、漸層起點 */
+  --orange-400: #FD9832;   /* Tier 2、熱度圖第 3 階、黑卡上的關鍵數字 */
+  --amber-400: #F2A722;    /* 琥珀：GenAI、漸層終點 */
+  --orange-200: #F8CB9F;   /* Tier 3、熱度圖第 2 階、淡色系列 */
+  --orange-50: #FAEADE;    /* 奶油底：Copilot（＝AI 產生）、hover／選取列、提示框 */
+
+  /* 衍生色（為文字對比補的，不得省略） */
+  --orange-700: #CC4400;   /* 白底連結、白字按鈕底色（白底 4.8:1） */
+  --orange-800: #B83D00;   /* gray-100 與奶油底上的橘色文字（5.2:1／4.8:1）；#CC4400 在這兩種底色上只有 4.3／4.1:1 */
+
+  /* 中性色 */
+  --ink-950: #111111;      /* 黑色主卡、主要按鈕、側欄選取項 */
   --ink-900: #1A1A1A;
-  --ink-800: #262626;   /* 黑底面板（Copilot）上的卡片 */
   --ink-600: #4A4A4A;
   --ink-500: #6B6B6B;
   --gray-400: #A6A6A6;
-  --gray-200: #D9D9D9;
-  --gray-50: #F5F5F5;
+  --gray-300: #D9D9D9;     /* 暫緩標章、分隔線 */
+  --gray-200: #EDEDED;     /* 卡片框線、分段控制底色 */
+  --gray-100: #F4F4F4;     /* 頁面底色 */
   --white: #FFFFFF;
-
-  /* 主色：橘（品牌、主要互動、優先度，約 15–20%）。v2.1 提高飽和度 */
-  --orange-800: #9A3412;   /* 圖表 Security、淡橘底上的文字、按鈕 hover */
-  --orange-700: #C2410C;   /* 白字橘底（Tier 1、主要按鈕，5.2:1）、連結文字 */
-  --orange-600: #EA580C;   /* 圖表線、點、細長條（白底 3.6:1） */
-  --orange-500: #F97316;   /* 品牌亮橘：字標、選取底線、焦點框（不放白字） */
-  --orange-300: #FDBA74;   /* 黑底上的 [S#] 與強調、漸層終點 */
-  --orange-100: #FFEDD5;   /* Tier 2 標章底 */
-  --orange-50: #FFF7ED;    /* hover、選取列、Tier 1 象限淡底 */
-
-  /* 輔色：靛紫，只用於圖表的 Data／GenAI 系列 */
-  --indigo-700: #4A2F9F;
-  --indigo-500: #6B6FD4;
 
   /* 狀態色（只在資料狀態頁） */
   --status-error: #C0392B;
   --status-ok: #2E7D5B;
 
-  /* 語意 token */
-  --link: var(--orange-700);           /* 白底 5.2:1、gray-50 上 4.8:1、orange-50 上 4.9:1 */
-  --link-on-tint: var(--orange-700);
-  --chart-mark: var(--orange-600);
-  --focus: var(--orange-500);
-  --shadow: rgba(26, 26, 26, .08);    /* 提示框陰影（ink-900 的 8%） */
+  /* 品牌漸層（只在字標、方法論頁首、空狀態、封面） */
+  --gradient-brand: linear-gradient(135deg, #FD7632, #F2A722);
 
-  /* Play（第 1.5 節）：同色系以深淺區分，再加形狀做第二編碼 */
-  --play-migration: var(--orange-600);
-  --play-security: var(--orange-800);
-  --play-data: var(--indigo-700);
-  --play-genai: var(--indigo-500);
+  /* 語意 token */
+  --link: var(--orange-700);         /* 白底連結 */
+  --link-tint: var(--orange-800);    /* gray-100／奶油底／hover 列上的連結與橘字 */
+  --chart-mark: var(--orange-600);   /* 圖表主系列、重點 */
+  --chart-base: var(--gray-400);     /* 比較型圖表的非重點 */
+  --focus: var(--orange-700);
+  --shadow: rgba(26, 26, 26, .08);
+
+  /* Tier 階梯：越橘越該先打 */
+  --tier-1: var(--orange-600);
+  --tier-2: var(--orange-400);
+  --tier-3: var(--orange-200);
+  --tier-hold: var(--gray-300);
+
+  /* Play（第 1.3 節）：四色明度差距大，再加形狀；亮色加 1px ink-900 外框 */
+  --play-migration: var(--ink-900);
+  --play-security: var(--orange-600);
+  --play-genai: var(--amber-400);
+  --play-data: var(--orange-200);
   --play-none: var(--gray-400);
 
   --font: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
-  --radius: 8px;
+  --radius: 20px;          /* 卡片 */
+  --radius-sm: 16px;       /* 卡片內的卡 */
+  --radius-pill: 999px;
 }

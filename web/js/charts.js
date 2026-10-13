@@ -37,20 +37,20 @@ const Charts = (() => {
     el('rect', { x: x(opt.timingCut), y: m.t, width: x(100) - x(opt.timingCut), height: y(opt.needCut) - m.t, fill: 'var(--orange-50)' }, svg);
     // 格線與軸
     [0, 25, 50, 75, 100].forEach(v => {
-      el('line', { x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: 'var(--gray-50)' }, svg);
-      el('line', { x1: x(v), x2: x(v), y1: m.t, y2: m.t + ih, stroke: 'var(--gray-50)' }, svg);
+      el('line', { x1: m.l, x2: m.l + iw, y1: y(v), y2: y(v), stroke: 'var(--gray-100)' }, svg);
+      el('line', { x1: x(v), x2: x(v), y1: m.t, y2: m.t + ih, stroke: 'var(--gray-100)' }, svg);
       el('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 12, fill: 'var(--ink-500)' }, svg).textContent = v;
       el('text', { x: x(v), y: m.t + ih + 18, 'text-anchor': 'middle', 'font-size': 12, fill: 'var(--ink-500)' }, svg).textContent = v;
     });
-    el('line', { x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih, stroke: 'var(--gray-200)' }, svg);
-    el('line', { x1: m.l, x2: m.l, y1: m.t, y2: m.t + ih, stroke: 'var(--gray-200)' }, svg);
+    el('line', { x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih, stroke: 'var(--gray-300)' }, svg);
+    el('line', { x1: m.l, x2: m.l, y1: m.t, y2: m.t + ih, stroke: 'var(--gray-300)' }, svg);
     el('text', { x: m.l + iw / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': 13, fill: 'var(--ink-600)' }, svg).textContent = 'Timing 時機（0–100）→';
     el('text', { x: 14, y: m.t + ih / 2, 'text-anchor': 'middle', 'font-size': 13, fill: 'var(--ink-600)', transform: `rotate(-90 14 ${m.t + ih / 2})` }, svg).textContent = 'Need 需求強度（0–100）→';
     // 象限分隔線（前 30% 門檻）
     el('line', { x1: x(opt.timingCut), x2: x(opt.timingCut), y1: m.t, y2: m.t + ih, stroke: 'var(--gray-400)', 'stroke-dasharray': '4 4' }, svg);
     el('line', { x1: m.l, x2: m.l + iw, y1: y(opt.needCut), y2: y(opt.needCut), stroke: 'var(--gray-400)', 'stroke-dasharray': '4 4' }, svg);
     const ql = (tx, ty, anchor, text, strong) => {
-      const t = el('text', { x: tx, y: ty, 'text-anchor': anchor, 'font-size': 12, fill: strong ? 'var(--orange-700)' : 'var(--ink-500)', 'font-weight': strong ? 700 : 400 }, svg);
+      const t = el('text', { x: tx, y: ty, 'text-anchor': anchor, 'font-size': 12, fill: strong ? 'var(--orange-800)' : 'var(--ink-500)', 'font-weight': strong ? 700 : 400 }, svg);
       t.textContent = text;
     };
     ql(m.l + iw - 6, m.t + 14, 'end', 'Tier 1 立即開發', true);
@@ -67,7 +67,7 @@ const Charts = (() => {
       const cx = x(r.timing) + (n ? ((n % 2 ? 1 : -1) * Math.ceil(n / 2) * 3) : 0), cy = y(r.need);
       const p = el('path', {
         d: markPath(CL.PLAY_SHAPE[r.play], cx, cy, 5.5), fill: CL.PLAY_COLOR[r.play],
-        stroke: 'var(--white)', 'stroke-width': 1.5, tabindex: 0, role: 'link',
+        stroke: CL.PLAY_STROKE[r.play], 'stroke-width': 1, opacity: 0.85, tabindex: 0, role: 'link',
         'aria-label': `${r.name}，Need ${r.need}，Timing ${r.timing}，${CL.LABELS.tier[r.tier]}，主 Play ${r.play}`
       }, g);
       p.style.cursor = 'pointer';
@@ -78,7 +78,7 @@ const Charts = (() => {
 
     const tip = host.querySelector('.tooltip');
     const show = p => {
-      marks.forEach(o => { o.style.opacity = o === p ? 1 : 0.3; });
+      marks.forEach(o => { o.style.opacity = o === p ? 1 : 0.25; });
       const r = p.__row;
       tip.innerHTML = `<b>${CL.esc(r.name)} ${r.code}</b><span class="muted">${CL.esc(r.industry)}</span><br>` +
         `Need <b style="display:inline">${CL.fmt(r.need)}</b>　Timing <b style="display:inline">${CL.fmt(r.timing)}</b><br>` +
@@ -89,7 +89,7 @@ const Charts = (() => {
       if (left + 200 > box.width) left = p.__x * k - 214;
       tip.style.left = left + 'px'; tip.style.top = top + 'px';
     };
-    const hide = () => { marks.forEach(o => { o.style.opacity = 1; }); tip.style.display = 'none'; };
+    const hide = () => { marks.forEach(o => { o.style.opacity = 0.85; }); tip.style.display = 'none'; };
     marks.forEach(p => {
       p.addEventListener('mouseenter', () => show(p));
       p.addEventListener('focus', () => show(p));
@@ -109,7 +109,7 @@ const Charts = (() => {
     const bw = iw / rows.length;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '近 15 個月月營收長條圖' });
     host.querySelector('.chart').appendChild(svg);
-    el('line', { x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih, stroke: 'var(--gray-200)' }, svg);
+    el('line', { x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih, stroke: 'var(--gray-300)' }, svg);
     const tip = host.querySelector('.tooltip');
     rows.forEach((r, i) => {
       const h = Math.max(2, (r[1] / max) * ih);

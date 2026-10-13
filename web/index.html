@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261012c">
-<link rel="stylesheet" href="css/app.css?v=20261012c">
+<link rel="stylesheet" href="css/tokens.css?v=20261013a">
+<link rel="stylesheet" href="css/app.css?v=20261013a">
 </head>
 <body>
 <nav class="nav" aria-label="主要導覽">
@@ -75,8 +75,8 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261012c"></script>
-<script src="js/charts.js?v=20261012c"></script>
+<script src="js/api.js?v=20261013a"></script>
+<script src="js/charts.js?v=20261013a"></script>
 <script>
 (async () => {
   const { LABELS, fmt, esc, tierBadge, playTag, shapeSvg, ageDays } = CL;
@@ -178,8 +178,8 @@
     document.getElementById('tbody').innerHTML = list.map(r => `
       <tr data-code="${r.code}" tabindex="0">
         <td>${r.code}</td><td><a href="account.html?code=${r.code}">${esc(r.name)}</a></td><td>${esc(r.industry)}</td>
-        <td class="num">${fmt(r.need)}<span class="bar"><i style="width:${r.need}%"></i></span></td>
-        <td class="num">${fmt(r.timing)}<span class="bar"><i style="width:${r.timing}%"></i></span></td>
+        <td class="num">${fmt(r.need)}<span class="bar${r.need >= needCut ? ' hi' : ''}"><i style="width:${r.need}%"></i></span></td>
+        <td class="num">${fmt(r.timing)}<span class="bar${r.timing >= timingCut ? ' hi' : ''}"><i style="width:${r.timing}%"></i></span></td>
         <td>${tierBadge(r.tier)}</td><td>${playTag(r.play)}</td><td>${playTag(r.play2)}</td>
         <td><span class="badge cloud">${LABELS.cloudShort[r.cloud]}</span></td>
         <td class="num muted">${Math.round(r.comp * 100)}%</td>

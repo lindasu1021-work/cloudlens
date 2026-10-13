@@ -56,7 +56,7 @@ const AC = (() => {
   /** Play 標記：有 Play 依色＋形狀；沒有 Play（營收、新聞動能證據）用灰色空心圓 */
   function playMark(parent, play, x, y, r, extra = {}) {
     if (!play || !CL.PLAY_SHAPE[play]) return el('path', { d: markPath('circle', x, y, r), fill: 'var(--white)', stroke: 'var(--ink-500)', 'stroke-width': 1.5, ...extra }, parent);
-    return el('path', { d: markPath(CL.PLAY_SHAPE[play], x, y, r), fill: CL.PLAY_COLOR[play], stroke: 'var(--white)', 'stroke-width': 1, ...extra }, parent);
+    return el('path', { d: markPath(CL.PLAY_SHAPE[play], x, y, r), fill: CL.PLAY_COLOR[play], stroke: CL.PLAY_STROKE[play], 'stroke-width': 1, ...extra }, parent);
   }
 
   // ---------- A1/A2 計量圖 ----------
@@ -66,8 +66,7 @@ const AC = (() => {
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `${value === null ? '無資料' : value + ' 分'}` }, host);
     const pt = v => { const a = Math.PI * (1 - v / 100); return [cx + R * Math.cos(a), cy - R * Math.sin(a)]; };
     const arc = (a, b) => { const [x1, y1] = pt(a), [x2, y2] = pt(b); return `M${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}`; };
-    el('path', { d: arc(0, 100), fill: 'none', stroke: 'var(--gray-50)', 'stroke-width': SW, 'stroke-linecap': 'round' }, svg);
-    el('path', { d: arc(0, 100), fill: 'none', stroke: 'var(--gray-200)', 'stroke-width': 1, transform: `translate(0 ${SW / 2})`, opacity: 0 }, svg);
+    el('path', { d: arc(0, 100), fill: 'none', stroke: 'var(--gray-200)', 'stroke-width': SW, 'stroke-linecap': 'round' }, svg);
     if (value !== null && value > 0) el('path', { d: arc(0, Math.min(100, value)), fill: 'none', stroke: 'var(--chart-mark)', 'stroke-width': SW, 'stroke-linecap': 'round' }, svg);
     if (cut !== null && cut !== undefined) {
       const a = Math.PI * (1 - cut / 100), r1 = R - SW / 2 - 4, r2 = R + SW / 2 + 4;
@@ -88,10 +87,10 @@ const AC = (() => {
     const x = v => m.l + v / 100 * iw, y = v => m.t + ih - v / 100 * ih;
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `帳戶池 ${rows.length} 家的位置，本公司 Need ${self.need}、Timing ${self.timing}` }, host);
     el('rect', { x: x(timingCut), y: m.t, width: x(100) - x(timingCut), height: y(needCut) - m.t, fill: 'var(--orange-50)' }, svg);
-    el('rect', { x: m.l, y: m.t, width: iw, height: ih, fill: 'none', stroke: 'var(--gray-200)' }, svg);
+    el('rect', { x: m.l, y: m.t, width: iw, height: ih, fill: 'none', stroke: 'var(--gray-300)' }, svg);
     el('line', { x1: x(timingCut), x2: x(timingCut), y1: m.t, y2: m.t + ih, stroke: 'var(--ink-500)', 'stroke-dasharray': '3 3' }, svg);
     el('line', { x1: m.l, x2: m.l + iw, y1: y(needCut), y2: y(needCut), stroke: 'var(--ink-500)', 'stroke-dasharray': '3 3' }, svg);
-    txt(svg, m.l + iw - 3, m.t + 11, 'Tier 1', { 'text-anchor': 'end', 'font-size': 10, fill: 'var(--orange-700)', 'font-weight': 700 });
+    txt(svg, m.l + iw - 3, m.t + 11, 'Tier 1', { 'text-anchor': 'end', 'font-size': 10, fill: 'var(--orange-800)', 'font-weight': 700 });
     txt(svg, m.l + iw / 2, H - 6, 'Timing →', { 'text-anchor': 'middle', 'font-size': 10 });
     txt(svg, 10, m.t + ih / 2, 'Need →', { 'text-anchor': 'middle', 'font-size': 10, transform: `rotate(-90 10 ${m.t + ih / 2})` });
     rows.forEach(r => { if (r.code !== self.code) el('circle', { cx: x(r.timing), cy: y(r.need), r: 2.2, fill: 'var(--gray-400)', opacity: 0.4 }, svg); });
@@ -139,13 +138,13 @@ const AC = (() => {
     // 時間衰減色帶
     const d30 = end - 30 * 864e5, d90 = end - 90 * 864e5;
     el('rect', { x: x(d30), y: m.t, width: x(end) - x(d30), height: LANES.length * laneH, fill: 'var(--orange-50)' }, svg);
-    el('rect', { x: x(d90), y: m.t, width: x(d30) - x(d90), height: LANES.length * laneH, fill: 'var(--gray-50)' }, svg);
-    txt(svg, (x(d30) + x(end)) / 2, m.t - 8, '×1.0', { 'text-anchor': 'middle', fill: 'var(--orange-700)', 'font-weight': 700 });
+    el('rect', { x: x(d90), y: m.t, width: x(d30) - x(d90), height: LANES.length * laneH, fill: 'var(--gray-100)' }, svg);
+    txt(svg, (x(d30) + x(end)) / 2, m.t - 8, '×1.0', { 'text-anchor': 'middle', fill: 'var(--orange-800)', 'font-weight': 700 });
     txt(svg, (x(d90) + x(d30)) / 2, m.t - 8, '×0.5', { 'text-anchor': 'middle', fill: 'var(--ink-600)' });
     txt(svg, (m.l + x(d90)) / 2, m.t - 8, '超過 90 天：只計入 Need，不計入 Timing', { 'text-anchor': 'middle' });
     LANES.forEach(([k, name], i) => {
       const yy = m.t + i * laneH;
-      el('line', { x1: m.l, x2: m.l + iw, y1: yy + laneH, y2: yy + laneH, stroke: 'var(--gray-200)' }, svg);
+      el('line', { x1: m.l, x2: m.l + iw, y1: yy + laneH, y2: yy + laneH, stroke: 'var(--gray-300)' }, svg);
       txt(svg, m.l - 8, yy + laneH / 2 + 4, name, { 'text-anchor': 'end', 'font-size': 12, fill: 'var(--ink-600)' });
     });
     for (let mo = 0; mo <= 12; mo += 2) {
@@ -184,7 +183,7 @@ const AC = (() => {
     txt(svg, m.l - 8, top0 + 4, `${(maxRev / 1e5).toFixed(0)} 億`, { 'text-anchor': 'end' });
     txt(svg, m.l - 8, top0 + topH, '0', { 'text-anchor': 'end' });
     txt(svg, 4, top0 + topH / 2, '月營收', { 'font-size': 11, fill: 'var(--ink-600)' });
-    el('line', { x1: m.l, x2: m.l + iw, y1: top0 + topH, y2: top0 + topH, stroke: 'var(--gray-200)' }, svg);
+    el('line', { x1: m.l, x2: m.l + iw, y1: top0 + topH, y2: top0 + topH, stroke: 'var(--gray-300)' }, svg);
     const yoys = rows.map(r => r[2] === '' || r[2] === null ? null : Number(r[2]));
     const vals = yoys.filter(v => v !== null);
     // 金融業等極端年增率會把 ±15% 門檻擠在一起：Y 軸截在 ±100%，超出的點畫在邊緣並標實際值
@@ -192,32 +191,32 @@ const AC = (() => {
     const lo = Math.max(-CAP, Math.min(-25, ...vals)), hi = Math.min(CAP, Math.max(25, ...vals));
     const clamp = v => Math.max(lo, Math.min(hi, v));
     const yy = v => bot0 + botH - (clamp(v) - lo) / (hi - lo) * botH;
-    const lineColor = applicable ? 'var(--ink-500)' : 'var(--gray-400)';
+    const lineColor = 'var(--gray-400)'; // ±15% 門檻線一律灰（金融業不適用時同色，標題另行說明）
     [15, -15].forEach(v => {
       el('line', { x1: m.l, x2: m.l + iw, y1: yy(v), y2: yy(v), stroke: lineColor, 'stroke-dasharray': '5 4' }, svg);
       txt(svg, m.l - 8, yy(v) + 4, (v > 0 ? '+' : '') + v + '%', { 'text-anchor': 'end', fill: applicable ? 'var(--ink-600)' : 'var(--ink-500)' });
     });
-    el('line', { x1: m.l, x2: m.l + iw, y1: yy(0), y2: yy(0), stroke: 'var(--gray-200)' }, svg);
+    el('line', { x1: m.l, x2: m.l + iw, y1: yy(0), y2: yy(0), stroke: 'var(--gray-300)' }, svg);
     txt(svg, m.l - 8, yy(0) + 4, '0%', { 'text-anchor': 'end' });
     txt(svg, 4, bot0 + 10, 'YoY', { 'font-size': 11, fill: 'var(--ink-600)' });
     let path = '';
     rows.forEach((r, i) => {
       const bx = m.l + i * bw + 3, h = Math.max(2, r[1] / maxRev * topH), recent = applicable && i >= rows.length - 3; // 最新 3 個月＝T3 判斷區間
-      el('path', { d: `M${bx} ${top0 + topH}V${top0 + topH - h + 3}q0 -3 3 -3h${bw - 12}q3 0 3 3V${top0 + topH}Z`, fill: recent ? 'var(--chart-mark)' : 'var(--gray-400)' }, svg);
+      el('path', { d: `M${bx} ${top0 + topH}V${top0 + topH - h + 3}q0 -3 3 -3h${bw - 12}q3 0 3 3V${top0 + topH}Z`, fill: recent ? 'var(--chart-mark)' : 'var(--gray-300)' }, svg);
       if (i === 0 || i === rows.length - 1 || i % 3 === 0) txt(svg, bx + (bw - 6) / 2, H - 6, r[0].slice(2).replace('-', '/'), { 'text-anchor': 'middle' });
       const v = yoys[i];
       if (v !== null) path += (path ? 'L' : 'M') + (bx + (bw - 6) / 2) + ' ' + yy(v);
       const hit = el('rect', { x: m.l + i * bw, y: top0, width: bw, height: H - top0 - 20, fill: 'transparent' }, svg);
       hover(hit, `<b>${r[0]}</b>營收 ${(r[1] / 1e5).toFixed(1)} 億元<br>YoY ${v === null ? '—' : v.toFixed(1) + '%'}`);
     });
-    el('path', { d: path, fill: 'none', stroke: 'var(--ink-600)', 'stroke-width': 2 }, svg);
+    el('path', { d: path, fill: 'none', stroke: applicable ? 'var(--chart-mark)' : 'var(--gray-400)', 'stroke-width': 2 }, svg);
     // 超出 ±100% 的點畫成邊緣三角形，只在絕對值最大的那一點標實際數值
     const clipped = yoys.map((v, i) => v !== null && v !== clamp(v) ? i : -1).filter(i => i >= 0);
     const peak = clipped.length ? clipped.reduce((a, i) => Math.abs(yoys[i]) > Math.abs(yoys[a]) ? i : a, clipped[0]) : -1;
     rows.forEach((r, i) => {
       const v = yoys[i]; if (v === null) return;
       const out = applicable && Math.abs(v) > 15, px = m.l + i * bw + 3 + (bw - 6) / 2, py = yy(v);
-      const fill = out ? 'var(--chart-mark)' : 'var(--ink-600)';
+      const fill = applicable ? 'var(--chart-mark)' : 'var(--gray-400)';
       if (v !== clamp(v)) {
         el('path', { d: v > 0 ? `M${px} ${py - 6}l5 8h-10Z` : `M${px} ${py + 6}l5 -8h-10Z`, fill, 'pointer-events': 'none' }, svg);
         if (i === peak) txt(svg, px, py + (v > 0 ? -10 : 18), (v > 0 ? '+' : '') + Math.round(v) + '%', { 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--ink-900)', 'font-weight': 700 });
@@ -228,7 +227,7 @@ const AC = (() => {
 
   // ---------- E Play 組成 ----------
   /** 段內文字顏色：深色段用白字、亮橘段用黑字；對比不足 4.5:1 的段（GenAI）把標籤放到長條下方 */
-  const LABEL_INK = { Migration: 'var(--ink-900)', Security: 'var(--white)', Data: 'var(--white)', GenAI: null };
+  const LABEL_INK = { Migration: 'var(--white)', Security: 'var(--ink-900)', Data: 'var(--ink-900)', GenAI: 'var(--ink-900)' };
   function playStack(host, { scores }) {
     host.innerHTML = '';
     const total = Object.values(scores).reduce((a, b) => a + b, 0);
@@ -238,7 +237,7 @@ const AC = (() => {
     const p1 = order[0];
     const bar = order.map(p => {
       const w = share(p), inside = LABEL_INK[p] && w >= 9;
-      return `<div class="seg" style="width:${w}%;background:${CL.PLAY_COLOR[p]};color:${inside ? LABEL_INK[p] : 'transparent'}"
+      return `<div class="seg" style="width:${w}%;background:${CL.PLAY_COLOR[p]};box-shadow:inset 0 0 0 1px ${CL.PLAY_STROKE[p] === 'var(--white)' ? 'transparent' : 'var(--ink-900)'};color:${inside ? LABEL_INK[p] : 'transparent'}"
         data-tip="<b>${p}</b>${Math.round(w)}%（分數 ${Math.round(scores[p])}）">${inside ? Math.round(w) + '%' : ''}</div>`;
     }).join('');
     const mark = Math.min(100, share(p1) * 1.5);
