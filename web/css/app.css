@@ -526,3 +526,5 @@ p, li, .hint, .bul-sub, td { text-wrap: pretty; line-break: strict; }
 .top-list li:last-child { border-bottom: 0; }
 .top-list .rk { font-family: var(--font-num); font-weight: 600; color: var(--ink-500); }
 .top-list .muted { font-size: 13px; }
+.ts-item:nth-child(3) .ts-big { font-size: 22px; white-space: nowrap; }
+.tier-strip + .b-legend { margin-top: 4px; }
