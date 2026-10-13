@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014f">
-<link rel="stylesheet" href="css/app.css?v=20261014f">
+<link rel="stylesheet" href="css/tokens.css?v=20261014h">
+<link rel="stylesheet" href="css/app.css?v=20261014h">
 </head>
 <body data-page="account" data-title="帳戶">
 <main>
@@ -26,6 +26,7 @@
       </section>
 
       <!-- 列 B：Need 拆解｜Timing 拆解 -->
+      <div class="b-legend" aria-label="圖例"><span><i class="i-over"></i>高於帳戶池中位數</span><span><i class="i-under"></i>未達中位數</span><span><i class="i-med"></i>帳戶池中位數</span><span><i class="i-miss"></i>無資料（不算 0 分）</span></div>
       <section class="b-row">
         <div class="card" id="b-need"></div>
         <div class="card" id="b-timing"></div>
@@ -72,11 +73,11 @@
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。不蒐集個人姓名或聯絡方式。</footer>
 
-<script src="js/api.js?v=20261014f"></script>
-<script src="js/shell.js?v=20261014f"></script>
-<script src="js/charts.js?v=20261014f"></script>
-<script src="js/account-charts.js?v=20261014f"></script>
-<script src="js/copilot.js?v=20261014f"></script>
+<script src="js/api.js?v=20261014h"></script>
+<script src="js/shell.js?v=20261014h"></script>
+<script src="js/charts.js?v=20261014h"></script>
+<script src="js/account-charts.js?v=20261014h"></script>
+<script src="js/copilot.js?v=20261014h"></script>
 <script>
 (async () => {
   const { LABELS, COMPONENTS, fmt, esc, tierBadge, ageDays } = CL;
@@ -112,7 +113,7 @@
   };
   AC.gauge(document.getElementById('g-need'), { value: s.need === '' ? null : Number(s.need), pct: s.need_pct === '' ? null : Number(s.need_pct), cut: pool.need_cut, tipHtml: compose('need') });
   AC.gauge(document.getElementById('g-timing'), { value: s.timing === '' ? null : Number(s.timing), pct: s.timing_pct === '' ? null : Number(s.timing_pct), cut: pool.timing_cut, tipHtml: compose('timing') });
-  const over = (v, cut) => cut === null || cut === undefined ? '' : (Number(v) >= cut ? `✔ 已過前 30%（≥ ${fmt(cut)}）` : `距前 30%（${fmt(cut)}）差 ${fmt(cut - Number(v))}`);
+  const over = (v, cut) => cut === null || cut === undefined ? '' : (Number(v) >= cut ? `✔ 過前 30% 門檻` : `差門檻 ${fmt(cut - Number(v))} 分`);
   document.getElementById('g-need-note').textContent = over(s.need, pool.need_cut);
   document.getElementById('g-timing-note').textContent = over(s.timing, pool.timing_cut);
   document.getElementById('q-title').textContent = '帳戶池位置';
@@ -124,7 +125,7 @@
     <div class="tc-label">帳戶池排名</div>
     <div class="tc-rank">#${poolRank}</div>
     <div class="tc-tier">${esc(String(s.tier) === 'hold' ? '暫緩' : 'Tier ' + s.tier)}・共 ${rows.length} 家</div>
-    <div class="tc-note">${esc(tierName)}${s.play_primary ? '・' + esc(s.play_primary) : ''}</div>`;
+    <div class="tc-note">${esc(tierName.replace(/^Tier \d\s*/, ''))}${s.play_primary ? '・' + esc(s.play_primary) : ''}</div>`;
   AC.miniQuad(document.getElementById('mini-quad'), { rows, self, needCut: pool.need_cut ?? 50, timingCut: pool.timing_cut ?? 50,
     onClick: () => { location.href = 'index.html?focus=' + code; } });
   const peers = rows.filter(r => r.industry === c.industry);
@@ -183,15 +184,14 @@
       <div class="bul-name">${x.name}${x.key === 'n4' && otc ? ` <span class="code" data-tip="${esc(REASON.D19)}" tabindex="0">D19</span>` : ''}</div>
       <div class="bul-track${miss ? ' missing' : ''}" data-tip="${esc(miss ? REASON[reason] || '無資料' : RULE[x.key] || '')}">
         ${miss ? '' : `<i class="${med !== null && med !== undefined && Number(v) >= med ? 'over' : ''}" style="width:${Number(v) / mx * 100}%"></i>`}
-        ${!miss && medPct !== null ? `<b class="med" style="left:${medPct}%"></b><span class="med-l${medPct < 8 ? ' edge-l' : medPct > 92 ? ' edge-r' : ''}" style="left:${medPct}%">中位 ${fmt(med)}</span>` : ''}
+        ${!miss && medPct !== null ? `<b class="med" style="left:${medPct}%"></b>` : ''}
       </div>
       <div class="bul-val">${miss ? `<span class="muted">無資料</span> <span class="code" data-tip="${esc(REASON[reason] || '')}" tabindex="0">${reason}</span>` : `<b>${fmt(v)}</b> <span class="muted">/ ${mx}</span>`}</div>
-      <div class="bul-line">${miss ? '' : esc(line(x.key))} ${miss ? '' : refs(evid[x.key] || [])}</div>
+      <div class="bul-line">${miss ? '' : esc(line(x.key))} ${miss ? '' : refs(evid[x.key] || [])}${!miss && med !== null && med !== undefined ? `<span class="mid">中位 ${fmt(med)}</span>` : ''}</div>
     </div>`;
   };
   const axisCard = ax => `
-    <div class="axis-title"><div><h2>${ax === 'need' ? 'Need 需求強度' : 'Timing 時機'}</h2>
-      <span class="hint">橘＝高於中位數・淡橘＝未達・黑刻度＝中位數</span></div>
+    <div class="axis-title"><div><h2>${ax === 'need' ? 'Need 需求強度' : 'Timing 時機'}</h2></div>
       <span class="score">${fmt(s[ax])}<span class="muted" style="font-size:13px;font-weight:400"> / 100</span></span></div>
     ${COMPONENTS.filter(x => x.axis === ax).map(bullet).join('')}`;
   document.getElementById('b-need').innerHTML = axisCard('need');

@@ -261,7 +261,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 @media (max-width: 1279px) { .span-8, .span-4 { grid-column: span 12; } .band-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ===== App 外殼（v3 第 3 節） ===== */
-.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns .18s ease; }
 .sidebar { position: sticky; top: 0; height: 100vh; background: var(--white); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; padding: 22px 16px 16px; overflow-y: auto; }
 .side-brand { display: block; padding: 0 8px 22px; text-decoration: none; }
 .side-brand:hover { text-decoration: none; }
@@ -302,16 +302,6 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .btn-dark.export-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; }
 .btn-dark:hover { background: var(--ink-900); }
 
-@media (max-width: 1279px) {
-  .app { grid-template-columns: 72px minmax(0, 1fr); }
-  .sidebar { padding: 22px 10px 16px; align-items: center; }
-  .side-mark { display: none; }
-  .side-brand { padding-bottom: 14px; }
-  .side-brand::before { content: "企"; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ink-950); color: var(--white); font-weight: 700; }
-  .side-group-title, .side-label, .update-card { display: none; }
-  .side-item { justify-content: center; padding: 10px; position: relative; }
-  .side-dot { position: absolute; right: 6px; top: 6px; }
-  .gsearch { width: 220px; }
 }
 
 /* ===== 帳戶頁 v3（S4） ===== */
@@ -365,7 +355,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .chapter { margin-bottom: 20px; scroll-margin-top: 70px; }
 .chapter > h2 { font-size: 20px; font-weight: 700; }
 .lead { font-size: 16px; color: var(--ink-900); margin: 6px 0 18px; }
-.sub { font-size: 14px; font-weight: 500; margin: 20px 0 8px; color: var(--ink-900); }
+h3.sub { font-size: 14px; font-weight: 500; margin: 20px 0 8px; color: var(--ink-900); }
 .mini-cap { font-size: 12px; color: var(--ink-600); margin-bottom: 6px; }
 .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .two-col svg { display: block; width: 100%; height: auto; }
@@ -471,3 +461,36 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background:
 .tbl-item { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--gray-200); padding: 4px 0; font-size: 13px; }
 .tbl-item .stat-num { font-size: 16px; }
 @media (max-width: 1279px) { .src-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ===== 整理：側欄收合、帳戶頁對齊（2026-10-14） ===== */
+.side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 18px 8px; }
+.side-head .side-brand { padding: 0; }
+.side-toggle { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--gray-200); background: var(--white); color: var(--ink-600); display: inline-grid; place-items: center; cursor: pointer; }
+.side-toggle:hover { border-color: var(--orange-600); color: var(--ink-900); }
+.side-toggle:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.side-toggle svg { transition: transform .18s ease; }
+.app.collapsed { grid-template-columns: 72px minmax(0, 1fr); }
+.app.collapsed .sidebar { padding: 22px 10px 16px; align-items: center; }
+.app.collapsed .side-head { flex-direction: column; padding: 0 0 14px; gap: 10px; }
+.app.collapsed .side-mark { display: none; }
+.app.collapsed .side-brand::before { content: "企"; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ink-950); color: var(--white); font-weight: 700; }
+.app.collapsed .side-toggle svg { transform: rotate(180deg); }
+.app.collapsed .side-group-title, .app.collapsed .side-label, .app.collapsed .update-card { display: none; }
+.app.collapsed .side-nav { width: 100%; }
+.app.collapsed .side-item { justify-content: center; padding: 10px; position: relative; }
+.app.collapsed .side-dot { position: absolute; right: 6px; top: 6px; }
+.app.collapsed .side-group { margin-bottom: 8px; }
+@media (max-width: 1279px) { .gsearch { width: 220px; } }
+
+/* 帳戶頁標頭：名稱與標籤同一行對齊，公司全名緊接在下 */
+.acct-head { align-items: center; margin: 4px 0 16px; }
+.acct-head .sub { margin: 2px 0 0; font-size: 13px; color: var(--ink-500); font-weight: 400; }
+.acct-head h1 { line-height: 1.25; }
+.b-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--ink-600); margin: 0; padding: 0 4px; align-items: center; }
+.b-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.b-legend i { display: inline-block; width: 18px; height: 8px; border-radius: 4px; }
+.b-legend .i-over { background: var(--orange-600); } .b-legend .i-under { background: var(--orange-200); box-shadow: inset 0 0 0 1px var(--ink-900); }
+.b-legend .i-med { width: 2px; height: 14px; border-radius: 0; background: var(--ink-900); }
+.b-legend .i-miss { background: repeating-linear-gradient(45deg, var(--gray-200) 0 4px, var(--white) 4px 6px); box-shadow: inset 0 0 0 1px var(--gray-300); }
+.bul-track { margin-bottom: 0 !important; }
+.bul-line .mid { color: var(--ink-500); margin-left: 6px; white-space: nowrap; }

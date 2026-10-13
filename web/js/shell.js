@@ -33,7 +33,12 @@ const Shell = (() => {
     const side = document.createElement('aside');
     side.className = 'sidebar';
     side.innerHTML = `
-      <a class="side-brand" href="index.html" aria-label="${NAME}，回總覽"><span class="side-mark">企業雲端<span>商機洞察</span></span></a>
+      <div class="side-head">
+        <a class="side-brand" href="index.html" aria-label="${NAME}，回總覽"><span class="side-mark">企業雲端<span>商機洞察</span></span></a>
+        <button type="button" class="side-toggle" id="side-toggle" aria-label="收合側欄" aria-expanded="true" title="收合側欄">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+      </div>
       <nav class="side-nav" aria-label="主要導覽">
         ${NAV.map(g => `<div class="side-group"><div class="side-group-title">${g.group}</div>
           ${g.items.map(i => `<a class="side-item" href="${i.href}" ${i.id === active ? 'aria-current="page"' : ''} title="${i.label}">
@@ -68,6 +73,19 @@ const Shell = (() => {
     app.appendChild(side);
     app.appendChild(wrap);
     document.body.insertBefore(app, document.body.firstChild);
+    // 側欄收合：記住選擇（localStorage 讀不到時退回依視窗寬度）
+    let pref = null;
+    try { pref = localStorage.getItem('cl:sidebar'); } catch (e) { /* 私密模式 */ }
+    const setCollapsed = (on, save) => {
+      app.classList.toggle('collapsed', on);
+      const b = document.getElementById('side-toggle');
+      b.setAttribute('aria-expanded', String(!on));
+      b.setAttribute('aria-label', on ? '展開側欄' : '收合側欄');
+      b.title = on ? '展開側欄' : '收合側欄';
+      if (save) { try { localStorage.setItem('cl:sidebar', on ? 'collapsed' : 'open'); } catch (e) { /* 忽略 */ } }
+    };
+    setCollapsed(pref ? pref === 'collapsed' : innerWidth < 1280, false);
+    document.getElementById('side-toggle').addEventListener('click', () => setCollapsed(!app.classList.contains('collapsed'), true));
     setCrumbs([]);
     bindSearch();
     document.getElementById('export-csv').addEventListener('click', exportCsv);
