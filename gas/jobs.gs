@@ -39,7 +39,7 @@ function retryFailedTasks_(exclude) {
 
 function weeklyJob() {
   runJob_('weekly', function () { return weeklyRunId_(); }, function () {
-    return ['esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores'], copilotTasks_());
+    return ['esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores', 'digest'], copilotTasks_());
   }, 'continueWeeklyJob');
 }
 
@@ -64,6 +64,7 @@ function runTask_(key, runId) {
     case 'annhist': return fetchAnnHistory_(runId, p[1]);
     case 'signals': return buildSignals_(runId);
     case 'scores': return computeScores_(runId);
+    case 'digest': return sendWeeklyDigest_(runId);
     case 'copilot': return precomputeCopilot_(runId, p[1]);
   }
   throw new Error('unknown task ' + key);
