@@ -47,7 +47,7 @@ const Shell = (() => {
     const top = document.createElement('header');
     top.className = 'topbar';
     top.innerHTML = `
-      <div class="top-title"><h1 id="top-title">${esc(title)}</h1><div class="crumbs" id="crumbs" aria-label="麵包屑"></div></div>
+      <div class="top-title"><h1 id="top-title">${esc(title)}</h1><nav class="crumbs" id="crumbs" aria-label="麵包屑"></nav></div>
       <div class="top-actions">
         <div class="gsearch">
           <span class="gs-ico">${svg('search', 18)}</span>
