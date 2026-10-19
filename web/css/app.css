@@ -774,3 +774,33 @@ p, li, .hint, .bul-sub, td { text-wrap: pretty; line-break: strict; }
 .acct-left { grid-template-columns: minmax(0, 1fr); }
 .pack-pre, .lk-events a, .rl-ev a, .wl-ev { overflow-wrap: anywhere; }
 @media (max-width: 720px) { .radar-kpis { grid-template-columns: 1fr 1fr; } .radar-kpis > :last-child { grid-column: 1 / -1; } .band-head { flex-wrap: wrap; gap: 4px; } }
+
+/* ---------- 09 檔 v4.1 衝刺 3：產業洞察、訂閱 ---------- */
+.in-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.in-select { font: inherit; font-size: 14px; height: 38px; border-radius: var(--radius-pill); border: 1px solid var(--on-dark-line); background: var(--on-dark-card); color: var(--on-dark); padding: 0 14px; }
+.in-select option { color: var(--ink-900); }
+.in-actions { display: flex; gap: 8px; }
+.heat-list, .ref-list, .ev-list { list-style: none; margin: 0; padding: 0; }
+.heat-row { width: 100%; display: grid; grid-template-columns: 120px 1fr 36px 64px; gap: 10px; align-items: center; font: inherit; font-size: 14px; background: none; border: 0; border-top: 1px solid var(--gray-200); padding: 10px 2px; cursor: pointer; text-align: left; color: var(--ink-900); }
+.heat-list > li:first-child .heat-row { border-top: 0; }
+.heat-row:hover { background: var(--orange-50); }
+.h-num { font-family: var(--font-num); font-weight: 600; text-align: right; }
+.chg { font-family: var(--font-num); font-size: 12px; color: var(--ink-500); white-space: nowrap; }
+.chg.up { color: var(--orange-800); font-weight: 600; }
+.heat-detail { padding: 4px 6px 14px 12px; font-size: 13px; line-height: 1.6; border-left: 2px solid var(--orange-200); margin: 0 0 6px 4px; }
+.heat-detail ul { margin: 6px 0 0; padding-left: 16px; }
+.heat-detail time { font-family: var(--font-num); color: var(--ink-500); }
+.heat-detail a, .ref-list a, .ev-list a, .h-cos a { color: var(--link); overflow-wrap: anywhere; }
+.h-angle, .h-cos { margin: 4px 0; }
+.ref-list li { padding: 6px 0; font-size: 13px; line-height: 1.5; border-top: 1px solid var(--gray-200); }
+.ref-list li:first-child { border-top: 0; }
+.ev-list li { padding: 12px 0; border-top: 1px solid var(--gray-200); font-size: 14px; line-height: 1.6; }
+.ev-list li:first-child { border-top: 0; padding-top: 0; }
+.ev-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+.ev-top time { font-family: var(--font-num); color: var(--ink-500); font-size: 13px; margin-right: 4px; }
+.ev-angle { margin: 4px 0 0; font-size: 13px; background: var(--orange-50); border-radius: 10px; padding: 6px 10px; }
+.sub-card .lk-form { max-width: 560px; }
+@media (max-width: 720px) {
+  .heat-row { grid-template-columns: 1fr 36px 56px; }
+  .heat-row .rt-bar { grid-column: 1 / -1; grid-row: 2; }
+}

@@ -15,7 +15,8 @@ function dailyJob() {
     if (readColumn_('companies', 'stock_code').length === 0) tasks.push('companies:twse', 'companies:tpex', 'aliases_universe');
     // Copilot 預生成：每週一次做不完（Gemini 免費層額度有限），每天接著補；已生成的沿用快取
     // 07 F2：重訊之後重算當週訊號與分數（run_id 沿用當週），新觸發事件隔天就反映在 Timing 與 Tier
-    return ['apply_settings'].concat(tasks, ['ann:twse', 'ann:tpex', 'signals:week', 'scores:week'], retryFailedTasks_(tasks), ['weekly_check'], copilotTasks_());
+    return ['apply_settings'].concat(tasks, ['ann:twse', 'ann:tpex', 'signals:week', 'scores:week'], retryFailedTasks_(tasks), ['weekly_check'],
+      missingInsightTasks_(), copilotTasks_());
   }, 'continueDailyJob');
 }
 
@@ -40,7 +41,7 @@ function retryFailedTasks_(exclude) {
 
 function weeklyJob() {
   runJob_('weekly', function () { return weeklyRunId_(); }, function () {
-    return ['apply_settings', 'esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores', 'digest'], copilotTasks_());
+    return ['apply_settings', 'esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores'], insightTasks_(), ['digest'], copilotTasks_());
   }, 'continueWeeklyJob');
 }
 
@@ -67,6 +68,7 @@ function runTask_(key, runId) {
     case 'signals': return buildSignals_(p[1] === 'week' ? weeklyRunId_() : runId);
     case 'scores': return computeScores_(p[1] === 'week' ? weeklyRunId_() : runId);
     case 'apply_settings': return applySettings_();
+    case 'insight': return runInsightTask_(p[1]);
     case 'digest': return sendWeeklyDigest_(runId);
     case 'copilot': return precomputeCopilot_(runId, p[1]);
   }
@@ -159,6 +161,7 @@ var FAILURE_ADVICE = {
   revenue: '月營收抓取失敗：隔天每日排程會自動重試。',
   signals: '訊號計算失敗：請看 run_log 錯誤訊息；修正後可手動執行 rescoreNow()。',
   scores: '計分失敗：網站仍顯示上一次成功的分數；請看 run_log 錯誤訊息，修正後可手動執行 rescoreNow()。',
+  insight: '產業洞察素材包產生失敗（多為 Google News 暫時拒絕）：下次每週排程會重新產生，網站仍顯示上一期。',
   apply_settings: '設定套用失敗：請看 run_log 錯誤訊息，可手動執行 applyPendingSettings()。'
 };
 function failureMailBody_(runId, failures, aiFailures) {
@@ -174,4 +177,10 @@ function failureMailBody_(runId, failures, aiFailures) {
   }
   L.push('', '詳細錯誤請看 Sheets 的 run_log 分頁（run_id = ' + runId + '）。');
   return L.join('\n');
+}
+
+/** 還沒有任何素材包的產業（新啟用時），每日排程先補一次；之後由每週排程每兩週產生。 */
+function missingInsightTasks_() {
+  try { return industries_().map(function (r) { return r.industry_key; }).filter(function (k) { return !latestPack_(k); }).map(function (k) { return 'insight:' + k; }); }
+  catch (e) { return []; }
 }

@@ -15,6 +15,7 @@ const Shell = (() => {
     lookup: '<circle cx="10" cy="10" r="6"/><path d="M19 19l-4.5-4.5"/><path d="M7.5 10h5M10 7.5v5"/>',
     radar: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/>',
     watchlist: '<path d="M6 4h12v16l-6-4-6 4z"/>',
+    insight: '<path d="M4 19h16"/><path d="M7 15v-4M12 15V7M17 15v-6"/>',
     download: '<path d="M12 4v11"/><path d="M7.5 11 12 15.5 16.5 11"/><path d="M5 19.5h14"/>'
   };
   const svg = (k, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
@@ -22,9 +23,10 @@ const Shell = (() => {
     { group: '查詢', items: [{ id: 'lookup', label: 'Lead 速查', href: 'lookup.html' }] },
     { group: '機會', items: [{ id: 'overview', label: '總覽', href: 'index.html' }, { id: 'radar', label: '觸發事件雷達', href: 'radar.html' },
                             { id: 'watchlist', label: '我的觀察清單', href: 'watchlist.html' }] },
+    { group: '內容', items: [{ id: 'insight', label: '產業洞察', href: 'insight.html' }] },
     { group: '關於', items: [{ id: 'methodology', label: '方法論', href: 'methodology.html' }, { id: 'status', label: '資料狀態', href: 'status.html' }] }
   ];
-  const PAGE_NAV = { lookup: 'lookup', overview: 'overview', account: 'overview', radar: 'radar', watchlist: 'watchlist', methodology: 'methodology', status: 'status' };
+  const PAGE_NAV = { lookup: 'lookup', overview: 'overview', account: 'overview', radar: 'radar', watchlist: 'watchlist', insight: 'insight', methodology: 'methodology', status: 'status' };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   let exportProvider = null, accounts = [];
 
