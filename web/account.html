@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261019a">
-<link rel="stylesheet" href="css/app.css?v=20261019a">
+<link rel="stylesheet" href="css/tokens.css?v=20261019b">
+<link rel="stylesheet" href="css/app.css?v=20261019d">
 </head>
 <body data-page="account" data-title="帳戶">
 <main>
@@ -17,8 +17,17 @@
 
   <div class="acct-grid">
     <div class="acct-left">
+      <!-- 上半部（09 檔 5.2）：業務速覽——結論、分數摘要、BANT 預審、開場白與問題 -->
+      <section class="lk-verdict" id="acct-verdict" aria-label="結論"></section>
       <!-- 列 A：Tier 主卡 -->
       <section class="card dark tier-strip" id="tier-card" aria-label="帳戶摘要"></section>
+      <section class="acct-quick">
+        <div class="card" id="acct-bant"></div>
+        <div class="card" id="acct-say"></div>
+      </section>
+
+      <!-- 下半部：深度分析 -->
+      <h2 class="acct-divider" id="deep">深度分析</h2>
 
       <!-- 列 B：Need 拆解｜Timing 拆解 -->
       <div class="b-legend" aria-label="圖例"><span><i class="i-over"></i>高於帳戶池中位數</span><span><i class="i-under"></i>未達中位數</span><span><i class="i-med"></i>帳戶池中位數</span><span><i class="i-miss"></i>無資料（不算 0 分）</span></div>
@@ -47,11 +56,21 @@
           <div class="card-body"><div id="stack"></div><p class="mini-note left" id="e-note"></p></div>
         </div>
         <div class="card">
-          <div class="card-head head-split"><div><h2 id="rank-title">同產業排名</h2></div>
-            <div class="seg-toggle" role="group" aria-label="排名依據"><button type="button" data-metric="need" aria-pressed="true">Need</button><button type="button" data-metric="timing" aria-pressed="false">Timing</button></div></div>
+          <div class="card-head head-split"><div><h2 id="rank-title">同產業排名</h2><span class="hint" id="rank-pr"></span></div>
+            <div class="seg-toggle" role="group" aria-label="排名依據" id="metric-seg"><button type="button" data-metric="need" aria-pressed="true">Need</button><button type="button" data-metric="timing" aria-pressed="false">Timing</button></div></div>
+          <div class="seg-toggle scope-seg" role="group" aria-label="比較範圍" id="scope-seg"><button type="button" data-scope="industry" aria-pressed="true">同產業</button><button type="button" data-scope="size" aria-pressed="false">同規模</button><button type="button" data-scope="pool" aria-pressed="false">帳戶池</button></div>
           <div class="card-body"><div id="rank"></div></div>
         </div>
       </section>
+
+      <!-- 雲端現況與同業證明｜建議接觸職稱與 MEDDPICC 缺口 -->
+      <section class="e-row">
+        <div class="card" id="acct-proof"></div>
+        <div class="card" id="acct-meddpicc"></div>
+      </section>
+
+      <!-- 會議準備包 -->
+      <section class="card" id="acct-pack" aria-labelledby="pack-title"></section>
 
       <!-- 列 F：訊號清單 -->
       <section class="card">
@@ -67,8 +86,9 @@
   </div>
 </main>
 
-<script src="js/api.js?v=20261019a"></script>
-<script src="js/shell.js?v=20261019a"></script>
+<script src="js/api.js?v=20261019b"></script>
+<script src="js/shell.js?v=20261019b"></script>
+<script src="js/lead.js?v=20261019c"></script>
 <script src="js/charts.js?v=20261014r"></script>
 <script src="js/account-charts.js?v=20261014r"></script>
 <script src="js/copilot.js?v=20261014r"></script>
@@ -90,8 +110,13 @@
   document.getElementById('head').innerHTML = `
     <div><h1>${esc(c.name)} <span style="font-weight:400">${c.code}</span></h1>
       <div class="sub">${esc(c.full)}・${esc(c.industry)}・${c.market}・實收資本額 ${(c.capital / 1e8).toFixed(0)} 億元</div></div>
-    <div class="tags">${tierBadge(String(s.tier))}
-      ${s.cloud_status === 'unknown' ? '' : `<span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>`}</div>`;
+    <div class="head-right"><div class="tags">${tierBadge(String(s.tier))}
+      ${s.cloud_status === 'unknown' ? '' : `<span class="badge cloud">${LABELS.cloud[s.cloud_status]}</span>`}</div>
+      <div class="acct-actions no-print">
+        <button type="button" class="lk-act btn-dark" id="act-handoff">複製轉交摘要</button>
+        <button type="button" class="lk-act lk-watch" id="act-watch"></button>
+        <button type="button" class="lk-act lk-link" id="act-print">匯出帳戶簡報</button>
+      </div></div>`;
 
   // ---------- A 帳戶摘要 ----------
   const maxOf = k => k === 'n4' && otc ? 15 : COMPONENTS.find(x => x.key === k).max;
@@ -104,14 +129,78 @@
     <div class="ts-item"><span class="ts-label">帳戶池排名</span><span class="ts-big">#${poolRank}<span class="ts-of"> / ${rows.length}</span></span></div>
     <div class="ts-item"><span class="ts-label">優先級</span><span class="ts-big">${tl}</span><span class="ts-note">${esc(tierName.replace(/^Tier \d\s*/, ''))}</span></div>
     <div class="ts-item"><span class="ts-label">建議 Play</span><span class="ts-big">${playLine}</span></div>`;
-  const peers = rows.filter(r => r.industry === c.industry);
-  const drawRank = metric => {
-    const rank = AC.lollipop(document.getElementById('rank'), { peers, selfCode: code, metric });
-    document.getElementById('rank-title').textContent = `${c.industry} ${peers.length} 家中排第 ${rank}`;
-    document.querySelectorAll('.seg-toggle button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metric)));
+  // 比較範圍（09 檔 5.2）：同產業／同規模（實收資本額同級距）／帳戶池，顯示 PR 值
+  const band = cap => cap >= 1e10 ? 4 : cap >= 1e9 ? 3 : cap >= 1e8 ? 2 : 1;
+  const capOf = {};
+  d.accounts.forEach(a => { capOf[a.code] = Number(a.capital) || 0; });
+  const SCOPE = { industry: ['同產業', r => r.industry === c.industry], size: ['同規模', r => band(capOf[r.code]) === band(Number(c.capital) || 0)], pool: ['帳戶池', () => true] };
+  let metricNow = 'need', scopeNow = 'industry';
+  const drawRank = () => {
+    const [label, fn] = SCOPE[scopeNow];
+    const peers = rows.filter(fn);
+    const rank = AC.lollipop(document.getElementById('rank'), { peers, selfCode: code, metric: metricNow });
+    const me = self[metricNow], prv = Math.round(peers.filter(r => r[metricNow] <= me).length / peers.length * 100);
+    document.getElementById('rank-title').textContent = `${label} ${peers.length} 家中排第 ${rank}`;
+    document.getElementById('rank-pr').textContent = `${metricNow === 'need' ? 'Need' : 'Timing'} ${fmt(me)}・${label} PR ${prv}`;
+    document.querySelectorAll('#metric-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === metricNow)));
+    document.querySelectorAll('#scope-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scope === scopeNow)));
   };
-  document.querySelectorAll('.seg-toggle button').forEach(b => b.addEventListener('click', () => drawRank(b.dataset.metric)));
-  drawRank('need');
+  document.querySelectorAll('#metric-seg button').forEach(b => b.addEventListener('click', () => { metricNow = b.dataset.metric; drawRank(); }));
+  document.querySelectorAll('#scope-seg button').forEach(b => b.addEventListener('click', () => { scopeNow = b.dataset.scope; drawRank(); }));
+  drawRank();
+
+  // ---------- 上半部：結論、BANT、開場白；下半部：同業證明、接觸職稱、MEDDPICC、會議準備包 ----------
+  window.__runId = d.run_id;
+  const cfg = await Lead.loadConfig();
+  const lp = Lead.profileFromAccount(c);
+  const seg = Lead.route(cfg.routing, { capital: lp.capital, listed: true });
+  const qs = Lead.QUESTIONS[lp.play] || Lead.QUESTIONS.none;
+  const bnt = Lead.bant(lp, cfg), open = Lead.opening(lp), handoffText = Lead.handoff(lp, seg, bnt, qs);
+  const packMd = Lead.meetingPack(lp, seg, cfg, d);
+  document.getElementById('acct-verdict').className = 'lk-verdict v-' + lp.verdict.key;
+  document.getElementById('acct-verdict').innerHTML = `<div class="lk-v-main"><span class="lk-v-label">${esc(lp.verdict.label)}</span><span class="lk-v-seg">建議分群：${esc(seg || '—')}</span></div>
+    <p class="lk-v-reason">${esc(lp.verdict.reason)}</p>`;
+  document.getElementById('acct-bant').innerHTML = `<div class="card-head"><h2>BANT 預審</h2><span class="hint">系統推估＝公開資料可支持；待確認＝需在通話中確認</span></div>
+    <ul class="lk-bant">${bnt.map(r => `<li><div class="lk-b-key">${esc(r.key)}</div><div class="lk-b-body"><div class="lk-b-label">${esc(r.label)}</div><div>${esc(r.text)}</div></div>
+      <span class="lk-state ${r.state}">${Lead.STATE[r.state]}</span></li>`).join('')}</ul>`;
+  document.getElementById('acct-say').innerHTML = `<div class="card-head"><h2>怎麼開口</h2><span class="hint">依觸發事件與主要 Play 由規則產生</span></div>
+    <div class="lk-say"><p>${esc(open)}</p><button type="button" class="lk-copy" data-text="open">複製</button></div>
+    <ol class="lk-qs">${qs.map((q, i) => `<li><span>${esc(q)}</span><button type="button" class="lk-copy" data-text="q${i}">複製</button></li>`).join('')}</ol>`;
+  const texts = { open, handoff: handoffText, pack: packMd };
+  qs.forEach((q, i) => { texts['q' + i] = q; });
+  document.querySelectorAll('[data-text]').forEach(b => b.addEventListener('click', () => Lead.copy(texts[b.dataset.text], b)));
+
+  // 雲端現況與同業證明
+  const vendor = docs.filter(x => x.parts.some(p => p.type === 'VENDOR'));
+  const proof = Lead.peerProof(lp, d);
+  document.getElementById('acct-proof').innerHTML = `<div class="card-head"><h2>雲端現況與同業證明</h2><span class="hint">只列公開來源；同產業優先、AWS 優先</span></div>
+    <p class="proof-now"><b>本公司：</b>${esc(LABELS.cloud[s.cloud_status] || '未知')}${vendor.length ? `（依據：${vendor.slice(0, 2).map(x => `<span class="ref" data-ref="${x.ref}" tabindex="0">[${x.ref}]</span>`).join('')}）` : '・公開資料中沒有雲端廠商線索'}</p>
+    <ul class="proof-list">${proof.length ? proof.slice(0, 5).map(x => `<li><span class="badge ${x.aws ? 'tier-1' : 'cloud'}">${esc(x.cloud)}</span>
+      <a href="account.html?code=${esc(x.code)}">${esc(x.name)}</a><span class="muted">${esc(x.sameInd ? '同產業' : '')}${x.samePlay ? (x.sameInd ? '・' : '') + '同 Play' : ''}</span>
+      ${x.url ? `<a class="src-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.src || '來源')}</a>` : `<span class="muted">${esc(x.src || '')}</span>`}</li>`).join('')
+      : '<li class="muted">驗證集中沒有同產業或同 Play 的公開雲端案例</li>'}</ul>`;
+
+  // 建議接觸職稱＋MEDDPICC 缺口
+  const md = Lead.meddpicc(lp);
+  document.getElementById('acct-meddpicc').innerHTML = `<div class="card-head"><h2>建議接觸職稱與 MEDDPICC 缺口</h2><span class="hint">不放人名；缺口＝公開資料無法回答，需在會議中確認</span></div>
+    <div class="roles">${Lead.contactRoles(lp).map(r => `<span class="role-chip">${esc(r)}</span>`).join('')}</div>
+    <ul class="med-list">${md.map(m => `<li class="${m.ok ? 'ok' : 'gap'}"><span class="med-k">${m.k}</span><div><div class="med-n">${esc(m.name)}<span class="lk-state ${m.ok ? 'estimated' : 'pending'}">${m.ok ? '有線索' : '缺口'}</span></div>
+      <div class="med-t">${esc(m.ok ? m.have : m.ask)}</div></div></li>`).join('')}</ul>`;
+
+  // 會議準備包
+  document.getElementById('acct-pack').innerHTML = `<div class="card-head head-split"><div><h2 id="pack-title">會議準備包</h2><span class="hint">議程、Discovery 問題、異議回應、同業證明、MEDDPICC 缺口；匯出 Markdown 貼進會議資料或 CRM</span></div>
+      <div class="pack-actions no-print"><button type="button" class="lk-copy" data-text="pack">複製 Markdown</button><button type="button" class="lk-copy" id="pack-dl">下載 .md</button></div></div>
+    <pre class="pack-pre">${esc(packMd)}</pre>`;
+  document.querySelector('#acct-pack [data-text]').addEventListener('click', e => Lead.copy(packMd, e.currentTarget));
+  document.getElementById('pack-dl').addEventListener('click', () => Lead.download(`${c.name}_會議準備包_${new Date().toISOString().slice(0, 10)}.md`, packMd));
+
+  // 頁首動作：轉交摘要、觀察清單、列印
+  document.getElementById('act-handoff').addEventListener('click', e => Lead.copy(handoffText, e.currentTarget));
+  const wb = document.getElementById('act-watch');
+  const paintW = () => { const on = Lead.inWatch(lp.key); wb.textContent = on ? '已在觀察清單' : '加入觀察清單'; wb.setAttribute('aria-pressed', String(on)); };
+  wb.addEventListener('click', () => { Lead.toggleWatch(lp); paintW(); });
+  paintW();
+  document.getElementById('act-print').addEventListener('click', () => window.print());
 
   // ---------- B 分數拆解（子彈圖＋帳戶池中位數） ----------
   const refs = list => {

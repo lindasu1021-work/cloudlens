@@ -147,22 +147,26 @@ function apiLookup_(q, alias) {
   q = String(q || '').trim().replace(/\s+/g, '');
   alias = String(alias || '').trim().replace(/\s+/g, '').slice(0, 20);
   if (q.length < 2) throw new Error('請輸入至少 2 個字的公司名稱或 8 碼統一編號');
+  var T0 = Date.now(), tm = {};
   ensureLookupSheets_();
+  tm.sheets = Date.now() - T0;
   var isTax = /^\d{8}$/.test(q);
   // 快取
   var cutoff = Date.now() - LOOKUP_TTL_DAYS * 864e5;
   var hit = readTable_('lead_lookups').filter(function (r) {
     return (String(r.query) === q || (isTax && String(r.tax_id) === q)) && new Date(r.created_at).getTime() >= cutoff && r.result_json;
   }).pop();
+  tm.cache = Date.now() - T0;
   if (hit) { var cached = JSON.parse(hit.result_json); if (cached.v === LOOKUP_VERSION) { cached.cached_at = String(hit.created_at); return cached; } }
 
   var rows;
   if (isTax) rows = gcisGet_(gcisUrl_(GCIS.byTaxId, 'Business_Accounting_NO eq ' + q, 1)).rows;
   else {
     // 使用者輸入上市櫃簡稱（例：台積電）時，先換成登記全名
-    var listed = listedIndex_(), full = Object.keys(listed).filter(function (f) { return listed[f].short === q || listed[f].code === q; })[0];
+    var listed = listedIndex_(); tm.listed = Date.now() - T0;
+    var full = Object.keys(listed).filter(function (f) { return listed[f].short === q || listed[f].code === q; })[0];
     var r1 = gcisGet_(gcisUrl_(GCIS.byName, 'Company_Name like ' + (full ? shortName_(full) : q) + ' and Company_Status eq 01', 20));
-    rows = r1.rows;
+    rows = r1.rows; tm.gcis = Date.now() - T0;
     if (r1.code !== 200) throw new Error('商工登記查詢失敗（HTTP ' + r1.code + '）');
     if (full) { var ex = rows.filter(function (r) { return r.Company_Name === full; }); if (ex.length) rows = ex; }
   }
@@ -182,7 +186,9 @@ function apiLookup_(q, alias) {
   var pool = readTable_('companies').filter(function (c) { return String(c.name_full) === String(co.Company_Name); })[0];
   if (pool) return { mode: 'pool', code: String(pool.stock_code), tax_id: co.Business_Accounting_NO, name: co.Company_Name };
 
-  var result = liteAssess_(co, isTax ? alias : q);
+  var result = liteAssess_(co, isTax ? alias : q, tm, T0);
+  tm.total = Date.now() - T0;
+  result.timing_ms = tm;
   appendObjects_('lead_lookups', [{
     lookup_id: md5_(q + '|' + Date.now()).slice(0, 12), query: q, tax_id: result.company.tax_id, company_name: result.company.name,
     capital: result.company.capital, industry: result.company.sector, listed: result.company.listed, mode: 'lite', verdict: result.verdict.label,
@@ -192,23 +198,28 @@ function apiLookup_(q, alias) {
 }
 
 /** 輕量評估：規模（商工登記）＋近 90 天新聞訊號（Google News，標題須含公司名稱）。 */
-function liteAssess_(co, userQuery) {
+function liteAssess_(co, userQuery, tm, T0) {
+  tm = tm || {}; T0 = T0 || Date.now();
   var taxId = String(co.Business_Accounting_NO);
   var items = gcisGet_(gcisUrl_(GCIS.items, 'Business_Accounting_NO eq ' + taxId, 1)).rows;
+  tm.items = Date.now() - T0;
   var biz = ((items[0] || {}).Cmp_Business || []).slice(0, 5).map(function (b) { return { code: b.Business_Item, desc: b.Business_Item_Desc }; });
   var sector = biz.length ? (ITEM_SECTOR[String(biz[0].code).charAt(0)] || '其他') : '未提供';
   var capital = Number(co.Paid_In_Capital_Amount) || Number(co.Capital_Stock_Amount) || 0;
   var name = shortName_(co.Company_Name);
   var lst = listedIndex_()[String(co.Company_Name)] || null;
+  tm.listed2 = Date.now() - T0;
   // 新聞比對用名稱：上市櫃簡稱、登記名稱（去掉公司型態）、使用者輸入的名稱
   var aliases = [lst ? lst.short : '', name, userQuery || ''].filter(function (a, i, arr) { return a && a.length >= 2 && arr.indexOf(a) === i; });
 
   // 新聞
   var kw = loadKeywords_();
+  tm.keywords = Date.now() - T0;
   var now = new Date(), from = new Date(now - LOOKUP_NEWS_DAYS * 864e5);
   var qy = '(' + aliases.map(function (a) { return '"' + a + '"'; }).join(' OR ') + ') ' + NEWS_TOPIC + ' after:' + ymd_(from);
   var url = 'https://news.google.com/rss/search?q=' + encodeURIComponent(qy) + '&hl=zh-TW&gl=TW&ceid=TW:zh-Hant';
   var res = fetchWithRetry_(url), news = [], newsError = '';
+  tm.news = Date.now() - T0;
   if (res.code !== 200) newsError = '新聞查詢失敗（HTTP ' + (res.code || res.error) + '）';
   else res.text.split('<item>').slice(1).forEach(function (it) {
     var title = xmlText_(it, 'title'), publisher = xmlText_(it, 'source');
