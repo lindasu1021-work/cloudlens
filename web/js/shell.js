@@ -1,6 +1,7 @@
 /**
  * App 外殼（docs/06_UI改版需求_v3.md 第 3 節）：左側欄＋頂部列，四頁共用。
- * 頁面只需在 <body> 設 data-page（overview｜account｜methodology｜status）與 data-title，
+ * 頁面只需在 <body> 設 data-page（lookup｜overview｜account｜methodology｜status）與 data-title，
+ * 側欄分組依 09 檔 v4.1 第 4 節（查詢／機會／關於）；每頁頂端有資料時效列（分數／重訊／新聞各自的更新時間）。
  * 帳戶頁載入公司後再呼叫 Shell.setCrumbs(...)。
  */
 const Shell = (() => {
@@ -11,15 +12,16 @@ const Shell = (() => {
     methodology: '<path d="M3 5.5C5 4.5 8.5 4.5 12 6.5c3.5-2 7-2 9-1v13c-2-1-5.5-1-9 1-3.5-2-7-2-9-1z"/><path d="M12 6.5v13"/>',
     status: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+    lookup: '<circle cx="10" cy="10" r="6"/><path d="M19 19l-4.5-4.5"/><path d="M7.5 10h5M10 7.5v5"/>',
     download: '<path d="M12 4v11"/><path d="M7.5 11 12 15.5 16.5 11"/><path d="M5 19.5h14"/>'
   };
   const svg = (k, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
   const NAV = [
-    { group: '主要', items: [{ id: 'overview', label: '總覽', href: 'index.html' }, { id: 'accounts', label: '帳戶清單', href: 'index.html#accounts' }] },
-    { group: '洞察', items: [{ id: 'methodology', label: '方法論', href: 'methodology.html' }] },
-    { group: '系統', items: [{ id: 'status', label: '資料狀態', href: 'status.html' }] }
+    { group: '查詢', items: [{ id: 'lookup', label: 'Lead 速查', href: 'lookup.html' }] },
+    { group: '機會', items: [{ id: 'overview', label: '總覽', href: 'index.html' }, { id: 'accounts', label: '帳戶清單', href: 'index.html#accounts' }] },
+    { group: '關於', items: [{ id: 'methodology', label: '方法論', href: 'methodology.html' }, { id: 'status', label: '資料狀態', href: 'status.html' }] }
   ];
-  const PAGE_NAV = { overview: 'overview', account: 'accounts', methodology: 'methodology', status: 'status' };
+  const PAGE_NAV = { lookup: 'lookup', overview: 'overview', account: 'accounts', methodology: 'methodology', status: 'status' };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   let exportProvider = null, accounts = [];
 
@@ -69,6 +71,10 @@ const Shell = (() => {
     const app = document.createElement('div');
     app.className = 'app';
     wrap.appendChild(top);
+    const fresh = document.createElement('div');
+    fresh.className = 'fresh-bar'; fresh.id = 'fresh-bar'; fresh.setAttribute('aria-label', '資料時效');
+    fresh.innerHTML = '<span class="muted">資料時效載入中…</span>';
+    wrap.appendChild(fresh);
     keep.forEach(n => wrap.appendChild(n));
     app.appendChild(side);
     app.appendChild(wrap);
@@ -167,13 +173,26 @@ const Shell = (() => {
     const box = document.getElementById('update-card');
     try {
       const d = await CL.load();
-      const at = String(d.updated_at || '').replace('T', ' ').slice(0, 16) || d.generated_at;
+      const t = (v) => String(v || '').replace('T', ' ').slice(5, 16) || '—';
+      const f = d.freshness || {};
+      const at = f.scores_at || d.updated_at;
       box.innerHTML = d.source === 'live'
         ? `<div class="uc-title">資料更新</div><div class="uc-main">${d.run_id}・規則 v${d.rule_version}</div>
-           <div class="uc-line">上次：${esc(at)}</div><div class="uc-line">下次：週一 05:00</div>`
+           <div class="uc-line">分數：${esc(t(at))}（每日 22:00）</div>
+           <div class="uc-line">重訊：${esc(t(f.ann_at))}（每日）</div>
+           <div class="uc-line">新聞：${esc(t(f.news_at))}（每週一）</div>`
         : `<div class="uc-title uc-warn">目前顯示靜態快照</div><div class="uc-line">無法連線後端，資料為 ${esc(d.generated_at)} 的備份。</div>`;
+      const bar = document.getElementById('fresh-bar');
+      if (bar) {
+        const age = v => { const t = new Date(v).getTime(); if (!v || isNaN(t)) return ''; const h = (Date.now() - t) / 36e5; return h < 1 ? '（1 小時內）' : h < 48 ? `（${Math.round(h)} 小時前）` : `（${Math.round(h / 24)} 天前）`; };
+        bar.innerHTML = d.source === 'live'
+          ? [['分數', at, '每日 22:00 重算'], ['重訊', f.ann_at, '每日'], ['新聞', f.news_at, '每週一']].map(([k, v, c]) =>
+              `<span class="fb-item"><b>${k}</b> ${esc(t(v))}<span class="fb-age">${age(v)}</span><span class="fb-cycle">${c}</span></span>`).join('')
+          : `<span class="fb-item uc-warn">顯示靜態快照（${esc(d.generated_at)}）</span>`;
+      }
     } catch (e) {
       box.innerHTML = '<div class="uc-title uc-warn">資料載入失敗</div><div class="uc-line">請稍後重新整理。</div>';
+      const bar = document.getElementById('fresh-bar'); if (bar) bar.innerHTML = '<span class="uc-warn">資料時效無法載入</span>';
     }
   }
 

@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/tokens.css?v=20261014r">
-<link rel="stylesheet" href="css/app.css?v=20261014r">
+<link rel="stylesheet" href="css/tokens.css?v=20261019a">
+<link rel="stylesheet" href="css/app.css?v=20261019a">
 </head>
 <body data-page="methodology" data-title="方法論">
 <main class="meth">
@@ -28,7 +28,7 @@
   </section>
 
   <nav class="chapters" id="chapters" aria-label="章節">
-    <a href="#arch">資料流</a><a href="#scope">帳戶範圍</a><a href="#rules">評分規則</a><a href="#dict">字典</a><a href="#valid">驗證</a><a href="#versions">版本</a><a href="#limits">限制</a>
+    <a href="#arch">資料流</a><a href="#scope">帳戶範圍</a><a href="#rules">評分規則</a><a href="#dict">字典</a><a href="#valid">驗證</a><a href="#versions">版本</a><a href="#limits">限制</a><a href="#lookup">Lead 速查</a>
   </nav>
 
   <!-- 1 資料流 -->
@@ -126,11 +126,39 @@
     <div id="coverage"></div>
     <div class="limit-cards" id="limit-cards"></div>
   </section>
+  <!-- 8 Lead 速查（09 檔 v4.1） -->
+  <section class="card chapter" id="lookup" aria-labelledby="h-lookup">
+    <h2 id="h-lookup">8　Lead 速查的規則</h2>
+    <p class="lead">帳戶池公司（三產業上市櫃、實收資本額達門檻）沿用完整評分；其他公司用「輕量評估」，只依公開的規模與近期新聞，不排 Tier。所有內容由規則產生，不使用 AI。</p>
+    <div class="two-col">
+      <div>
+        <h3 class="sub-h">完整評分（帳戶池）</h3>
+        <ul class="plain-list">
+          <li>結論：Tier 1＝優先跟進；Tier 2、Tier 3＝培養；暫緩＝暫緩</li>
+          <li>為什麼是現在：最新 2 則觸發事件（重大訊息、新聞）</li>
+          <li>BANT：N、T 取 Need／Timing 分數與 PR 值；B 取規模；A 依主 Play 建議職稱</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="sub-h">輕量評估（其他公司）</h3>
+        <ul class="plain-list">
+          <li>資料：經濟部商工登記（公司登記、營業項目）＋Google News 近 90 天，新聞標題須含公司名稱或上市櫃簡稱</li>
+          <li>優先跟進：近 30 天有觸發事件，且實收資本額 ≥ 1 億</li>
+          <li>培養：近 90 天有觸發事件或數位化相關新聞，或實收資本額 ≥ 10 億</li>
+          <li>暫緩：以上皆無</li>
+          <li>股價、指數等行情類新聞不算觸發事件；結果快取 7 天</li>
+          <li>獨資、合夥行號的商業登記查詢需授權介接，目前查不到</li>
+        </ul>
+      </div>
+    </div>
+    <h3 class="sub-h">建議分群與 BANT 欄位</h3>
+    <p class="lead">建議分群依 Sheets 的 config_routing（實收資本額、是否上市櫃）由上而下判斷；BANT 欄位依 config_bant，F（合適度）、C（競爭）為預留欄位、預設隱藏。「系統推估」代表公開資料可支持，「待確認」需在通話中確認；預算金額一律待確認。負責人等個人姓名不保存、不顯示。</p>
+  </section>
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
-<script src="js/api.js?v=20261014r"></script>
-<script src="js/shell.js?v=20261014r"></script>
+<script src="js/api.js?v=20261019a"></script>
+<script src="js/shell.js?v=20261019a"></script>
 <script src="js/method-charts.js?v=20261014r"></script>
 <script>
 (async () => {

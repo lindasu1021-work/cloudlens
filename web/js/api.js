@@ -147,7 +147,8 @@ const CL = (() => {
   /** 頁首資料來源說明 */
   function sourceNote(d) {
     if (d.source === 'live') {
-      return `資料更新 <b>${esc(String(d.updated_at || '').replace('T', ' ').slice(0, 16))}</b>（${d.run_id}・規則 v${d.rule_version}）・每週一 05:00 自動更新`;
+      const f = d.freshness || {}, t = (v) => esc(String(v || '').replace('T', ' ').slice(0, 16) || '—');
+      return `分數更新 <b>${t(f.scores_at || d.updated_at)}</b>（${d.run_id}・規則 v${d.rule_version}，每日 22:00 重算）・新聞 ${t(f.news_at)}（每週一 05:00）`;
     }
     return `<b>目前無法連線後端，顯示靜態快照</b>（${d.generated_at}・${esc(d.note)}）`;
   }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lead 速查｜企業雲端商機洞察平台</title>
+<meta name="description" content="輸入公司名稱或統一編號，30 秒整理規模、近期觸發事件、開場白與 BANT 預審，並一鍵複製轉交摘要">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261019a">
+<link rel="stylesheet" href="css/app.css?v=20261019a">
+</head>
+<body data-page="lookup" data-title="Lead 速查">
+<main class="lk-main">
+  <section class="card lk-search" aria-labelledby="lk-title">
+    <h2 id="lk-title">查一家公司</h2>
+    <p class="hint">輸入公司名稱、上市櫃簡稱或 8 碼統一編號。上市櫃（帳戶池）公司用完整評分；其他公司用「輕量評估」（商工登記規模＋近 90 天新聞）。</p>
+    <form id="lk-form" class="lk-form" role="search" autocomplete="off">
+      <label class="visually-hidden" for="lk-q">公司名稱或統一編號</label>
+      <input id="lk-q" name="q" type="search" inputmode="search" placeholder="例：元大金、台積電、22099131" required minlength="2" maxlength="40">
+      <button type="submit" class="btn-dark lk-go">查詢</button>
+    </form>
+    <ul class="lk-suggest" id="lk-suggest" hidden></ul>
+    <div class="lk-recent" id="lk-recent"></div>
+  </section>
+
+  <div id="lk-status" class="lk-status" role="status" aria-live="polite"></div>
+  <section id="lk-candidates" class="card lk-cands" hidden aria-labelledby="lk-cand-title">
+    <h2 id="lk-cand-title">找到多家公司，請選一家</h2>
+    <ul id="lk-cand-list"></ul>
+  </section>
+  <article id="lk-card" class="lk-card" hidden aria-live="polite"></article>
+</main>
+<script src="js/api.js?v=20261019a"></script>
+<script src="js/shell.js?v=20261019a"></script>
+<script src="js/lookup.js?v=20261019a"></script>
+</body>
+</html>
