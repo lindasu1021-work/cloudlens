@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css?v=20261019b">
-<link rel="stylesheet" href="css/app.css?v=20261019h">
+<link rel="stylesheet" href="css/app.css?v=20261019i">
 </head>
 <body data-page="methodology" data-title="方法論">
 <main class="meth">
@@ -77,8 +77,9 @@
         <li><b>時間衰減</b>（Timing）：0–30 天 ×1；31–90 天 ×0.5；超過 90 天不計。</li>
         <li><b>缺資料不算 0 分</b>：該項移出分母，分數＝已取得項目得分 ÷ 已取得項目滿分 × 100，並顯示資料完整度。</li>
         <li><b>去重</b>：同一份文件同一類別只計一次；同週重訊與新聞命中同類別只計一次。</li>
-        <li><b>雜訊排除</b>：例行公告（股利、財報、自結損益…）與股市行情新聞（目標價、法人、接單…）整則不計；「AI 伺服器」等產品新聞不算 AI 策略意圖。</li>
-        <li><b>Tier</b>：各軸帳戶池內前 30% 為「高」。用百分位而非固定分數，因為規則尚未校準，絕對分數沒有意義，相對排序才有用。</li>
+        <li><b>雜訊排除</b>：例行公告（股利、財報、自結損益…）與股市行情新聞（目標價、法人、接單…）整則不計；「AI 伺服器」等產品新聞不算 AI 策略意圖。<b>規則 v3</b>：製造業公司「賣」AI 產品、參展、做先進封裝的新聞（預製、解決方案、亮相、先進封裝…）也不算導入 AI；公司名稱誤配（如「AI新巨獸」≠新巨、「台產業」≠台產）會被移除。排除詞放在 config_keywords，可自行增減。</li>
+        <li><b>資本支出</b>（規則 v3）：從重訊說明解析交易金額（含人民幣、美元等換算），金額占實收資本額 ≥ 5% 才給 T1 分數，否則保留為訊號但標示「未達資本額 5%」；解析不到金額維持原分數。同一公司同一類觸發事件重複出現時，第 2 次起權重依序 ×0.5、×0.25…</li>
+        <li><b>Tier</b>：各軸前 30% 為「高」，預設在<b>各產業內</b>比較（業務依客群分工，金融、製造的規模與事件型態不同，跨產業比較不公平）；總覽頁可切換為全帳戶池。用百分位而非固定分數，因為規則尚未校準，絕對分數沒有意義，相對排序才有用。</li>
         <li><b>Play</b>：每則訊號帶 Play 類別，各 Play 分數加總（含產業先驗各 +5）最高者為主 Play，第二名達 50% 為次 Play；<b>分數只來自產業先驗者標「訊號不足」</b>。</li>
         <li><b>雲端現況</b>：公開來源證實用 AWS → 已是 AWS 客戶（擴充）；Azure／Google Cloud → 用競品（替換）；其他 → 未知（新導入）。供應鏈新聞不算。</li>
       </ul></details>
@@ -289,12 +290,21 @@
   const pv = prec === null || prec === undefined ? null : Number(prec);
   MC.donut(document.getElementById('donut'), pv, 'precision@20%');
   document.getElementById('lead-valid').textContent = pv === null ? '驗證集建置中，完成後會在這裡顯示。'
-    : `驗證集 ${latest ? latest.validation_set_size : '—'} 家中 ${latest ? latest.hits_top20pct : '—'} 家落在 Need 前 20%；但這還不能證明評分優於「挑最大的公司」。`;
-  const vNote = latest && Number(latest.rule_version) < Number(m.rule_version)
-    ? `<br><span class="muted">此為規則 v${latest.rule_version} 的驗證；v${m.rule_version} 只改 Play 標籤、不影響 Need 分數，結果沿用。</span>` : '';
+    : `驗證集 ${latest ? latest.validation_set_size : '—'} 家中 ${latest ? latest.hits_top20pct : '—'} 家落在 Need 前 20%，並與「只看規模」的基準線比較增益。`;
+  const bp = latest && latest.baseline_precision !== '' && latest.baseline_precision !== undefined ? Number(latest.baseline_precision) : null;
+  const gain = latest && latest.gain !== '' && latest.gain !== undefined ? Number(latest.gain) : null;
+  const rk = latest && latest.avg_rank !== '' && latest.avg_rank !== undefined ? [Number(latest.avg_rank), Number(latest.baseline_avg_rank)] : null;
+  const seg = (n, h, bh) => Number(n) ? `${h}/${n}（基準線 ${bh}/${n}）` : '<span class="muted">尚無樣本</span>';
+  const noGain = gain !== null && gain <= 0;
   document.getElementById('valid-text').innerHTML = pv === null ? '<p class="muted">尚無驗證紀錄。</p>' : `
-    <p style="margin:0 0 10px">${latest ? `最新結果（${esc(latest.run_id)}・規則 v${latest.rule_version}）：驗證集 <b>${latest.validation_set_size}</b> 家中 <b>${latest.hits_top20pct}</b> 家進入 Need 前 20%，precision@20% ＝ <b>${pctTxt(pv)}</b>。${vNote}` : ''}</p>
-    ${baseHit.length ? `<p class="callout"><b>誠實揭露：</b>只看營收規模排名的基準線也命中 ${baseHit[1]}/${baseHit[2]}。驗證集中多為金控，規模本來就大，所以目前還無法證明這套評分比「挑最大的公司」更好。下一步：擴充製造業驗證樣本、改看產業內排名。</p>` : ''}`;
+    <p style="margin:0 0 10px">${latest ? `最新結果（${esc(latest.run_id)}・規則 v${latest.rule_version}）：驗證集 <b>${latest.validation_set_size}</b> 家。` : ''}</p>
+    <table class="cov"><thead><tr><th class="plain">指標</th><th class="plain c">本模型</th><th class="plain c">基準線（只看規模）</th><th class="plain c">增益</th></tr></thead><tbody>
+      <tr><th scope="row" class="plain">precision@20%</th><td class="c"><b>${pctTxt(pv)}</b></td><td class="c">${bp === null ? '—' : pctTxt(bp)}</td><td class="c">${gain === null ? '—' : (gain > 0 ? '+' : '') + Math.round(gain * 100) + ' 個百分點'}</td></tr>
+      ${rk ? `<tr><th scope="row" class="plain">平均名次（越小越好）</th><td class="c"><b>${rk[0]}</b> / ${m.tier_counts ? Object.values(m.tier_counts).reduce((a, b) => a + b, 0) : 185}</td><td class="c">${rk[1]}</td><td class="c">${rk[1] > rk[0] ? '提前 ' + Math.round((rk[1] - rk[0]) * 10) / 10 + ' 名' : '無'}</td></tr>` : ''}
+      <tr><th scope="row" class="plain">大型公司命中</th><td class="c" colspan="3">${latest ? seg(latest.large_n, latest.large_hits, latest.large_base_hits) : '—'}</td></tr>
+      <tr><th scope="row" class="plain">中型公司命中</th><td class="c" colspan="3">${latest ? seg(latest.mid_n, latest.mid_hits, latest.mid_base_hits) : '—'}</td></tr>
+    </tbody></table>
+    ${noGain ? `<p class="callout"><b>誠實揭露：</b>命中率與「只看營收規模」的基準線相同（增益 0）。差別只在平均名次${rk ? `（${rk[0]} vs ${rk[1]}）` : ''}。驗證集全是大型公司（金控為主），規模本來就大，所以還不能說這套評分比「挑最大的公司」更準；需要加入中型公司樣本才有辦法檢驗。</p>` : ''}`;
   document.getElementById('vset').innerHTML = m.validation_set.map(x => `<tr><td>${esc(x.company_name)} ${esc(x.stock_code)}</td><td>${esc(String(x.cloud).toUpperCase())}</td>
     <td>${x.evidence_url ? `<a href="${esc(x.evidence_url)}" target="_blank" rel="noopener">${esc(x.source_type)}</a>` : esc(x.source_type)}　<span class="muted">${esc(x.note)}</span></td></tr>`).join('');
 

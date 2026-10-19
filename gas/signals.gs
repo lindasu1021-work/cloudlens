@@ -16,11 +16,19 @@ var CIO_CHANGE_RE = /異動|新任|委任|聘任|接任|任命/;
 function buildSignals_(runId) {
   var added = seedKeywords_(); // 補上程式更新後新增的字典詞
   var kw = loadKeywords_();
-  var ind = {};
-  readTable_('companies').forEach(function (c) { ind[String(c.stock_code)] = String(c.industry_code); });
+  var ind = {}, cap = {}, names = {};
+  readTable_('companies').forEach(function (c) {
+    var code = String(c.stock_code);
+    ind[code] = String(c.industry_code);
+    cap[code] = Number(c.capital) || 0;
+    names[code] = [String(c.name_short).replace(/[-－]?KY$|\*$/, '')];
+  });
+  readTable_('company_aliases').forEach(function (a) { (names[String(a.stock_code)] = names[String(a.stock_code)] || []).push(String(a.alias)); });
+  var capexPct = Number(setting_('capex_materiality_pct', 0.05));
+  var nameFalse = (kw.NAME_FALSE || []).map(function (e) { return e.kw; });
   var cutoff = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
   var out = [];
-  var stats = { ann: 0, ann_excluded: 0, news: 0, news_excluded: 0 };
+  var stats = { ann: 0, ann_excluded: 0, news: 0, news_excluded: 0, news_mismatch: 0, capex: 0, capex_below: 0, capex_unknown: 0 };
 
   function push(code, type, category, play, weight, points, doc) {
     out.push({
@@ -81,7 +89,18 @@ function buildSignals_(runId) {
       if (!byType[e.trig_type] || e.points > byType[e.trig_type].points) byType[e.trig_type] = e;
     });
     Object.keys(byType).forEach(function (t) {
-      push(code, 'T1', t, byType[t].play, 1, byType[t].points, doc);
+      var pts = byType[t].points, d1 = doc;
+      if (t === 'capex') {
+        // 規則 v3（R2）：資本支出看金額 ÷ 實收資本額；解析不到金額維持原分數
+        stats.capex++;
+        var amt = parseTxnAmount_(a.description), billions = amt ? Math.round(amt.ntd / 1e7) / 10 : 0;
+        if (!amt || !cap[code]) { stats.capex_unknown++; d1 = Object.assign({}, doc, { title: doc.title + '（金額未知）' }); }
+        else if (amt.ntd / cap[code] < capexPct) {
+          stats.capex_below++; pts = 0;
+          d1 = Object.assign({}, doc, { title: doc.title + '（金額約 ' + billions + ' 億元，未達資本額 ' + Math.round(capexPct * 100) + '%）' });
+        } else d1 = Object.assign({}, doc, { title: doc.title + '（金額約 ' + billions + ' 億元，占資本額 ' + Math.round(amt.ntd / cap[code] * 100) + '%）' });
+      }
+      push(code, 'T1', t, byType[t].play, 1, pts, d1);
       if (t === 'security_incident') push(code, 'N4', 'incident', 'Security', 1, 15, doc);
     });
     vendor(text, code, doc);
@@ -94,6 +113,9 @@ function buildSignals_(runId) {
     stats.news++;
     var title = String(n.title);
     if (matchCat_(kw.EXCLUDE_NEWS, title, ind[code]).length) { stats.news_excluded++; return; }
+    // 規則 v3（R1）：移除已知誤配詞後，標題仍須含公司名稱（避免「AI新巨獸」被當成新巨）
+    var clean = nameFalse.reduce(function (t, f) { return t.split(f).join(''); }, title);
+    if (!(names[code] || []).some(function (nm) { return nm.length >= 2 && clean.indexOf(nm) >= 0; })) { stats.news_mismatch++; return; }
     var doc = { key: n.raw_id, observed_at: n.published_at, title: title + '（' + n.publisher + '）', url: n.link, source: 'news' };
     var h = hits(title, title, code, ['MIG', 'DATA', 'AI', 'SEC']);
     Object.keys(h).forEach(function (cat) {
@@ -121,6 +143,6 @@ function buildSignals_(runId) {
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   appendObjects_('signals', out);
   return { rows_in: stats.ann + stats.news, rows_out: out.length,
-           note: '重訊 ' + stats.ann + '（排除 ' + stats.ann_excluded + '）、新聞 ' + stats.news + '（排除 ' + stats.news_excluded + '）' +
+           note: '重訊 ' + stats.ann + '（排除 ' + stats.ann_excluded + '）、新聞 ' + stats.news + '（排除 ' + stats.news_excluded + '、公司名誤配 ' + stats.news_mismatch + '）、資本支出 ' + stats.capex + '（未達門檻 ' + stats.capex_below + '、金額未知 ' + stats.capex_unknown + '）' +
                  (added ? '；字典新增 ' + added + ' 詞' : '') };
 }

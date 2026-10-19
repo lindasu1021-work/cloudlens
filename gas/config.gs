@@ -26,8 +26,9 @@ var SCHEMA = {
   // 4.4 處理結果
   signals: ['signal_id', 'stock_code', 'signal_type', 'category', 'play', 'strength', 'points_raw', 'observed_at', 'title', 'evidence_url', 'source', 'run_id'],
   scores: ['run_id', 'stock_code', 'rule_version', 'n1', 'n2', 'n3', 'n4', 'need', 't1', 't2', 't3', 't4', 'timing', 'need_pct', 'timing_pct',
-           'tier', 'play_primary', 'play_secondary', 'cloud_status', 'data_completeness', 'top_signal_ids'],
-  validation: ['run_id', 'rule_version', 'validation_set_size', 'hits_top20pct', 'precision', 'note'],
+           'tier', 'play_primary', 'play_secondary', 'cloud_status', 'data_completeness', 'top_signal_ids', 'tier_pool', 'tier_industry'],
+  validation: ['run_id', 'rule_version', 'validation_set_size', 'hits_top20pct', 'precision', 'note',
+               'baseline_hits', 'baseline_precision', 'gain', 'avg_rank', 'baseline_avg_rank', 'large_n', 'large_hits', 'large_base_hits', 'mid_n', 'mid_hits', 'mid_base_hits'],
   // 4.5 AI 與維運
   ai_cache: ['cache_key', 'output_json', 'created_at', 'mode'],
   ai_log: ['ts', 'stock_code', 'action', 'mode', 'success', 'error', 'est_tokens'],
@@ -55,7 +56,11 @@ var DEFAULT_SETTINGS = [
   ['copilot_precompute_daily', '15', '每日 Copilot 預生成的按鈕生成次數上限（保留其餘 Gemini 額度給即時模式）'],
   ['tier_percentile', '0.30', '各軸前 30% 為高'],
   ['gemini_model', 'gemini-3.8-flash,gemini-3.5-flash-lite,gemini-2.5-flash', '候選模型，依序嘗試；用明確型號（別名可能共用額度），各模型有獨立的每分鐘／每日額度'],
-  ['rule_version', '2', '調整權重或字典時 +1（v2：Play 只來自產業先驗者改標「訊號不足」）'],
+  ['rule_version', '3', '調整權重或字典時 +1（v2：Play 只來自產業先驗者改標「訊號不足」；v3：賣方語境排除、資本支出金額門檻與重複遞減、產業內排名、驗證對基準線）'],
+  ['tier_scope', 'industry', 'Tier 排名範圍：industry＝各產業內各軸前 30%（預設，BD 依客群分工）；pool＝全帳戶池'],
+  ['capex_materiality_pct', '0.05', '資本支出重大性：交易金額 ÷ 實收資本額 ≥ 此比例才給 T1 資本支出分數；解析不到金額時維持原分數並標示「金額未知」'],
+  ['t1_repeat_decay', '0.5', '同一公司同一類觸發事件重複出現時，第 k 次的權重為此值的 (k−1) 次方（1、0.5、0.25…）'],
+  ['large_capital', '10000000000', '驗證「大型」公司的實收資本額門檻（元）；以下為「中型」'],
   ['current_run_id', '', '網站目前顯示的計分 run_id']
 ];
 

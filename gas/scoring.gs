@@ -6,7 +6,7 @@
 
 var PLAYS = ['Migration', 'Data', 'GenAI', 'Security'];
 var NO_PLAY = '訊號不足';   // 規則 v2（D36）：Play 分數只來自產業先驗、沒有任何實際訊號時的主 Play
-var RULE_VERSION = 2;
+var RULE_VERSION = 3;
 var INDUSTRY_PRIOR = { '17': ['Security', 'Data'], '28': ['Data', 'Migration'], '05': ['Migration', 'Data'] };
 
 function dimReturn_(max, n) { return max * (1 - Math.pow(0.5, n)); }
@@ -55,12 +55,15 @@ function computeScores_(runId) {
   if (Number(setting_('rule_version', 1)) < RULE_VERSION) setSetting_('rule_version', RULE_VERSION);
   // D28 的驗證集分頁在 setupPhase2 之後才加入：不存在時自動建立並寫入預設清單
   if (!ss().getSheetByName('config_validation')) { setupSheets(); seedValidation_(); }
+  if (header_('scores').indexOf('tier_pool') < 0 || header_('validation').indexOf('baseline_precision') < 0) setupSheets(); // v3 新增欄位
   var now = Date.now();
   var weights = {};
   readTable_('config_weights').forEach(function (w) {
     weights[w.component] = { max: Number(w.max_points), on: !(w.enabled === false || String(w.enabled).toUpperCase() === 'FALSE') };
   });
   var tierP = Number(setting_('tier_percentile', 0.3));
+  var tierScope = String(setting_('tier_scope', 'industry'));
+  var repeatDecay = Number(setting_('t1_repeat_decay', 0.5));
   var ruleVersion = setting_('rule_version', 1);
   var companies = readTable_('companies').filter(function (c) { return c.in_universe === true || String(c.in_universe).toUpperCase() === 'TRUE'; });
   var codes = companies.map(function (c) { return String(c.stock_code); });
@@ -128,8 +131,14 @@ function computeScores_(runId) {
     put('N4', 'need', Math.min(n4, n4max), n4max);
 
     // T1：觸發事件 × 時間衰減，上限 50
-    var t1 = list.filter(function (s) { return s.signal_type === 'T1'; })
-      .reduce(function (sum, s) { return sum + Number(s.points_raw) * decay_(s.observed_at, now); }, 0);
+    // 規則 v3（R2）：同一公司同一類事件重複出現 → 依分數×時間衰減由大到小，第 k 次乘 repeat^(k−1)（1、0.5、0.25…）
+    var byCat = {};
+    list.filter(function (s) { return s.signal_type === 'T1'; }).forEach(function (s) {
+      (byCat[s.category] = byCat[s.category] || []).push(Number(s.points_raw) * decay_(s.observed_at, now));
+    });
+    var t1 = Object.keys(byCat).reduce(function (sum, cat) {
+      return sum + byCat[cat].sort(function (a, b) { return b - a; }).reduce(function (a, v, i) { return a + v * Math.pow(repeatDecay, i); }, 0);
+    }, 0);
     put('T1', 'timing', Math.min(t1, weights.T1.max), weights.T1.max);
     // T2：近 30 天命中新聞數 ÷ 過去 90 天月均（至少 2 則才計）
     if (newsDone[code]) {
@@ -181,11 +190,21 @@ function computeScores_(runId) {
   var needVals = rows.map(function (r) { return r.need; }).filter(function (v) { return v !== ''; });
   var timVals = rows.map(function (r) { return r.timing; }).filter(function (v) { return v !== ''; });
   var needHigh = highSet_(rows, 'need', tierP), timHigh = highSet_(rows, 'timing', tierP);
+  // 規則 v3（R3）：同時算「全帳戶池」與「產業內」兩種 Tier；tier 欄依 tier_scope 設定（預設產業內）
+  var indOf = {};
+  companies.forEach(function (c) { indOf[String(c.stock_code)] = String(c.industry_code); });
+  var byInd = {};
+  rows.forEach(function (r) { (byInd[indOf[r.stock_code]] = byInd[indOf[r.stock_code]] || []).push(r); });
+  var indHigh = {};
+  Object.keys(byInd).forEach(function (k) { indHigh[k] = { need: highSet_(byInd[k], 'need', tierP), timing: highSet_(byInd[k], 'timing', tierP) }; });
+  var tierOf = function (nh, th) { return nh && th ? '1' : nh ? '2' : th ? '3' : 'hold'; };
   rows.forEach(function (r) {
     r.need_pct = r.need === '' ? '' : Math.round(pctRank_(r.need, needVals) * 100) / 100;
     r.timing_pct = r.timing === '' ? '' : Math.round(pctRank_(r.timing, timVals) * 100) / 100;
-    var nh = needHigh(r.need), th = timHigh(r.timing);
-    r.tier = nh && th ? '1' : nh ? '2' : th ? '3' : 'hold';
+    r.tier_pool = tierOf(needHigh(r.need), timHigh(r.timing));
+    var ih = indHigh[indOf[r.stock_code]];
+    r.tier_industry = tierOf(ih.need(r.need), ih.timing(r.timing));
+    r.tier = tierScope === 'pool' ? r.tier_pool : r.tier_industry;
   });
 
   // T2/T3 證據寫入 signals（buildSignals_ 已重建，這裡只追加）
@@ -248,30 +267,38 @@ function setSetting_(key, value) {
 }
 
 /**
- * 驗證（D28）：config_validation 中屬於帳戶池的公司，落在 Need 排名前 20% 的比例。
+ * 驗證（D28；規則 v3 R4 改為「對基準線的增益」）：config_validation 中屬於帳戶池的公司，
+ * 落在 Need 排名前 20% 的比例，並與「只看 N1 規模」的基準線比較；另算平均名次，以及「大型／中型」各自的命中。
  * 同一 run_id + rule_version 先刪後寫。
  */
 function computeValidation_(runId, rows, ruleVersion) {
   var set = readTable_('config_validation').map(function (v) { return String(v.stock_code); });
+  var capital = {};
+  readTable_('companies').forEach(function (c) { capital[String(c.stock_code)] = Number(c.capital) || 0; });
+  var largeCut = Number(setting_('large_capital', 1e10));
   var ranked = rows.filter(function (r) { return r.need !== ''; }).sort(function (a, b) { return b.need - a.need; });
   var topN = Math.ceil(ranked.length * 0.2);
-  var top = {};
-  ranked.slice(0, topN).forEach(function (r) { top[r.stock_code] = true; });
+  var top = {}, rankOf = {};
+  ranked.forEach(function (r, i) { rankOf[r.stock_code] = i + 1; if (i < topN) top[r.stock_code] = true; });
   var inPool = set.filter(function (c) { return rows.some(function (r) { return r.stock_code === c; }); });
-  var hits = inPool.filter(function (c) { return top[c]; });
-  // 基準線：只用 N1（營收規模）排名，檢查系統是否比「挑最大的公司」更好
-  var base = {};
-  rows.slice().sort(function (a, b) { return Number(b.n1) - Number(a.n1); }).slice(0, topN).forEach(function (r) { base[r.stock_code] = true; });
-  var baseHits = inPool.filter(function (c) { return base[c]; }).length;
-  // 平均名次（越小越好），比 precision 更能區分
-  var rankOf = {};
-  ranked.forEach(function (r, i) { rankOf[r.stock_code] = i + 1; });
-  var avgRank = inPool.length ? Math.round(inPool.reduce(function (s, c) { return s + (rankOf[c] || ranked.length); }, 0) / inPool.length * 10) / 10 : '';
+  // 基準線：只用 N1（營收規模）排名
+  var baseRanked = rows.slice().sort(function (a, b) { return Number(b.n1) - Number(a.n1); });
+  var base = {}, baseRankOf = {};
+  baseRanked.forEach(function (r, i) { baseRankOf[r.stock_code] = i + 1; if (i < topN) base[r.stock_code] = true; });
+  var avg = function (list, map, fb) { return list.length ? Math.round(list.reduce(function (s, c) { return s + (map[c] || fb); }, 0) / list.length * 10) / 10 : ''; };
+  var hits = inPool.filter(function (c) { return top[c]; }), baseHits = inPool.filter(function (c) { return base[c]; });
+  var large = inPool.filter(function (c) { return capital[c] >= largeCut; }), mid = inPool.filter(function (c) { return capital[c] < largeCut; });
+  var pr = function (h, n) { return n ? Math.round(h / n * 100) / 100 : ''; };
   var rec = { run_id: runId, rule_version: ruleVersion, validation_set_size: inPool.length, hits_top20pct: hits.length,
-              precision: inPool.length ? Math.round(hits.length / inPool.length * 100) / 100 : '',
+              precision: pr(hits.length, inPool.length),
               note: '前 20% = Need 前 ' + topN + ' 名；命中：' + hits.join(',') + '；未命中：' +
-                    inPool.filter(function (c) { return !top[c]; }).join(',') + '；平均名次 ' + avgRank + '/' + ranked.length +
-                    '；基準線（只看營收規模）命中 ' + baseHits + '/' + inPool.length };
+                    inPool.filter(function (c) { return !top[c]; }).join(',') + '；平均名次 ' + avg(inPool, rankOf, ranked.length) + '/' + ranked.length +
+                    '；基準線（只看營收規模）命中 ' + baseHits.length + '/' + inPool.length + '，平均名次 ' + avg(inPool, baseRankOf, ranked.length),
+              baseline_hits: baseHits.length, baseline_precision: pr(baseHits.length, inPool.length),
+              gain: inPool.length ? Math.round((hits.length - baseHits.length) / inPool.length * 100) / 100 : '',
+              avg_rank: avg(inPool, rankOf, ranked.length), baseline_avg_rank: avg(inPool, baseRankOf, ranked.length),
+              large_n: large.length, large_hits: large.filter(function (c) { return top[c]; }).length, large_base_hits: large.filter(function (c) { return base[c]; }).length,
+              mid_n: mid.length, mid_hits: mid.filter(function (c) { return top[c]; }).length, mid_base_hits: mid.filter(function (c) { return base[c]; }).length };
   var keep = readTable_('validation').filter(function (v) { return !(String(v.run_id) === runId && String(v.rule_version) === String(ruleVersion)); });
   var sh = sheet_('validation');
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();

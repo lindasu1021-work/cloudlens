@@ -78,6 +78,13 @@ function defaultKeywords_() {
   k = k.concat(['拉貨', '供應鏈', '供應商', '受惠', '訂單', '出貨', '機櫃', '伺服器', 'Trainium', 'ASIC', '資本支出', '採購']
     .map(function (w) { return { category: 'NEG', keyword: w, strength: 'strong', industry_scope: 'all', play: 'VENDOR' }; }));
 
+  // 規則 v3（R1）：賣方語境——製造業公司「賣」AI 產品、參展、做先進封裝，不等於「導入」AI。只否定 AI 類（play 欄＝AI），限製造業
+  k = k.concat(['預製', '模組化', '缺電', '電網', '解方', '解決方案', 'AIDC', 'AI資料中心', 'AI 資料中心', '先進封裝', '光通訊', '小晶片', 'Chiplet',
+    'COMPUTEX', '首展', '展出', '亮相', '展覽', '自動化展', '能源展', '工具機展', '電子展', '產學', 'MOU', '基礎建設']
+    .map(function (w) { return { category: 'NEG', keyword: w, strength: 'strong', industry_scope: 'mfg', play: 'AI' }; }));
+  // 規則 v3（R1）：公司名稱誤配。這些詞含公司簡稱但不是該公司（例：「AI新巨獸」≠新巨、「台產業」≠台產）；比對公司名前先移除
+  k = k.concat(['新巨獸', '台產業', '大同大學', '東台灣', '聯電子']
+    .map(function (w) { return { category: 'NAME_FALSE', keyword: w, strength: 'strong', industry_scope: 'all', play: '' }; }));
   var seq = {};
   return k.map(function (r) {
     seq[r.category] = (seq[r.category] || 0) + 1;

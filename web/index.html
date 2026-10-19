@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css?v=20261019b">
-<link rel="stylesheet" href="css/app.css?v=20261019h">
+<link rel="stylesheet" href="css/app.css?v=20261019i">
 </head>
 <body data-page="overview" data-title="總覽">
 <main>
@@ -39,7 +39,8 @@
   <!-- 列 2：象限圖（8）＋鬆餅圖／本週動態（4） -->
   <section class="grid-12">
     <div class="card chart-wrap span-8" id="quad">
-      <div class="card-head"><h2>先打誰：Need × Timing 象限</h2><span class="hint">點選公司看分數拆解；虛線為前 30% 門檻</span></div>
+      <div class="card-head head-split"><div><h2>先打誰：Need × Timing 象限</h2><span class="hint" id="scope-hint">點選公司看分數拆解</span></div>
+        <div class="seg-toggle" role="group" aria-label="Tier 排名範圍" id="scope-seg"><button type="button" data-s="industry" aria-pressed="true">各產業內</button><button type="button" data-s="pool" aria-pressed="false">全帳戶池</button></div></div>
       <div class="card-body">
         <div class="chart"></div>
         <div class="legend" id="legend"></div>
@@ -111,7 +112,7 @@
 
 <script src="js/api.js?v=20261019b"></script>
 <script src="js/shell.js?v=20261019e"></script>
-<script src="js/charts.js?v=20261014r"></script>
+<script src="js/charts.js?v=20261019i"></script>
 <script>
 (async () => {
   const { LABELS, fmt, esc, tierBadge, playTag, shapeSvg, ageDays } = CL;
@@ -122,28 +123,34 @@
   const rows = d.accounts.map(c => ({
     code: c.code, name: c.name, industry: c.industry, market: c.market,
     need: c.score.need === '' ? 0 : Number(c.score.need), timing: c.score.timing === '' ? 0 : Number(c.score.timing),
-    tier: String(c.score.tier), play: c.score.play_primary, play2: c.score.play_secondary,
+    tier: String(c.score.tier), tierPool: String(c.score.tier_pool || c.score.tier), tierInd: String(c.score.tier_industry || c.score.tier), play: c.score.play_primary, play2: c.score.play_secondary,
     cloud: c.score.cloud_status, comp: Number(c.score.data_completeness)
   }));
   const byCode = Object.fromEntries(rows.map(r => [r.code, r]));
   const S = d.summary || {};
-  const tierCounts = S.tier_counts || rows.reduce((m, r) => (m[r.tier] = (m[r.tier] || 0) + 1, m), {});
-  const recent = d.signals.filter(s => s.type === 'T1' && ageDays(s.at, d.generated_at) <= 30);
+  let scope = 'industry';
+  try { scope = localStorage.getItem('cl:tierscope') === 'pool' ? 'pool' : 'industry'; } catch (e) { /* 無儲存空間時用預設 */ }
+  let tierCounts = {};
+  const recent = d.signals.filter(s => s.type === 'T1' && Number(s.points) > 0 && ageDays(s.at, d.generated_at) <= 30);
   const eventDocs = new Set(recent.map(s => s.code + '|' + s.title + '|' + s.at));
 
   // ---------- KPI 帶 ----------
   document.getElementById('k-accounts').textContent = S.rank_total || rows.length;
-  document.getElementById('k-tier1').textContent = tierCounts['1'] || 0;
   document.getElementById('k-events').textContent = eventDocs.size;
   document.getElementById('k-nosig').textContent = rows.filter(r => r.play === CL.NO_PLAY).length;
   document.getElementById('band-sub').textContent = `${d.run_id}${d.source === 'live' ? '' : '・靜態快照'}`;
 
   // ---------- 象限圖 ----------
   const mid = (hi, lo) => (Math.min(...hi) + Math.max(0, ...lo)) / 2;
-  const highN = r => r.tier === '1' || r.tier === '2', highT = r => r.tier === '1' || r.tier === '3';
-  const needCut = mid(rows.filter(highN).map(r => r.need), rows.filter(r => !highN(r)).map(r => r.need));
-  const timingCut = mid(rows.filter(highT).map(r => r.timing), rows.filter(r => !highT(r)).map(r => r.timing));
-  Charts.quadrant(document.getElementById('quad'), rows, { needCut, timingCut, onClick: r => { location.href = 'account.html?code=' + r.code; } });
+  const drawQuad = () => {
+    let cuts = { needCut: null, timingCut: null };
+    if (scope === 'pool') {
+      const highN = r => r.tier === '1' || r.tier === '2', highT = r => r.tier === '1' || r.tier === '3';
+      cuts = { needCut: mid(rows.filter(highN).map(r => r.need), rows.filter(r => !highN(r)).map(r => r.need)),
+               timingCut: mid(rows.filter(highT).map(r => r.timing), rows.filter(r => !highT(r)).map(r => r.timing)) };
+    }
+    Charts.quadrant(document.getElementById('quad'), rows, { ...cuts, onClick: r => { location.href = 'account.html?code=' + r.code; } });
+  };
   const playOrder = ['Migration', 'Data', 'GenAI', 'Security', CL.NO_PLAY];
   document.getElementById('legend').innerHTML = playOrder
     .map(p => `<span>${shapeSvg(p, 11)}${p === CL.NO_PLAY ? CL.NO_PLAY : LABELS.play[p]}（${rows.filter(r => r.play === p).length}）</span>`).join('');
@@ -153,8 +160,10 @@
   const dotSvg = t => `<svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="${Charts.TIER_VAR[t]}" stroke="var(--ink-900)" stroke-width="0.8"/></svg>`;
 
   // ---------- 最優先 10 家 ----------
-  document.getElementById('top10').innerHTML = rows.filter(r => r.tier === '1').sort((a, b) => (b.need + b.timing) - (a.need + a.timing)).slice(0, 10)
+  const drawTop = () => {
+    document.getElementById('top10').innerHTML = rows.filter(r => r.tier === '1').sort((a, b) => (b.need + b.timing) - (a.need + a.timing)).slice(0, 10)
     .map((r, i) => `<li><span class="rk">${i + 1}</span><a href="account.html?code=${r.code}">${esc(r.name)}</a><span class="muted">${esc(r.industry)}</span><span class="tp">${playTag(r.play)}</span></li>`).join('');
+  };
 
   // ---------- 本週動態 ----------
   const prevRows = rows.filter(r => d.prev[r.code]).map(r => {
@@ -197,7 +206,9 @@
   drawCal();
 
   // ---------- 產業 × Tier 百分比堆疊 ----------
-  const matrix = S.industry_tier_matrix || {};
+  const drawInd = () => {
+  const matrix = {};
+  rows.forEach(r => { const m = (matrix[r.industry] = matrix[r.industry] || {}); m[r.tier] = (m[r.tier] || 0) + 1; });
   const inds = Object.keys(matrix);
   document.getElementById('ind-stack').innerHTML = inds.map(ind => {
     const m = matrix[ind], tot = Charts.TIER_ORDER.reduce((a, t) => a + (m[t] || 0), 0) || 1;
@@ -213,6 +224,7 @@
   document.getElementById('ind-stack').querySelectorAll('[data-tip]').forEach(n => {
     n.addEventListener('mousemove', e => AC_tip(e, n.dataset.tip)); n.addEventListener('mouseleave', AC_untip);
   });
+  };
   let tipEl = null;
   function AC_tip(e, html) {
     if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'tooltip floating'; document.body.appendChild(tipEl); }
@@ -285,8 +297,8 @@
     document.getElementById('tbody').innerHTML = cut.map(r => `
       <tr data-code="${r.code}" tabindex="0">
         <td>${r.code}</td><td><a href="account.html?code=${r.code}">${esc(r.name)}</a></td><td>${esc(r.industry)}</td>
-        <td class="num">${fmt(r.need)}<span class="bar${r.need >= needCut ? ' hi' : ''}"><i style="width:${r.need}%"></i></span></td>
-        <td class="num">${fmt(r.timing)}<span class="bar${r.timing >= timingCut ? ' hi' : ''}"><i style="width:${r.timing}%"></i></span></td>
+        <td class="num">${fmt(r.need)}<span class="bar${r.tier === '1' || r.tier === '2' ? ' hi' : ''}"><i style="width:${r.need}%"></i></span></td>
+        <td class="num">${fmt(r.timing)}<span class="bar${r.tier === '1' || r.tier === '3' ? ' hi' : ''}"><i style="width:${r.timing}%"></i></span></td>
         <td>${tierBadge(r.tier)}</td><td>${playTag(r.play)}</td><td>${playTag(r.play2)}</td>
         <td>${r.cloud === 'unknown' ? '' : `<span class="badge cloud">${LABELS.cloudShort[r.cloud]}</span>`}</td>
       </tr>`).join('');
@@ -298,7 +310,21 @@
     const tr = e.target.closest('tr'); if (tr && e.key === 'Enter') location.href = 'account.html?code=' + tr.dataset.code;
   });
   Shell.setExport(() => window.__shown || rows);
-  render();
+  const applyScope = () => {
+    rows.forEach(r => { r.tier = scope === 'pool' ? r.tierPool : r.tierInd; r.tierOrder = tierOrder[r.tier]; });
+    tierCounts = rows.reduce((m, r) => (m[r.tier] = (m[r.tier] || 0) + 1, m), {});
+    document.getElementById('k-tier1').textContent = tierCounts['1'] || 0;
+    document.getElementById('scope-hint').textContent = scope === 'pool'
+      ? '點選公司看分數拆解；虛線為全帳戶池前 30% 門檻' : '點選公司看分數拆解；橘圈＝Tier 1（各產業內各軸前 30%）';
+    document.querySelectorAll('#scope-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === scope)));
+    drawQuad(); drawTop(); drawInd(); render();
+  };
+  document.querySelectorAll('#scope-seg button').forEach(b => b.addEventListener('click', () => {
+    scope = b.dataset.s;
+    try { localStorage.setItem('cl:tierscope', scope); } catch (e) { /* 略 */ }
+    applyScope();
+  }));
+  applyScope();
 
   // 從帳戶頁迷你象限圖點過來（?focus=代號）：捲到該公司並高亮
   const focus = new URLSearchParams(location.search).get('focus');
