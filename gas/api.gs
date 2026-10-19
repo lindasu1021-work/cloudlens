@@ -25,7 +25,6 @@ function doGet(e) {
     else if (action === 'lookup') data = apiLookup_(p.q, p.alias);
     else if (action === 'lookup_config') data = apiLookupConfig_();
     else if (action === 'insight') data = apiInsight_(String(p.industry || ''));
-    else if (action === 'run_once') data = scheduleRunOnce_(String(p.fn || ''));
     else if (action === 'confirm' || action === 'unsubscribe') return subPage_(action, p.token);
     else return jsonOut_({ ok: false, error: 'unknown action: ' + action, run_id: runId });
     return jsonOut_({ ok: true, data: data, run_id: runId });
@@ -175,15 +174,4 @@ function statusCards_(log) {
                   message: String(r.error).split('\n')[0].slice(0, 240), resolved: resolved });
   }
   return { cards: cards, week_labels: weekLabels, recent_errors: errors };
-}
-
-
-/** 暫時性：排一個 10 秒後執行的白名單函式（4.2 上線驗證用；30 分鐘內只能排一次）。驗證完即移除。 */
-function scheduleRunOnce_(fn) {
-  if (['techNewsJob', 'cloudCasesNow', 'rescoreNow'].indexOf(fn) < 0) return { scheduled: false, note: 'fn not allowed' };
-  var props = PropertiesService.getScriptProperties(), key = 'RUNONCE_' + fn, last = Number(props.getProperty(key) || 0);
-  if (Date.now() - last < 5 * 60 * 1000) return { scheduled: false, note: '5 分鐘內已排過' };
-  props.setProperty(key, String(Date.now()));
-  scheduleContinuation_(fn, 10 * 1000);
-  return { scheduled: true, fn: fn };
 }
