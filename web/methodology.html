@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css?v=20261019b">
-<link rel="stylesheet" href="css/app.css?v=20261019d">
+<link rel="stylesheet" href="css/app.css?v=20261019e">
 </head>
 <body data-page="methodology" data-title="方法論">
 <main class="meth">
@@ -28,7 +28,7 @@
   </section>
 
   <nav class="chapters" id="chapters" aria-label="章節">
-    <a href="#arch">資料流</a><a href="#scope">帳戶範圍</a><a href="#rules">評分規則</a><a href="#dict">字典</a><a href="#valid">驗證</a><a href="#versions">版本</a><a href="#limits">限制</a><a href="#lookup">Lead 速查</a>
+    <a href="#arch">資料流</a><a href="#scope">帳戶範圍</a><a href="#rules">評分規則</a><a href="#dict">字典</a><a href="#valid">驗證</a><a href="#versions">版本</a><a href="#limits">限制</a><a href="#lookup">Lead 速查</a><a href="#insight">產業洞察</a>
   </nav>
 
   <!-- 1 資料流 -->
@@ -156,11 +156,25 @@
     <h3 class="sub-h">帳戶頁的會議準備</h3>
     <p class="lead">同業證明只列驗證集（config_validation）中有公開來源的公司，依「同產業 → AWS → 同主 Play」排序；建議接觸職稱依主、次 Play 對應，不放人名；MEDDPICC 只有指標（規模）、痛點（觸發事件或 Play 訊號）、競爭（雲端現況）可由公開資料提供線索，其餘列為缺口並附建議問題；異議回應與議程依主 Play 由規則產生。觀察清單只存在使用者的瀏覽器。</p>
   </section>
+  <!-- 9 產業洞察素材包 -->
+  <section class="card chapter" id="insight" aria-labelledby="h-insight">
+    <h2 id="h-insight">9　產業洞察素材包的規則</h2>
+    <p class="lead">每兩週（偶數 ISO 週的每週排程）為 config_industries 中啟用的產業產生一次；目前只啟用零售（含餐飲），金融、製造用同一套引擎，填好主題關鍵字後即可開啟。內容由規則產生，不使用 AI。</p>
+    <ul class="plain-list">
+      <li>主題熱度：近 14 天 Google News 中，標題同時命中產業情境詞（例：零售、超商、餐飲）與主題關鍵字的新聞則數；雙週變化與前 14 天比較；排除股價、指數等行情新聞</li>
+      <li>相關公司：標題中出現的上市櫃簡稱（3 字以上；2 字簡稱只比對該產業的證交所產業別，避免一般詞誤判）</li>
+      <li>重點事件：標題含併購、展店、上線、導入、資安事件等事件詞，跨主題命中多者優先，取 5 則；AWS 切入角度取標題中命中關鍵字最多的主題</li>
+      <li>建議標題：依最熱主題、升溫最多的主題、第一則重點事件套用固定句型</li>
+      <li>AWS 參考資源：AWS for Industries 部落格（零售）RSS 的最新文章</li>
+    </ul>
+    <h3 class="sub-h">每週摘要信訂閱</h3>
+    <p class="lead">輸入 Email 後先寄確認信，點連結確認才會收到；訂閱者收到的是公開版摘要（不含資料源與錯誤資訊），每封信都附取消連結。為避免被濫用，每天最多寄出 20 封確認信。</p>
+  </section>
 </main>
 <footer>資料來源：臺灣證券交易所、證券櫃檯買賣中心、公開資訊觀測站、Google News。</footer>
 
 <script src="js/api.js?v=20261019b"></script>
-<script src="js/shell.js?v=20261019b"></script>
+<script src="js/shell.js?v=20261019e"></script>
 <script src="js/method-charts.js?v=20261014r"></script>
 <script>
 (async () => {

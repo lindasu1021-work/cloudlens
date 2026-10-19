@@ -24,6 +24,8 @@ function doGet(e) {
     else if (action === 'gcis_probe') data = apiGcisProbe_();
     else if (action === 'lookup') data = apiLookup_(p.q, p.alias);
     else if (action === 'lookup_config') data = apiLookupConfig_();
+    else if (action === 'insight') data = apiInsight_(String(p.industry || ''));
+    else if (action === 'confirm' || action === 'unsubscribe') return subPage_(action, p.token);
     else return jsonOut_({ ok: false, error: 'unknown action: ' + action, run_id: runId });
     return jsonOut_({ ok: true, data: data, run_id: runId });
   } catch (err) {
@@ -35,6 +37,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (body.action === 'subscribe') return jsonOut_({ ok: true, data: apiSubscribe_(body.email), run_id: '' });
     if (body.action === 'copilot') {
       var runId = String(setting_('current_run_id', ''));
       return jsonOut_({ ok: true, data: apiCopilot_(body), run_id: runId });

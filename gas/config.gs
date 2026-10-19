@@ -36,6 +36,10 @@ var SCHEMA = {
   lead_lookups: ['lookup_id', 'query', 'tax_id', 'company_name', 'capital', 'industry', 'listed', 'mode', 'verdict', 'created_at', 'result_json'],
   config_routing: ['rule_id', 'condition', 'segment', 'note'],
   config_bant: ['field_key', 'label', 'visible', 'prefill_rule'],
+  // 09 檔衝刺 3：產業洞察素材包、每週摘要信訂閱
+  config_industries: ['industry_key', 'name', 'news_keywords', 'aws_blog_feed', 'active'],
+  insight_packs: ['pack_id', 'industry_key', 'period', 'topics_json', 'events_json', 'created_at'],
+  subscribers: ['email', 'status', 'token', 'created_at', 'confirmed_at', 'unsubscribed_at'],
   mail_log: ['mail_key', 'sent_at']
 };
 
@@ -88,6 +92,7 @@ function setupSheets() {
   seedConfig_('config_weights', 'component', DEFAULT_WEIGHTS);
   seedConfig_('config_routing', 'rule_id', DEFAULT_ROUTING);
   seedConfig_('config_bant', 'field_key', DEFAULT_BANT);
+  seedConfig_('config_industries', 'industry_key', DEFAULT_INDUSTRIES);
   // 移除建立試算表時的預設空白分頁
   ['工作表1', 'Sheet1'].forEach(function (n) {
     var sh = book.getSheetByName(n);

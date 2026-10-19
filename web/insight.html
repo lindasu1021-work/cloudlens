@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>產業洞察｜企業雲端商機洞察平台</title>
+<meta name="description" content="雙週產業洞察素材包：主題熱度與變化、重點事件與 AWS 切入角度、建議標題，可匯出 Markdown">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261019b">
+<link rel="stylesheet" href="css/app.css?v=20261019e">
+<body data-page="insight" data-title="產業洞察">
+<main>
+  <section class="card dark" aria-labelledby="in-title">
+    <div class="band-head"><h2 id="in-title">產業洞察素材包</h2><span class="band-sub" id="in-sub">載入中…（第一次產生約需 30–60 秒）</span></div>
+    <div class="in-bar">
+      <label class="visually-hidden" for="in-ind">產業</label><select id="in-ind" class="in-select"></select>
+      <div class="in-actions"><button type="button" class="lk-copy" id="in-copy">複製 Markdown</button><button type="button" class="lk-copy" id="in-dl">下載 .md</button></div>
+    </div>
+  </section>
+
+  <section class="grid-12">
+    <div class="card span-8" aria-labelledby="hot-title">
+      <div class="card-head"><h2 id="hot-title">主題熱度</h2><span class="hint" id="hot-hint">近 14 天新聞則數；變化＝與前 14 天相比。點主題看相關新聞與公司</span></div>
+      <ul class="heat-list" id="heat"></ul>
+    </div>
+    <div class="span-4 col-stack">
+      <div class="card"><div class="card-head"><h2>建議標題</h2><span class="hint">依熱門主題與重點事件由規則產生</span></div><ol class="lk-qs" id="titles"></ol></div>
+      <div class="card"><div class="card-head"><h2>AWS 參考資源</h2><span class="hint">AWS for Industries 部落格（零售）最新文章</span></div><ul class="ref-list" id="refs"></ul></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="ev-title" style="margin-top:20px">
+    <div class="card-head"><h2 id="ev-title">本期 5 則重點事件</h2><span class="hint">標題含併購、展店、上線、資安事件等事件詞；附 AWS 切入角度</span></div>
+    <ol class="ev-list" id="events"></ol>
+  </section>
+
+  <section class="card sub-card" id="subscribe" aria-labelledby="sub-title" style="margin-top:20px">
+    <div class="card-head"><h2 id="sub-title">訂閱每週摘要信</h2><span class="hint">每週一寄出：Tier 1 帳戶、分數變化、近 7 天觸發事件。Email 只用於寄送摘要，會先寄確認信，每封信都可取消訂閱。</span></div>
+    <form class="lk-form" id="sub-form">
+      <label class="visually-hidden" for="sub-email">Email</label>
+      <input id="sub-email" type="email" required maxlength="254" placeholder="you@example.com" autocomplete="email">
+      <button type="submit" class="btn-dark lk-go">訂閱</button>
+    </form>
+    <p class="lk-status" id="sub-msg" role="status" aria-live="polite"></p>
+  </section>
+  <p class="lk-foot" id="in-foot"></p>
+</main>
+<script src="js/api.js?v=20261019b"></script>
+<script src="js/shell.js?v=20261019e"></script>
+<script src="js/lead.js?v=20261019c"></script>
+<script src="js/insight.js?v=20261019a"></script>
+</body>
+</html>
