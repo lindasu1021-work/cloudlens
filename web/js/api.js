@@ -5,7 +5,7 @@
 const CL = (() => {
   // Web App 網址本來就公開在前端，不是秘密
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbzb32r6vAc54inssIjGO3ol0FNmevyKkDvp_QMmpNYguGhz4C6k5fNk8Nmc3izW_7fo/exec';
-  const CACHE_KEY = 'cl:snapshot:v4', CACHE_MS = 30 * 60 * 1000;
+  const CACHE_KEY = 'cl:snapshot:v5', CACHE_MS = 30 * 60 * 1000;
 
   async function gas(action, params = {}, timeoutMs = 20000) {
     const qs = new URLSearchParams({ action, ...params }).toString();
