@@ -13,15 +13,18 @@ const Shell = (() => {
     status: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
     lookup: '<circle cx="10" cy="10" r="6"/><path d="M19 19l-4.5-4.5"/><path d="M7.5 10h5M10 7.5v5"/>',
+    radar: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/>',
+    watchlist: '<path d="M6 4h12v16l-6-4-6 4z"/>',
     download: '<path d="M12 4v11"/><path d="M7.5 11 12 15.5 16.5 11"/><path d="M5 19.5h14"/>'
   };
   const svg = (k, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
   const NAV = [
     { group: '查詢', items: [{ id: 'lookup', label: 'Lead 速查', href: 'lookup.html' }] },
-    { group: '機會', items: [{ id: 'overview', label: '總覽', href: 'index.html' }, { id: 'accounts', label: '帳戶清單', href: 'index.html#accounts' }] },
+    { group: '機會', items: [{ id: 'overview', label: '總覽', href: 'index.html' }, { id: 'radar', label: '觸發事件雷達', href: 'radar.html' },
+                            { id: 'watchlist', label: '我的觀察清單', href: 'watchlist.html' }] },
     { group: '關於', items: [{ id: 'methodology', label: '方法論', href: 'methodology.html' }, { id: 'status', label: '資料狀態', href: 'status.html' }] }
   ];
-  const PAGE_NAV = { lookup: 'lookup', overview: 'overview', account: 'accounts', methodology: 'methodology', status: 'status' };
+  const PAGE_NAV = { lookup: 'lookup', overview: 'overview', account: 'overview', radar: 'radar', watchlist: 'watchlist', methodology: 'methodology', status: 'status' };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   let exportProvider = null, accounts = [];
 
@@ -44,7 +47,7 @@ const Shell = (() => {
       <nav class="side-nav" aria-label="主要導覽">
         ${NAV.map(g => `<div class="side-group"><div class="side-group-title">${g.group}</div>
           ${g.items.map(i => `<a class="side-item" href="${i.href}" ${i.id === active ? 'aria-current="page"' : ''} title="${i.label}">
-            <span class="side-ico">${svg(i.id === 'accounts' ? 'accounts' : i.id)}</span><span class="side-label">${i.label}</span>
+            <span class="side-ico">${svg(i.id === 'accounts' ? 'accounts' : i.id)}</span><span class="side-label">${i.label}</span>${i.id === 'watchlist' ? '<span class="side-count" id="watch-count" hidden></span>' : ''}
             ${i.id === active ? '<span class="side-dot" aria-hidden="true"></span>' : ''}</a>`).join('')}</div>`).join('')}
       </nav>
       <div class="update-card" id="update-card" aria-live="polite"><div class="uc-title">資料更新</div><div class="uc-line muted">載入中…</div></div>`;
@@ -100,6 +103,7 @@ const Shell = (() => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); document.getElementById('gsearch').focus(); }
     });
     fillUpdateCard();
+    fillWatchCount();
   }
 
   function setCrumbs(list) {
@@ -166,6 +170,22 @@ const Shell = (() => {
     a.download = `${NAME}_帳戶清單_${d.run_id || 'snapshot'}.csv`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // ---------- 觀察清單：有新觸發事件的公司數 ----------
+  async function fillWatchCount() {
+    const el = document.getElementById('watch-count');
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem('cl:watch') || '[]'); } catch (e) { return; }
+    if (!el || !list.length) return;
+    try {
+      const d = await CL.load();
+      const n = list.filter(w => { const a = w.code && d.byCode[w.code]; return a && a.docs.some(x => x.parts.some(p => p.type === 'T1') && new Date(x.at) > new Date(w.added_at)); }).length;
+      el.textContent = n ? String(n) : String(list.length);
+      el.classList.toggle('hot', n > 0);
+      el.title = n ? `${n} 家有新事件` : `觀察中 ${list.length} 家`;
+      el.hidden = false;
+    } catch (e) { /* 略過 */ }
   }
 
   // ---------- 資料更新卡 ----------

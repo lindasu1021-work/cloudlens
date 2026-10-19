@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>觸發事件雷達｜企業雲端商機洞察平台</title>
+<meta name="description" content="帳戶池公司的觸發事件流：依產業、事件類型、Play、Tier 篩選，可加入觀察清單或開啟帳戶">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261019b">
+<link rel="stylesheet" href="css/app.css?v=20261019d">
+</head>
+<body data-page="radar" data-title="觸發事件雷達">
+<main>
+  <section class="card dark" aria-labelledby="rk-title">
+    <div class="band-head"><h2 id="rk-title">觸發事件雷達</h2><span class="band-sub" id="rk-sub"></span></div>
+    <div class="radar-kpis">
+      <button type="button" class="band-card kpi-btn" data-days="7"><div class="band-label">近 7 天事件</div><div class="band-num" id="k7">—</div></button>
+      <button type="button" class="band-card kpi-btn" data-days="30"><div class="band-label">近 30 天事件</div><div class="band-num" id="k30">—</div></button>
+      <button type="button" class="band-card kpi-btn" data-days="30" data-tier="1"><div class="band-label">近 30 天 Tier 1 有事件</div><div class="band-num hot" id="kt1">—</div></button>
+      <div class="band-card"><div class="band-label">近 30 天事件類型</div><div class="radar-types" id="ktypes"></div></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="rl-title">
+    <div class="card-head"><h2 id="rl-title">事件流</h2><span class="hint" id="rl-hint"></span></div>
+    <div class="filters" role="group" aria-label="篩選">
+      <label class="visually-hidden" for="f-days">期間</label>
+      <select id="f-days"><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="90">近 90 天</option><option value="365">近一年</option></select>
+      <label class="visually-hidden" for="f-ind">產業</label><select id="f-ind"><option value="">全部產業</option></select>
+      <label class="visually-hidden" for="f-type">事件類型</label><select id="f-type"><option value="">全部事件類型</option></select>
+      <label class="visually-hidden" for="f-play">Play</label><select id="f-play"><option value="">全部 Play</option></select>
+      <label class="visually-hidden" for="f-tier">Tier</label><select id="f-tier"><option value="">全部 Tier</option><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option><option value="hold">暫緩</option></select>
+    </div>
+    <ul class="radar-list" id="rlist"></ul>
+    <button type="button" class="btn-secondary radar-more" id="rmore" hidden></button>
+  </section>
+</main>
+<script src="js/api.js?v=20261019b"></script>
+<script src="js/shell.js?v=20261019b"></script>
+<script src="js/lead.js?v=20261019c"></script>
+<script src="js/radar.js?v=20261019b"></script>
+</body>
+</html>

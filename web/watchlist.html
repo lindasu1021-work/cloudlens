@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的觀察清單｜企業雲端商機洞察平台</title>
+<meta name="description" content="存在這個瀏覽器的觀察清單：清單內公司有新觸發事件時標示">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261019b">
+<link rel="stylesheet" href="css/app.css?v=20261019d">
+</head>
+<body data-page="watchlist" data-title="我的觀察清單">
+<main>
+  <section class="card" aria-labelledby="wl-title">
+    <div class="card-head head-split"><div><h2 id="wl-title">我的觀察清單</h2><span class="hint">只存在這個瀏覽器（不上傳）；加入後有新的觸發事件會標示「新事件」</span></div>
+      <div class="pack-actions"><button type="button" class="lk-copy" id="wl-export">匯出 CSV</button></div></div>
+    <ul class="watch-list" id="wlist"></ul>
+  </section>
+</main>
+<script src="js/api.js?v=20261019b"></script>
+<script src="js/shell.js?v=20261019b"></script>
+<script src="js/lead.js?v=20261019c"></script>
+<script src="js/watchlist.js?v=20261019b"></script>
+</body>
+</html>
