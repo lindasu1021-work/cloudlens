@@ -7,6 +7,9 @@
 
 var NEWS_TOPIC = '(雲端 OR 數位轉型 OR AI OR 數據 OR 資料 OR 資安 OR ERP OR 智慧製造 OR 系統 OR 平台)';
 var NEWS_BATCH = 15;
+// 規則 v3（D1）：科技媒體限定查詢（不加主題詞）；標題須含公司名稱。回補近 365 天一次，之後每週 8 天。
+var TECH_SITES = ['ithome.com.tw', 'bnext.com.tw', 'technews.tw', 'digitimes.com.tw'];
+var TECH_PUBLISHER_RE = /iThome|數位時代|TechNews|科技新報|DIGITIMES|CIO Taiwan|INSIDE|Bnext/i;
 
 function newsTasks_() {
   var codes = universeCodes_();
@@ -39,8 +42,9 @@ function fetchNewsBatch_(runId, from, to) {
   readTable_('company_aliases').forEach(function (a) { (aliases[String(a.stock_code)] = aliases[String(a.stock_code)] || []).push(String(a.alias)); });
   var props = PropertiesService.getScriptProperties();
   var backfilled = JSON.parse(props.getProperty('NEWS_BACKFILLED') || '{}');
+  var techDone = JSON.parse(props.getProperty('NEWS_TECH_BACKFILLED') || '{}');
 
-  var now = new Date(), day = 864e5, rows = [], fetched = 0, failed = [];
+  var now = new Date(), day = 864e5, rows = [], fetched = 0, failed = [], techFetched = 0, techRows = 0, techFailed = [];
   codes.forEach(function (code) {
     var c = companies[code];
     var name = newsQueryName_(c, overrides);
@@ -77,12 +81,34 @@ function fetchNewsBatch_(runId, from, to) {
       });
     });
     if (ok) backfilled[code] = true; else failed.push(code);
+    // 科技媒體限定查詢
+    var tw = techDone[code] ? [new Date(now - 8 * day), now] : [new Date(now - 365 * day), now];
+    var tq = '"' + name + '" (' + TECH_SITES.map(function (d) { return 'site:' + d; }).join(' OR ') + ')' + exclude +
+      ' after:' + ymd_(tw[0]) + ' before:' + ymd_(new Date(tw[1].getTime() + day));
+    var turl = 'https://news.google.com/rss/search?q=' + encodeURIComponent(tq) + '&hl=zh-TW&gl=TW&ceid=TW:zh-Hant';
+    var tres = fetchWithRetry_(turl);
+    fetched++; techFetched++;
+    Utilities.sleep(300);
+    if (tres.code === 200) {
+      techDone[code] = true;
+      tres.text.split('<item>').slice(1).forEach(function (it) {
+        var title = xmlText_(it, 'title'), publisher = xmlText_(it, 'source');
+        if (publisher && title.slice(-(publisher.length + 3)) === ' - ' + publisher) title = title.slice(0, -(publisher.length + 3));
+        if (!names.some(function (n) { return title.indexOf(n) >= 0; })) return;
+        var guid = xmlText_(it, 'guid') || xmlText_(it, 'link'), pub = new Date(xmlText_(it, 'pubDate'));
+        rows.push({ raw_id: 'news:' + code + ':' + md5_(guid).slice(0, 16), run_id: runId, fetched_at: nowIso_(), source_url: turl,
+          stock_code: code, query: tq, title: title, published_at: isNaN(pub) ? '' : Utilities.formatDate(pub, TZ, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+          publisher: publisher, link: xmlText_(it, 'link') });
+        techRows++;
+      });
+    } else techFailed.push(code);
   });
   props.setProperty('NEWS_BACKFILLED', JSON.stringify(backfilled));
+  props.setProperty('NEWS_TECH_BACKFILLED', JSON.stringify(techDone));
   var added = appendNewRaw_('raw_news', rows);
   if (failed.length === codes.length) throw new Error('本批全部查詢失敗：' + failed.join(','));
   return { rows_in: fetched, rows_out: added, status: failed.length ? 'partial' : 'success',
-           note: codes.length + ' 家、' + fetched + ' 次查詢、標題相符 ' + rows.length + '、新增 ' + added + (failed.length ? '；失敗 ' + failed.join(',') : '') };
+           note: codes.length + ' 家、' + fetched + ' 次查詢、標題相符 ' + rows.length + '（科技媒體 ' + techRows + '／' + techFetched + ' 次）、新增 ' + added + (failed.length ? '；失敗 ' + failed.join(',') : '') };
 }
 
 function xmlText_(s, tag) {

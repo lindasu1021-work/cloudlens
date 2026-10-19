@@ -55,6 +55,7 @@ function computeScores_(runId) {
   if (Number(setting_('rule_version', 1)) < RULE_VERSION) setSetting_('rule_version', RULE_VERSION);
   // D28 的驗證集分頁在 setupPhase2 之後才加入：不存在時自動建立並寫入預設清單
   if (!ss().getSheetByName('config_validation')) { setupSheets(); seedValidation_(); }
+  if (!ss().getSheetByName('config_cloud_cases')) setupSheets();
   if (header_('scores').indexOf('tier_pool') < 0 || header_('validation').indexOf('baseline_precision') < 0) setupSheets(); // v3 新增欄位
   var now = Date.now();
   var weights = {};
@@ -77,6 +78,8 @@ function computeScores_(runId) {
   var awsCases = {}, known = {};
   readTable_('config_aws_cases').forEach(function (a) { if (a.stock_code) awsCases[String(a.stock_code)] = a.case_url || true; });
   readTable_('config_validation').forEach(function (v) { if (v.stock_code) known[String(v.stock_code)] = String(v.cloud).toLowerCase(); });
+  var vc = verifiedCloudCases_();
+  Object.keys(vc).forEach(function (code) { known[code] = vc[code] === 'aws' ? 'aws' : known[code] || vc[code]; }); // 10 檔 D2：人工確認的雲端案例
   var newsDone = JSON.parse(getProp_('NEWS_BACKFILLED', '{}'));
   var allMonths = Object.keys(rev).reduce(function (acc, k) { return acc.concat(Object.keys(rev[k])); }, []).sort();
   var latestYm = allMonths[allMonths.length - 1];
@@ -272,7 +275,9 @@ function setSetting_(key, value) {
  * 同一 run_id + rule_version 先刪後寫。
  */
 function computeValidation_(runId, rows, ruleVersion) {
+  var vcases = verifiedCloudCases_();
   var set = readTable_('config_validation').map(function (v) { return String(v.stock_code); });
+  Object.keys(vcases).forEach(function (c) { if (set.indexOf(c) < 0) set.push(c); }); // 驗證集＝config_validation ＋ 已確認的雲端案例
   var capital = {};
   readTable_('companies').forEach(function (c) { capital[String(c.stock_code)] = Number(c.capital) || 0; });
   var largeCut = Number(setting_('large_capital', 1e10));

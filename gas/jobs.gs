@@ -22,7 +22,7 @@ function dailyJob() {
 
 function monthlyJob() {
   runJob_('monthly', function () { return todayStr_().slice(0, 7) + '-monthly'; }, function () {
-    return ['companies:twse', 'companies:tpex', 'aliases_universe'].concat(revenueTasks_());
+    return ['companies:twse', 'companies:tpex', 'aliases_universe'].concat(revenueTasks_(), cloudCasesTasks_());
   }, 'continueMonthlyJob');
 }
 
@@ -48,6 +48,11 @@ function weeklyJob() {
 /** 每週 run_id：ISO 週次（2026-W42）；同一週重跑沿用同一個 run_id。 */
 function weeklyRunId_() { return weekRunId_(new Date()); }
 
+/** 手動：只重抓新聞（含科技媒體查詢）並重算訊號與分數；run_id 沿用本週。 */
+function techNewsJob() {
+  runJob_('technews', function () { return weeklyRunId_(); }, function () { return newsTasks_().concat(['signals', 'scores']); }, 'continueTechNewsJob');
+}
+function continueTechNewsJob() { techNewsJob(); }
 function continueWeeklyJob() { weeklyJob(); }
 function continueDailyJob() { dailyJob(); }
 function continueMonthlyJob() { monthlyJob(); }
@@ -70,6 +75,8 @@ function runTask_(key, runId) {
     case 'apply_settings': return applySettings_();
     case 'insight': return runInsightTask_(p[1]);
     case 'digest': return sendWeeklyDigest_(runId);
+    case 'cloudpages': return fetchCloudPages_(runId);
+    case 'cloudcand': return discoverCloudCandidates_(runId, p[1], p[2]);
     case 'copilot': return precomputeCopilot_(runId, p[1]);
   }
   throw new Error('unknown task ' + key);

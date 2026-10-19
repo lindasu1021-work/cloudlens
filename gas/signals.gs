@@ -14,6 +14,7 @@
 var CIO_CHANGE_RE = /異動|新任|委任|聘任|接任|任命/;
 
 function buildSignals_(runId) {
+  if (header_('signals').indexOf('source_type') < 0) setupSheets(); // v3 新增欄位
   var added = seedKeywords_(); // 補上程式更新後新增的字典詞
   var kw = loadKeywords_();
   var ind = {}, cap = {}, names = {};
@@ -25,13 +26,24 @@ function buildSignals_(runId) {
   });
   readTable_('company_aliases').forEach(function (a) { (names[String(a.stock_code)] = names[String(a.stock_code)] || []).push(String(a.alias)); });
   var capexPct = Number(setting_('capex_materiality_pct', 0.05));
+  var techW = Number(setting_('tech_news_weight', 1.5));
   var nameFalse = (kw.NAME_FALSE || []).map(function (e) { return e.kw; });
   var cutoff = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
   var out = [];
   var stats = { ann: 0, ann_excluded: 0, news: 0, news_excluded: 0, news_mismatch: 0, capex: 0, capex_below: 0, capex_unknown: 0 };
 
+  // 訊號產出率（D1 驗收指標）：各來源原始筆數 → 至少產生 1 則訊號的文件數
+  var YG = { ann: '重大訊息', news_finance: '新聞（財經／一般）', news_tech: '新聞（科技媒體）' };
+  var yraw = { ann: { all: 0, w7: 0 }, news_finance: { all: 0, w7: 0 }, news_tech: { all: 0, w7: 0 } };
+  var yhit = { ann: {}, news_finance: {}, news_tech: {} };
+  var cut7 = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  function yCount(g, dateStr) { yraw[g].all++; if (String(dateStr).slice(0, 10) >= cut7) yraw[g].w7++; }
+  function yGroup(doc) { return doc.source === 'ann' ? 'ann' : doc.source_type === 'tech' ? 'news_tech' : doc.source === 'news' ? 'news_finance' : null; }
+
   function push(code, type, category, play, weight, points, doc) {
+    var yg = yGroup(doc); if (yg) yhit[yg][doc.key] = String(doc.observed_at).slice(0, 10);
     out.push({
+      source_type: doc.source_type || '',
       signal_id: md5_([code, type, category, doc.key].join('|')).slice(0, 16),
       stock_code: code, signal_type: type, category: category, play: play,
       strength: weight >= 1 ? 'strong' : 'weak', points_raw: points,
@@ -73,7 +85,7 @@ function buildSignals_(runId) {
   readTable_('raw_announcements').forEach(function (a) {
     var code = String(a.stock_code);
     if (!ind[code] || String(a.ann_date).slice(0, 10) < cutoff) return;
-    stats.ann++;
+    stats.ann++; yCount('ann', a.ann_date);
     var subject = String(a.subject);
     if (matchCat_(kw.EXCLUDE, subject, ind[code]).length) { stats.ann_excluded++; return; }
     var doc = { key: a.raw_id, observed_at: a.ann_date, title: subject, url: a.source_url, source: 'ann' };
@@ -110,16 +122,19 @@ function buildSignals_(runId) {
   readTable_('raw_news').forEach(function (n) {
     var code = String(n.stock_code);
     if (!ind[code] || String(n.published_at).slice(0, 10) < cutoff) return;
-    stats.news++;
+    stats.news++; yCount(TECH_PUBLISHER_RE.test(String(n.publisher)) ? 'news_tech' : 'news_finance', n.published_at);
     var title = String(n.title);
     if (matchCat_(kw.EXCLUDE_NEWS, title, ind[code]).length) { stats.news_excluded++; return; }
     // 規則 v3（R1）：移除已知誤配詞後，標題仍須含公司名稱（避免「AI新巨獸」被當成新巨）
     var clean = nameFalse.reduce(function (t, f) { return t.split(f).join(''); }, title);
     if (!(names[code] || []).some(function (nm) { return nm.length >= 2 && clean.indexOf(nm) >= 0; })) { stats.news_mismatch++; return; }
-    var doc = { key: n.raw_id, observed_at: n.published_at, title: title + '（' + n.publisher + '）', url: n.link, source: 'news' };
+    var tech = TECH_PUBLISHER_RE.test(String(n.publisher));
+    var doc = { key: n.raw_id, observed_at: n.published_at, title: title + '（' + n.publisher + '）', url: n.link, source: 'news', source_type: tech ? 'tech' : 'finance' };
     var h = hits(title, title, code, ['MIG', 'DATA', 'AI', 'SEC']);
     Object.keys(h).forEach(function (cat) {
-      push(code, cat === 'SEC' ? 'PLAY' : 'N3', cat, PLAY_OF[cat], h[cat], h[cat], doc);
+      // 規則 v3（D1）：科技媒體命中給 1.5 倍權重
+      var w = h[cat] * (tech ? techW : 1);
+      push(code, cat === 'SEC' ? 'PLAY' : 'N3', cat, PLAY_OF[cat], w, w, doc);
     });
     vendor(title, code, doc);
   });
@@ -139,6 +154,11 @@ function buildSignals_(runId) {
     }
   });
 
+  var yieldRows = Object.keys(YG).map(function (g) {
+    var hit = Object.keys(yhit[g]), hit7 = hit.filter(function (k) { return yhit[g][k] >= cut7; }).length;
+    return { key: g, name: YG[g], raw_all: yraw[g].all, hit_all: hit.length, raw_w7: yraw[g].w7, hit_w7: hit7 };
+  });
+  PropertiesService.getScriptProperties().setProperty('SIGNAL_YIELD', JSON.stringify({ at: nowIso_(), run_id: runId, rows: yieldRows }));
   var sh = sheet_('signals');
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   appendObjects_('signals', out);

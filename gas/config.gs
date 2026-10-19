@@ -15,6 +15,8 @@ var SCHEMA = {
   config_aws_cases: ['stock_code', 'company_name', 'case_url', 'checked_at', 'note'],
   // D28：驗證集＝公開來源證實使用公有雲的帳戶池公司；cloud 欄同時用於雲端現況
   config_validation: ['stock_code', 'company_name', 'cloud', 'evidence_url', 'source_type', 'checked_at', 'note'],
+  // 10 檔 D2：雲端案例（verified＝TRUE 才影響雲端現況與驗證集）
+  config_cloud_cases: ['stock_code', 'company_name', 'cloud', 'evidence_url', 'source_type', 'checked_at', 'verified', 'note'],
   // 4.2 主檔
   companies: ['stock_code', 'name_full', 'name_short', 'market', 'industry_code', 'industry_name', 'capital', 'in_universe', 'updated_at'],
   company_aliases: ['alias', 'stock_code'],
@@ -24,7 +26,7 @@ var SCHEMA = {
   raw_news: RAW_COMMON.concat(['stock_code', 'query', 'title', 'published_at', 'publisher', 'link']),
   raw_esg_security: RAW_COMMON.concat(['stock_code', 'report_year', 'breach_count', 'pii_breach_ratio', 'affected_customers']),
   // 4.4 處理結果
-  signals: ['signal_id', 'stock_code', 'signal_type', 'category', 'play', 'strength', 'points_raw', 'observed_at', 'title', 'evidence_url', 'source', 'run_id'],
+  signals: ['signal_id', 'stock_code', 'signal_type', 'category', 'play', 'strength', 'points_raw', 'observed_at', 'title', 'evidence_url', 'source', 'run_id', 'source_type'],
   scores: ['run_id', 'stock_code', 'rule_version', 'n1', 'n2', 'n3', 'n4', 'need', 't1', 't2', 't3', 't4', 'timing', 'need_pct', 'timing_pct',
            'tier', 'play_primary', 'play_secondary', 'cloud_status', 'data_completeness', 'top_signal_ids', 'tier_pool', 'tier_industry'],
   validation: ['run_id', 'rule_version', 'validation_set_size', 'hits_top20pct', 'precision', 'note',
@@ -60,6 +62,7 @@ var DEFAULT_SETTINGS = [
   ['tier_scope', 'industry', 'Tier 排名範圍：industry＝各產業內各軸前 30%（預設，BD 依客群分工）；pool＝全帳戶池'],
   ['capex_materiality_pct', '0.05', '資本支出重大性：交易金額 ÷ 實收資本額 ≥ 此比例才給 T1 資本支出分數；解析不到金額時維持原分數並標示「金額未知」'],
   ['t1_repeat_decay', '0.5', '同一公司同一類觸發事件重複出現時，第 k 次的權重為此值的 (k−1) 次方（1、0.5、0.25…）'],
+  ['tech_news_weight', '1.5', '科技媒體（iThome、數位時代、TechNews、DIGITIMES）新聞命中的權重倍數'],
   ['large_capital', '10000000000', '驗證「大型」公司的實收資本額門檻（元）；以下為「中型」'],
   ['current_run_id', '', '網站目前顯示的計分 run_id']
 ];

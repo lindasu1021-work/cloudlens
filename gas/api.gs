@@ -25,6 +25,7 @@ function doGet(e) {
     else if (action === 'lookup') data = apiLookup_(p.q, p.alias);
     else if (action === 'lookup_config') data = apiLookupConfig_();
     else if (action === 'insight') data = apiInsight_(String(p.industry || ''));
+    else if (action === 'run_once') data = scheduleRunOnce_(String(p.fn || ''));
     else if (action === 'confirm' || action === 'unsubscribe') return subPage_(action, p.token);
     else return jsonOut_({ ok: false, error: 'unknown action: ' + action, run_id: runId });
     return jsonOut_({ ok: true, data: data, run_id: runId });
@@ -79,7 +80,18 @@ function apiStatus_() {
     announcements: hist ? { done_days: Object.keys(hist.done).length, total_days: Math.round((hist.end - hist.start) / 864e5) + 1 } : null,
     news_companies: Object.keys(JSON.parse(getProp_('NEWS_BACKFILLED', '{}'))).length
   };
-  return { cards: cards.cards, week_labels: cards.week_labels, recent_errors: cards.recent_errors,
+  var yieldInfo = null;
+  try { yieldInfo = JSON.parse(getProp_('SIGNAL_YIELD', 'null')); } catch (e) { /* 尚未計算 */ }
+  var cloudCases = null;
+  try {
+    var cc = readTable_('config_cloud_cases'), isV = function (r) { return r.verified === true || String(r.verified).toUpperCase() === 'TRUE'; };
+    cloudCases = { total: cc.length, verified: cc.filter(isV).length, candidates: cc.filter(function (r) { return !isV(r); }).length,
+      companies_verified: Object.keys(cc.filter(isV).reduce(function (m, r) { m[r.stock_code] = 1; return m; }, {})).length,
+      companies_candidate: Object.keys(cc.filter(function (r) { return !isV(r); }).reduce(function (m, r) { m[r.stock_code] = 1; return m; }, {})).length,
+      by_source: cc.reduce(function (m, r) { m[r.source_type] = (m[r.source_type] || 0) + 1; return m; }, {}),
+      sample: cc.filter(function (r) { return !isV(r); }).slice(0, 12).map(function (r) { return { code: String(r.stock_code), name: r.company_name, cloud: r.cloud, note: String(r.note).slice(0, 70) }; }) };
+  } catch (e) { /* 分頁尚未建立 */ }
+  return { cloud_cases: cloudCases, signal_yield: yieldInfo, cards: cards.cards, week_labels: cards.week_labels, recent_errors: cards.recent_errors,
            sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs, backfill: backfill,
            schedule: ['每日 22:00–23:00 重大訊息＋訊號與計分', '每週一 05:00–06:00 新聞・ESG・重訊回補・訊號・計分', '每月 15 日 05:00–06:00 公司主檔・月營收'],
            server_time: nowIso_(),
@@ -163,4 +175,15 @@ function statusCards_(log) {
                   message: String(r.error).split('\n')[0].slice(0, 240), resolved: resolved });
   }
   return { cards: cards, week_labels: weekLabels, recent_errors: errors };
+}
+
+
+/** 暫時性：排一個 10 秒後執行的白名單函式（4.2 上線驗證用；30 分鐘內只能排一次）。驗證完即移除。 */
+function scheduleRunOnce_(fn) {
+  if (['techNewsJob', 'cloudCasesNow', 'rescoreNow'].indexOf(fn) < 0) return { scheduled: false, note: 'fn not allowed' };
+  var props = PropertiesService.getScriptProperties(), key = 'RUNONCE_' + fn, last = Number(props.getProperty(key) || 0);
+  if (Date.now() - last < 5 * 60 * 1000) return { scheduled: false, note: '5 分鐘內已排過' };
+  props.setProperty(key, String(Date.now()));
+  scheduleContinuation_(fn, 10 * 1000);
+  return { scheduled: true, fn: fn };
 }
