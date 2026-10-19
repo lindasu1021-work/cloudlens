@@ -341,7 +341,7 @@ footer { color: var(--ink-500); font-size: 12px; text-align: center; padding: 24
 .cp-out { max-height: 60vh; overflow-y: auto; }
 
 /* ===== 方法論頁 v3（S5） ===== */
-.meth { max-width: 1100px; }
+.meth { max-width: 1100px; margin-inline: auto; }
 .hero-card { background: var(--gradient-brand); color: var(--ink-900); border-radius: var(--radius); padding: 28px 32px; margin-bottom: 20px; }
 .hero-card h2 { font-size: 28px; line-height: 1.3; }
 .hero-card p { margin: 8px 0 0; font-size: 14px; max-width: 760px; }
@@ -554,7 +554,7 @@ p, li, .hint, .bul-sub, td { text-wrap: pretty; line-break: strict; }
 .fb-cycle { color: var(--ink-500); margin-left: 6px; padding-left: 6px; border-left: 1px solid var(--gray-200); }
 .fresh-bar .uc-warn { color: var(--orange-800); }
 
-.lk-main { max-width: 860px; }
+.lk-main { max-width: 920px; margin-inline: auto; }
 .lk-search h2 { font-size: 18px; font-weight: 700; }
 .lk-search .hint { color: var(--ink-500); font-size: 13px; margin: 4px 0 14px; }
 .lk-form { display: flex; gap: 10px; }
