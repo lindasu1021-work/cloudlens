@@ -177,54 +177,146 @@ function validateOutput_(button, out, ctx) {
 
 // ---------- Gemini ----------
 
+// 免費層每分鐘約 5 次請求：以「上次呼叫時間」計算等待（跨執行以 Script Property 記錄），每次至少間隔 13 秒（≈4.6 次／分）
+var GEMINI_MIN_INTERVAL_MS = 13000;
+var GEMINI_503_WAIT_MS = 30000;          // 模型忙碌（5xx）時等 30 秒再試 1 次，仍失敗就換下一個模型
+var GEMINI_MAX_MINUTE_WAIT_MS = 60000;   // 每分鐘上限（429 PerMinute）：照回應建議秒數等待，最多 60 秒
+var GEMINI_LAST_CALL_KEY = 'GEMINI_LAST_CALL_MS';
+var GEMINI_DAILY_OFF_KEY = 'GEMINI_DAILY_OFF'; // { date: 'yyyyMMdd', models: [...] }：已用完每日額度的模型，當日停用
+var geminiLastCallMem_ = 0;
+
 function geminiModels_() {
   return String(setting_('gemini_model', 'gemini-flash-latest')).split(',').map(function (m) { return m.trim(); }).filter(String);
 }
 
-/** 呼叫 Gemini；模型 404／429／5xx 時改試下一個候選。回傳 { text, tokens, model }。 */
-function geminiCall_(contents, json) {
+/** 等到距離上次 Gemini 呼叫滿 GEMINI_MIN_INTERVAL_MS，再記下這次呼叫時間。 */
+function geminiThrottle_() {
+  var last = Math.max(geminiLastCallMem_, Number(getProp_(GEMINI_LAST_CALL_KEY, 0)));
+  var wait = last + GEMINI_MIN_INTERVAL_MS - Date.now();
+  if (wait > 0) Utilities.sleep(Math.min(wait, GEMINI_MIN_INTERVAL_MS));
+  geminiLastCallMem_ = Date.now();
+  PropertiesService.getScriptProperties().setProperty(GEMINI_LAST_CALL_KEY, String(geminiLastCallMem_));
+}
+
+function geminiDailyOff_() {
+  var o = null;
+  try { o = JSON.parse(getProp_(GEMINI_DAILY_OFF_KEY, 'null')); } catch (e) {}
+  return o && o.date === Utilities.formatDate(new Date(), TZ, 'yyyyMMdd') ? (o.models || []) : [];
+}
+
+function geminiDisableToday_(model) {
+  var off = geminiDailyOff_();
+  if (off.indexOf(model) < 0) off.push(model);
+  PropertiesService.getScriptProperties().setProperty(GEMINI_DAILY_OFF_KEY, JSON.stringify({ date: Utilities.formatDate(new Date(), TZ, 'yyyyMMdd'), models: off }));
+}
+
+/** 解析 Gemini 錯誤回應：訊息、額度類型（quotaId）、建議等待秒數。 */
+function parseGeminiError_(text) {
+  var o = { message: '', quotaIds: [], retrySec: 0 };
+  try {
+    var e = JSON.parse(text).error || {};
+    o.message = String(e.message || '').split('\n')[0].slice(0, 120);
+    (e.details || []).forEach(function (d) {
+      (d.violations || []).forEach(function (v) { if (v.quotaId) o.quotaIds.push(v.quotaId); });
+      if (d.retryDelay) { var m = /([\d.]+)s/.exec(String(d.retryDelay)); if (m) o.retrySec = Math.ceil(Number(m[1])); }
+    });
+  } catch (x) { o.message = String(text).slice(0, 160); }
+  return o;
+}
+
+/**
+ * 對單一模型發出請求（每次請求前先節流）。回傳 { ok, result?, fatal? }；失敗原因寫進 trail（模型名稱＋HTTP 狀態＋quotaId）。
+ * patient=true（排程預生成）才會做 30 秒／最長 60 秒的等待；即時模式（使用者在等）不等待，直接換下一個模型。
+ */
+function geminiTryModel_(model, body, key, patient, trail) {
+  var minuteRetried = false, retried5xx = false;
+  for (var n = 0; n < 4; n++) {
+    geminiThrottle_();
+    var res;
+    try {
+      var r = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+        method: 'post', contentType: 'application/json', payload: JSON.stringify(body), headers: { 'x-goog-api-key': key }, muteHttpExceptions: true });
+      res = { code: r.getResponseCode(), text: r.getContentText() };
+    } catch (e) { res = { code: 0, text: String(e) }; }
+    if (res.code === 200) {
+      var j = JSON.parse(res.text);
+      var text = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(function (p) { return p.text || ''; }).join('');
+      if (!text) { trail.push(model + ' 回傳空白（' + (((j.candidates || [])[0] || {}).finishReason || '無原因') + '）'); return { ok: false }; }
+      return { ok: true, result: { text: text, tokens: (j.usageMetadata || {}).totalTokenCount || 0, model: model } };
+    }
+    var pe = parseGeminiError_(res.text);
+    trail.push(model + ' HTTP ' + (res.code || '網路錯誤') + (pe.quotaIds.length ? '｜quotaId：' + pe.quotaIds.join(',') : '') +
+               (pe.message ? '｜' + pe.message : '') + (pe.retrySec ? '｜建議等待 ' + pe.retrySec + 's' : ''));
+    if (res.code === 429) {
+      if (pe.quotaIds.some(function (q) { return /PerDay/i.test(q); })) { geminiDisableToday_(model); return { ok: false }; } // 每日上限：該模型當日停用
+      if (patient && !minuteRetried) { // 每分鐘上限：等回應建議的秒數後繼續，不暫停整個排程
+        minuteRetried = true;
+        Utilities.sleep(Math.min(Math.max(pe.retrySec * 1000, GEMINI_MIN_INTERVAL_MS), GEMINI_MAX_MINUTE_WAIT_MS));
+        continue;
+      }
+      return { ok: false };
+    }
+    if (res.code === 0 || res.code >= 500) {
+      if (patient && !retried5xx) { retried5xx = true; Utilities.sleep(GEMINI_503_WAIT_MS); continue; }
+      return { ok: false };
+    }
+    if (res.code === 404) return { ok: false };
+    return { ok: false, fatal: true }; // 其他 4xx（請求內容或金鑰問題）換模型也不會好
+  }
+  return { ok: false };
+}
+
+/** 呼叫 Gemini，依序嘗試候選模型。回傳 { text, tokens, model, trail }；全部失敗丟例外（err.trail 為各模型各自的錯誤）。 */
+function geminiCall_(contents, json, patient) {
   var key = getProp_('GEMINI_API_KEY', '');
   if (!key) throw new Error('未設定 GEMINI_API_KEY');
   var body = { systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents: contents,
                generationConfig: { temperature: 0.4, responseMimeType: json ? 'application/json' : 'text/plain' } };
-  var lastErr = '';
-  var models = geminiModels_();
+  var models = geminiModels_(), off = geminiDailyOff_(), trail = [], usable = 0;
   for (var i = 0; i < models.length; i++) {
-    var res = fetchWithRetry_('https://generativelanguage.googleapis.com/v1beta/models/' + models[i] + ':generateContent', {
-      method: 'post', contentType: 'application/json', payload: JSON.stringify(body), headers: { 'x-goog-api-key': key } });
-    if (res.code === 200) {
-      var j = JSON.parse(res.text);
-      var text = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(function (p) { return p.text || ''; }).join('');
-      if (!text) { lastErr = models[i] + ' 回傳空白（' + (((j.candidates || [])[0] || {}).finishReason || '無原因') + '）'; continue; }
-      return { text: text, tokens: (j.usageMetadata || {}).totalTokenCount || 0, model: models[i] };
-    }
-    lastErr = models[i] + ' HTTP ' + (res.code || res.error) + ' ' + geminiErrorSummary_(res.text);
-    if (res.code !== 404 && res.code !== 429 && res.code < 500) break;
+    if (off.indexOf(models[i]) >= 0) { trail.push(models[i] + ' 今日已用完每日額度，略過'); continue; }
+    usable++;
+    var o = geminiTryModel_(models[i], body, key, !!patient, trail);
+    if (o.ok) { o.result.trail = trail; return o.result; }
+    if (o.fatal) break;
   }
-  var err = new Error(lastErr);
-  err.quota = /HTTP 429/.test(lastErr);
+  var err = new Error(trail.join('；') || '沒有可用的 Gemini 模型');
+  err.trail = trail;
+  err.quotaDaily = usable === 0 || geminiModels_().every(function (m) { return geminiDailyOff_().indexOf(m) >= 0; });
+  err.quota = err.quotaDaily || /HTTP 429/.test(err.message);
   throw err;
 }
 
-/** 從 Gemini 錯誤回應取出訊息、額度類型（quotaId）與建議等待時間，方便判斷是每分鐘還是每日上限。 */
-function geminiErrorSummary_(text) {
-  try {
-    var e = JSON.parse(text).error || {};
-    var quota = [], retry = '';
-    (e.details || []).forEach(function (d) {
-      (d.violations || []).forEach(function (v) { if (v.quotaId) quota.push(v.quotaId + (v.quotaValue ? '=' + v.quotaValue : '')); });
-      if (d.retryDelay) retry = d.retryDelay;
+/** 手動執行：列出這把金鑰可用、支援 generateContent 的模型（不顯示金鑰），用來挑選不同額度桶的備援模型。 */
+function listGeminiModels() {
+  var key = getProp_('GEMINI_API_KEY', '');
+  if (!key) throw new Error('未設定 GEMINI_API_KEY');
+  var out = [], token = '';
+  do {
+    var res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100' + (token ? '&pageToken=' + encodeURIComponent(token) : ''),
+      { headers: { 'x-goog-api-key': key }, muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) throw new Error('ListModels HTTP ' + res.getResponseCode() + ' ' + res.getContentText().slice(0, 200));
+    var j = JSON.parse(res.getContentText());
+    (j.models || []).forEach(function (m) {
+      if ((m.supportedGenerationMethods || []).indexOf('generateContent') >= 0)
+        out.push(String(m.name).replace(/^models\//, '') + '｜' + (m.displayName || '') + '｜輸入上限 ' + (m.inputTokenLimit || '?') + '｜' + String(m.description || '').slice(0, 70));
     });
-    return String(e.message || '').split('\n')[0].slice(0, 120) + (quota.length ? '｜額度：' + quota.join(',') : '') + (retry ? '｜建議等待 ' + retry : '');
-  } catch (x) { return String(text).slice(0, 160); }
+    token = j.nextPageToken || '';
+  } while (token);
+  out.forEach(function (l) { Logger.log(l); });
+  return out;
 }
 
 var QUOTA_PAUSE_KEY = 'COPILOT_QUOTA_PAUSE_UNTIL';
 function quotaPaused_() { return Date.now() < Number(getProp_(QUOTA_PAUSE_KEY, 0)); }
-function pauseForQuota_() { PropertiesService.getScriptProperties().setProperty(QUOTA_PAUSE_KEY, String(Date.now() + 60 * 60 * 1000)); }
+/** 所有模型當日額度都用完才暫停，暫停到台灣時間隔天 00:00（不再固定 1 小時）。 */
+function pauseForQuota_() {
+  var t = new Date(); t.setHours(24, 0, 0, 0);
+  PropertiesService.getScriptProperties().setProperty(QUOTA_PAUSE_KEY, String(t.getTime()));
+}
 
 /** 產生一個按鈕的內容（含 schema 驗證與最多 2 次修正重試）。 */
-function generate_(button, ctx, lang, question, zhSource) {
+function generate_(button, ctx, lang, question, zhSource, patient) {
   var cfg = BUTTONS[button];
   var prompt;
   if (lang === 'en') {
@@ -236,10 +328,13 @@ function generate_(button, ctx, lang, question, zhSource) {
     prompt = TASKS[button];
   }
   var contents = [{ role: 'user', parts: [{ text: '上下文（JSON）：\n' + JSON.stringify(ctx) + '\n\n任務：\n' + prompt }] }];
-  var tokens = 0, lastErr = '', raw = '';
+  var tokens = 0, lastErr = '', raw = '', trail = [];
   for (var attempt = 0; attempt < 3; attempt++) { // 第 1 次＋最多 2 次修正重試
-    var r = geminiCall_(contents, cfg.json);
+    var r;
+    try { r = geminiCall_(contents, cfg.json, patient); }
+    catch (ge) { ge.trail = trail.concat(ge.trail || []); ge.tokens = tokens; throw ge; }
     tokens += r.tokens;
+    trail = trail.concat(r.trail || []);
     raw = r.text;
     var out = raw, err = '';
     if (cfg.json) {
@@ -247,7 +342,7 @@ function generate_(button, ctx, lang, question, zhSource) {
       catch (e) { err = 'JSON 解析失敗：' + e; }
     }
     if (!err) err = validateOutput_(button, out, ctx);
-    if (!err) return { output: out, tokens: tokens, model: r.model, attempts: attempt + 1 };
+    if (!err) return { output: out, tokens: tokens, model: r.model, attempts: attempt + 1, trail: trail };
     lastErr = err;
     contents.push({ role: 'model', parts: [{ text: raw }] });
     contents.push({ role: 'user', parts: [{ text: '上一個輸出不符合規格：' + err + '。請修正後重新輸出完整結果。' }] });
@@ -255,6 +350,7 @@ function generate_(button, ctx, lang, question, zhSource) {
   var err = new Error('輸出驗證失敗（已重試 2 次）：' + lastErr);
   err.raw = raw;
   err.tokens = tokens;
+  err.trail = trail;
   throw err;
 }
 
@@ -355,7 +451,10 @@ function apiCopilot_(body) {
 
 // ---------- 每週預生成（展示模式） ----------
 
-var PRECOMPUTE_BATCH = 3; // 每個步驟 3 家公司（約 15 次呼叫），避免撞到 6 分鐘上限
+// 每個步驟 1 家公司（5 個按鈕 ≈ 5 次呼叫 × 13 秒），避免撞到 6 分鐘上限
+var PRECOMPUTE_BATCH = 1;
+var PRECOMPUTE_COUNT_KEY = 'PRECOMPUTE_COUNT';   // { date: 'yyyyMMdd', n }：今日預生成已發出的按鈕生成次數
+var PRECOMPUTE_FAIL_KEY = 'PRECOMPUTE_FAILS';    // { 代號: ['yyyyMMdd', ...] }：非額度原因的失敗日期
 
 function copilotTasks_() {
   var n = Number(setting_('copilot_precompute_max', 40));
@@ -364,45 +463,145 @@ function copilotTasks_() {
   return tasks;
 }
 
-/** 替本週 Tier 1 公司（依 Need＋Timing 排序）預先生成各按鈕；上下文沒變的沿用快取，不重複呼叫。 */
-function precomputeCopilot_(runId, from) {
-  seedPlayAws_();
+function todayKey_() { return Utilities.formatDate(new Date(), TZ, 'yyyyMMdd'); }
+function dayNum_(key) { return Math.floor(Date.UTC(Number(key.slice(0, 4)), Number(key.slice(4, 6)) - 1, Number(key.slice(6, 8))) / 864e5); }
+
+function precomputeUsedToday_() {
+  var o = null;
+  try { o = JSON.parse(getProp_(PRECOMPUTE_COUNT_KEY, 'null')); } catch (e) {}
+  return o && o.date === todayKey_() ? Number(o.n) || 0 : 0;
+}
+function precomputeCount_() {
+  PropertiesService.getScriptProperties().setProperty(PRECOMPUTE_COUNT_KEY, JSON.stringify({ date: todayKey_(), n: precomputeUsedToday_() + 1 }));
+}
+function precomputeCapReached_() { return precomputeUsedToday_() >= Number(setting_('copilot_precompute_daily', 15)); }
+
+function precomputeFails_() { try { return JSON.parse(getProp_(PRECOMPUTE_FAIL_KEY, '{}')) || {}; } catch (e) { return {}; } }
+function precomputeFailNote_(code, failedNonQuota) {
+  var f = precomputeFails_();
+  if (failedNonQuota) {
+    var list = (f[code] || []).filter(function (d) { return d !== todayKey_(); });
+    list.push(todayKey_());
+    f[code] = list.slice(-5);
+  } else if (failedNonQuota === false) {
+    delete f[code];
+  }
+  PropertiesService.getScriptProperties().setProperty(PRECOMPUTE_FAIL_KEY, JSON.stringify(f));
+}
+/** 連續 2 天（今天與昨天，或昨天與前天）都失敗的公司排到隊尾，避免每天卡在同一家。 */
+function failedTwoDays_(code, fails) {
+  var days = (fails[code] || []).map(dayNum_), today = dayNum_(todayKey_());
+  return days.some(function (d) { return d >= today - 1 && days.indexOf(d - 1) >= 0; });
+}
+
+/** 本週 Tier 1 公司，依 Need＋Timing 排序；連續失敗 2 天的排到最後。 */
+function precomputeOrder_() {
   var t1 = readTable_('scores').filter(function (r) { return String(r.run_id) === String(setting_('current_run_id', '')) && String(r.tier) === '1'; })
     .sort(function (a, b) { return (Number(b.need) + Number(b.timing)) - (Number(a.need) + Number(a.timing)); })
     .map(function (r) { return String(r.stock_code); });
-  var batch = t1.slice(Number(from), Number(from) + PRECOMPUTE_BATCH);
-  if (!batch.length) return { status: 'skipped', rows_in: 0, rows_out: 0, note: 'Tier 1 共 ' + t1.length + ' 家，本批無公司' };
-  // 免費層額度用完後暫停 1 小時；未完成的部分由之後的每日排程接著補（已生成的會沿用，不重複呼叫）
-  if (quotaPaused_()) return { status: 'skipped', rows_in: 0, rows_out: 0, note: 'Gemini 額度暫停中，之後的排程會接著補' };
-  var made = 0, reused = 0, failed = [];
-  for (var i = 0; i < batch.length; i++) {
-    var code = batch[i], ctx = buildContext_(code);
-    for (var j = 0; j < PRECOMPUTE_BUTTONS.length; j++) {
-      var b = PRECOMPUTE_BUTTONS[j], key = cacheKey_(code, b, 'zh', ctx);
-      if (cacheGet_(key)) { reused++; continue; }
-      try {
-        var g = generate_(b, ctx, 'zh');
-        cachePut_(key, g.output, 'demo');
-        aiLog_(code, b + ':zh', 'demo', true, g.attempts > 1 ? '重試 ' + (g.attempts - 1) + ' 次後通過' : '', g.tokens);
-        made++;
-      } catch (e) {
-        aiLog_(code, b + ':zh', 'demo', false, String(e.message) + (e.raw ? '｜原始輸出：' + String(e.raw).slice(0, 600) : ''), e.tokens);
-        failed.push(code + ':' + b);
-        if (e.quota) {
-          pauseForQuota_();
-          return { status: 'partial', rows_in: batch.length, rows_out: made, note: 'Gemini 額度用完，停在 ' + code + ':' + b + '；新增 ' + made + '、沿用 ' + reused + '；' + String(e.message).slice(0, 200) };
-        }
-      }
-      Utilities.sleep(4000); // 免費層每分鐘請求數有限
-    }
-  }
-  return { status: failed.length ? 'partial' : 'success', rows_in: batch.length * PRECOMPUTE_BUTTONS.length, rows_out: made,
-           note: batch.join(',') + '：新增 ' + made + '、沿用 ' + reused + (failed.length ? '、失敗 ' + failed.join(',') : '') };
+  var fails = precomputeFails_();
+  return t1.filter(function (c) { return !failedTwoDays_(c, fails); }).concat(t1.filter(function (c) { return failedTwoDays_(c, fails); }));
 }
 
-/** 手動執行：立即替 Need＋Timing 最高的 3 家 Tier 1 公司預先生成（不必等週一排程）。 */
+/**
+ * 替單一公司預先生成各按鈕。回傳 { made, reused, failed[], stop }；stop='quota'（所有模型當日額度用完）、'cap'（今日預生成上限）、''。
+ * ignoreCap：手動執行時不受每日預生成上限限制（仍會計入）。
+ */
+function precomputeCompany_(code, ignoreCap) {
+  var ctx = buildContext_(code), made = 0, reused = 0, failed = [], nonQuotaFail = false;
+  for (var j = 0; j < PRECOMPUTE_BUTTONS.length; j++) {
+    var b = PRECOMPUTE_BUTTONS[j], key = cacheKey_(code, b, 'zh', ctx);
+    if (cacheGet_(key)) { reused++; continue; }
+    if (!ignoreCap && precomputeCapReached_()) return { made: made, reused: reused, failed: failed, stop: 'cap' };
+    precomputeCount_();
+    try {
+      var g = generate_(b, ctx, 'zh', undefined, undefined, true);
+      cachePut_(key, g.output, 'demo');
+      aiLog_(code, b + ':zh', 'demo', true, '模型 ' + g.model + (g.attempts > 1 ? '｜重試 ' + (g.attempts - 1) + ' 次後通過' : '') + (g.trail.length ? '｜前序失敗：' + g.trail.join('；') : ''), g.tokens);
+      made++;
+    } catch (e) {
+      aiLog_(code, b + ':zh', 'demo', false, String(e.message) + (e.raw ? '｜原始輸出：' + String(e.raw).slice(0, 600) : ''), e.tokens);
+      failed.push(code + ':' + b);
+      if (!e.quota) nonQuotaFail = true;
+      if (e.quotaDaily) { pauseForQuota_(); precomputeFailNote_(code, nonQuotaFail ? true : null); return { made: made, reused: reused, failed: failed, stop: 'quota' }; }
+    }
+  }
+  precomputeFailNote_(code, failed.length ? (nonQuotaFail ? true : null) : false);
+  return { made: made, reused: reused, failed: failed, stop: '' };
+}
+
+/** 替本週 Tier 1 公司（依 Need＋Timing 排序）預先生成各按鈕；上下文沒變的沿用快取，不重複呼叫。 */
+function precomputeCopilot_(runId, from) {
+  seedPlayAws_();
+  var t1 = precomputeOrder_();
+  var batch = t1.slice(Number(from), Number(from) + PRECOMPUTE_BATCH);
+  if (!batch.length) return { status: 'skipped', rows_in: 0, rows_out: 0, note: 'Tier 1 共 ' + t1.length + ' 家，本批無公司' };
+  // 所有模型當日額度用完才會暫停到隔天；未完成的部分由之後的每日排程接著補（已生成的會沿用，不重複呼叫）
+  if (quotaPaused_()) return { status: 'skipped', rows_in: 0, rows_out: 0, note: 'Gemini 額度暫停中（所有模型當日額度已用完），明天自動續跑' };
+  var made = 0, reused = 0, failed = [], stop = '';
+  for (var i = 0; i < batch.length && !stop; i++) {
+    var r = precomputeCompany_(batch[i], false);
+    made += r.made; reused += r.reused; failed = failed.concat(r.failed); stop = r.stop;
+  }
+  var note = batch.join(',') + '：新增 ' + made + '、沿用 ' + reused + (failed.length ? '、失敗 ' + failed.join(',') : '') +
+             (stop === 'cap' ? '；已達今日預生成上限（' + setting_('copilot_precompute_daily', 15) + '），保留額度給即時模式' : '') +
+             (stop === 'quota' ? '；所有模型當日額度用完，暫停到隔天' : '');
+  if (stop === 'cap' && !made && !failed.length) return { status: 'skipped', rows_in: 0, rows_out: 0, note: note };
+  return { status: failed.length || stop === 'quota' ? 'partial' : 'success', rows_in: batch.length * PRECOMPUTE_BUTTONS.length, rows_out: made, note: note };
+}
+
+/** 手動執行：立即替 Need＋Timing 最高、尚未生成的 3 家 Tier 1 公司預先生成（不必等排程；不受每日預生成上限限制，但會計入）。 */
 function copilotPrecomputeNow() {
   var runId = String(setting_('current_run_id', ''));
-  runStep_(runId, 'copilot:0', function () { return precomputeCopilot_(runId, 0); });
-  Logger.log(JSON.stringify(readTable_('run_log').filter(function (r) { return r.step === 'copilot:0'; }).pop()));
+  seedPlayAws_();
+  var t0 = Date.now();
+  runStep_(runId, 'copilot:now', function () {
+    var worked = 0, made = 0, reused = 0, failed = [], stop = '', order = precomputeOrder_();
+    for (var i = 0; i < order.length && worked < 3 && !stop; i++) {
+      if (Date.now() - t0 > 4.2 * 60 * 1000) { stop = 'time'; break; }
+      if (quotaPaused_()) { stop = 'quota'; break; }
+      var r = precomputeCompany_(order[i], true);
+      if (r.made + r.failed.length > 0) worked++;
+      made += r.made; reused += r.reused; failed = failed.concat(r.failed); if (r.stop) stop = r.stop;
+    }
+    return { status: failed.length ? 'partial' : 'success', rows_in: worked * PRECOMPUTE_BUTTONS.length, rows_out: made,
+             note: '手動預生成 ' + worked + ' 家：新增 ' + made + '、沿用 ' + reused + (failed.length ? '、失敗 ' + failed.join(',') : '') + (stop ? '；停止原因：' + stop : '') };
+  });
+  Logger.log(JSON.stringify(readTable_('run_log').filter(function (r) { return r.step === 'copilot:now'; }).pop()));
+}
+
+/**
+ * 設定變更（07 F1）：排程開頭的 apply_settings 步驟會套用一次（以 SETTINGS_APPLIED 記錄已套用的版本），也可手動執行 applyPendingSettings。
+ * 只改這裡列出的 config_settings 值，並補上缺少的設定 key；不動 Script Properties 的金鑰與通行碼、不動其他設定值。
+ */
+// ListModels（2026-10-19）確認：gemini-flash-latest 是別名，可能與主模型共用額度；改用明確型號、不同額度桶的備援
+var PENDING_SETTINGS = { version: 'f1-2026-10-19', values: { gemini_model: 'gemini-3.8-flash,gemini-3.5-flash-lite,gemini-2.5-flash' } };
+
+function applySettings_() {
+  var done = getProp_('SETTINGS_APPLIED', '');
+  seedConfig_('config_settings', 'key', DEFAULT_SETTINGS);
+  settingsCache_ = null;
+  var changed = [];
+  if (Number(setting_('rule_version', 1)) < RULE_VERSION) { setSetting_('rule_version', RULE_VERSION); changed.push('rule_version=' + RULE_VERSION); }
+  if (done !== PENDING_SETTINGS.version) {
+    Object.keys(PENDING_SETTINGS.values).forEach(function (k) {
+      if (String(setting_(k, '')) !== String(PENDING_SETTINGS.values[k])) { setSetting_(k, PENDING_SETTINGS.values[k]); changed.push(k + '=' + PENDING_SETTINGS.values[k]); }
+    });
+    PropertiesService.getScriptProperties().setProperty('SETTINGS_APPLIED', PENDING_SETTINGS.version);
+  }
+  return { status: changed.length ? 'success' : 'skipped', rows_in: 0, rows_out: changed.length,
+           note: (changed.length ? '已套用：' + changed.join('、') : '無需變更') + '（設定版本 ' + PENDING_SETTINGS.version + '）' };
+}
+
+/** 手動執行：立即套用 PENDING_SETTINGS。 */
+function applyPendingSettings() { Logger.log(JSON.stringify(applySettings_())); }
+
+/** 可用模型清單（快取 6 小時），資料狀態 API 顯示用；只回傳模型名稱，不含金鑰。 */
+function geminiModelsCached_() {
+  var c = CacheService.getScriptCache(), hit = c.get('gemini_models');
+  if (hit) return JSON.parse(hit);
+  var list = [];
+  try { list = listGeminiModels(); } catch (e) { return ['（ListModels 失敗：' + String(e.message).slice(0, 120) + '）']; }
+  c.put('gemini_models', JSON.stringify(list), 6 * 3600);
+  return list;
 }

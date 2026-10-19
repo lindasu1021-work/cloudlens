@@ -32,6 +32,10 @@ var SCHEMA = {
   ai_cache: ['cache_key', 'output_json', 'created_at', 'mode'],
   ai_log: ['ts', 'stock_code', 'action', 'mode', 'success', 'error', 'est_tokens'],
   run_log: ['run_id', 'step', 'started_at', 'ended_at', 'rows_in', 'rows_out', 'status', 'error'],
+  // 09 檔 v4.1 衝刺 1：Lead 速查（只做讀取與快取，不做工作流）
+  lead_lookups: ['lookup_id', 'query', 'tax_id', 'company_name', 'capital', 'industry', 'listed', 'mode', 'verdict', 'created_at', 'result_json'],
+  config_routing: ['rule_id', 'condition', 'segment', 'note'],
+  config_bant: ['field_key', 'label', 'visible', 'prefill_rule'],
   mail_log: ['mail_key', 'sent_at']
 };
 
@@ -44,8 +48,9 @@ var DEFAULT_SETTINGS = [
   ['revenue_backfill_months', '15', '月營收回補月數（N1 年化需 12 個月、T3 需連 3 個月）'],
   ['daily_ai_limit', '30', 'Copilot 即時模式每日上限（台灣時間午夜歸零）'],
   ['copilot_precompute_max', '40', '每週預先生成 Copilot 的 Tier 1 公司數上限（依 Need＋Timing 排序）'],
+  ['copilot_precompute_daily', '15', '每日 Copilot 預生成的按鈕生成次數上限（保留其餘 Gemini 額度給即時模式）'],
   ['tier_percentile', '0.30', '各軸前 30% 為高'],
-  ['gemini_model', 'gemini-3.8-flash,gemini-flash-latest', '候選模型，依序嘗試（Phase 0：免費層會暫時 503）'],
+  ['gemini_model', 'gemini-3.8-flash,gemini-3.5-flash-lite,gemini-2.5-flash', '候選模型，依序嘗試；用明確型號（別名可能共用額度），各模型有獨立的每分鐘／每日額度'],
   ['rule_version', '2', '調整權重或字典時 +1（v2：Play 只來自產業先驗者改標「訊號不足」）'],
   ['current_run_id', '', '網站目前顯示的計分 run_id']
 ];
@@ -81,6 +86,8 @@ function setupSheets() {
   });
   seedConfig_('config_settings', 'key', DEFAULT_SETTINGS);
   seedConfig_('config_weights', 'component', DEFAULT_WEIGHTS);
+  seedConfig_('config_routing', 'rule_id', DEFAULT_ROUTING);
+  seedConfig_('config_bant', 'field_key', DEFAULT_BANT);
   // 移除建立試算表時的預設空白分頁
   ['工作表1', 'Sheet1'].forEach(function (n) {
     var sh = book.getSheetByName(n);

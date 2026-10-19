@@ -103,11 +103,18 @@ function buildSnapshot_(runId) {
   };
   pool.need_cut = high('need', ['1', '2']);
   pool.timing_cut = high('timing', ['1', '3']);
-  var scoreLog = readTable_('run_log').filter(function (r) { return r.step === 'scores' && String(r.run_id) === runId; }).pop();
+  var runLog = readTable_('run_log');
+  // 每日排程也會重算當週分數（07 F2），步驟名為 scores:week；取最後一次成功的計分時間
+  var lastOk = function (prefixes) {
+    var r = runLog.filter(function (x) { return prefixes.indexOf(String(x.step).split(':')[0]) >= 0 && x.status !== 'error' && x.status !== 'skipped'; }).pop();
+    return r ? String(r.ended_at) : '';
+  };
+  var scoreLog = runLog.filter(function (r) { return String(r.step).split(':')[0] === 'scores' && r.status !== 'error'; }).pop();
   var validation = readTable_('validation').filter(function (v) { return String(v.run_id) === runId; }).pop() || null;
   return {
     generated_at: Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'),
     updated_at: scoreLog ? String(scoreLog.ended_at) : '',
+    freshness: { scores_at: scoreLog ? String(scoreLog.ended_at) : '', news_at: lastOk(['news']), ann_at: lastOk(['ann', 'annhist']) },
     run_id: runId, prev_run_id: prevRun, rule_version: Math.max(Number(setting_('rule_version', 1)), RULE_VERSION),
     summary: buildSummary_(companies, scores, signals, validation),
     note: 'GAS 每週排程正式資料',
@@ -140,7 +147,8 @@ function apiSummary_(runId) {
     tier_changes: changes.filter(function (c) { return c.tier_from !== c.tier_to; }),
     top_movers: changes.sort(function (a, b) { return Math.abs(b.delta) - Math.abs(a.delta); }).slice(0, 5),
     new_events: s.signals.filter(function (x) { return x.type === 'T1' && age(x.at) <= 7; }),
-    updated_at: s.updated_at
+    updated_at: s.updated_at,
+    freshness: s.freshness
   };
 }
 

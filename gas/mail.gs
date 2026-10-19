@@ -62,11 +62,15 @@ function buildWeeklyDigest_(runId) {
     return true;
   }).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }).slice(0, 8);
 
+  // 07 F5：Copilot 預生成的失敗只在每週摘要彙總（近 7 天 ai_log）
+  var ai = readTable_('ai_log').filter(function (r) { return r.mode === 'demo' && new Date(r.ts).getTime() >= cutoff; });
+  var aiOk = ai.filter(function (r) { return r.success === true || String(r.success).toUpperCase() === 'TRUE'; }).length;
+  var aiFail = ai.length - aiOk, aiQuota = ai.filter(function (r) { return /HTTP 429/.test(String(r.error)); }).length;
   var st = statusCards_(readTable_('run_log'));
   var errors = st.recent_errors.filter(function (e) { return !e.resolved; });
   return { runId: runId, ruleVersion: snap.rule_version, first: first, prevRun: snap.prev_run_id, name: name,
            tier1Count: tier1.length, newT1: newT1, droppedT1: droppedT1, movers: movers, events: events,
-           sources: st.cards, errors: errors, tierCounts: snap.summary.tier_counts };
+           sources: st.cards, errors: errors, tierCounts: snap.summary.tier_counts, ai: { ok: aiOk, fail: aiFail, quota: aiQuota } };
 }
 
 function digestText_(d) {
@@ -92,6 +96,8 @@ function digestText_(d) {
   d.sources.forEach(function (c) {
     L.push('  ' + (c.state === 'ok' ? '✓' : c.state === 'error' ? '✕' : '!') + ' ' + c.name + '：' + c.unit + ' ' + c.this_week.toLocaleString());
   });
+  L.push('', '■ Copilot 預生成（近 7 天）：成功 ' + d.ai.ok + '、失敗 ' + d.ai.fail + (d.ai.quota ? '（其中 Gemini 額度相關 ' + d.ai.quota + '）' : ''));
+  if (d.ai.fail) L.push('  多為 Gemini 免費額度或模型忙碌，每日排程會自動續跑；預生成失敗不寄即時告警。');
   L.push('', '■ 錯誤摘要');
   if (!d.errors.length) L.push('  無待處理的錯誤');
   d.errors.forEach(function (e) { L.push('  ✕ ' + e.step + '：' + e.message.slice(0, 100)); });

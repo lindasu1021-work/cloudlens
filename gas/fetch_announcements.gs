@@ -13,9 +13,29 @@ var PERSONNEL_RE = /異動|變動|辭任|辭職|解任|新任|委任|退休|聘�
 // 第二道防線：其他公告的說明欄中，含「姓名」的行（例：交易相對人姓名）整行刪除
 var NAME_LINE_RE = /^.*姓名.*$/gm;
 
-function fetchAnnouncements_(runId, src) {
+// 07 F3：403／429 時同次執行等 2 分鐘再試 1 次；仍失敗就排一次性接續觸發器 retryAnnToday（5 分鐘後，之後每 30 分鐘），當天 23:59 前持續補抓
+var ANN_RETRY_KEY = 'ANN_RETRY'; // { date: 'yyyy-MM-dd', sources: ['tpex', ...], attempts: n }
+var ANN_INRUN_WAIT_MS = 2 * 60 * 1000;
+
+function fetchAnnJson_(url, waitOnBlock) {
+  for (var i = 0; i < 2; i++) {
+    var res = fetchWithRetry_(url);
+    if ((res.code === 403 || res.code === 429) && waitOnBlock && i === 0) { Utilities.sleep(ANN_INRUN_WAIT_MS); continue; }
+    if (res.code !== 200) { var e = new Error('HTTP ' + (res.code || res.error) + ' ' + url); e.blocked = res.code === 403 || res.code === 429 || res.code === 0 || res.code >= 500; throw e; }
+    try { return JSON.parse(res.text); } catch (x) { if (i === 1) throw new Error('JSON 解析失敗：' + x + ' ' + url); Utilities.sleep(3000); }
+  }
+  throw new Error('HTTP 重試後仍失敗 ' + url);
+}
+
+function fetchAnnouncements_(runId, src, fromRetry) {
   var s = ANN_SOURCES[src];
-  var data = fetchJson_(s.url).map(trimKeys_);
+  var data;
+  try {
+    data = fetchAnnJson_(s.url, !fromRetry).map(trimKeys_);
+  } catch (e) {
+    if (!fromRetry) annRetryAdd_(src);
+    throw e;
+  }
   var scope = {};
   readColumn_('companies', 'stock_code').forEach(function (c) { scope[c] = true; });
   var now = nowIso_();
@@ -37,7 +57,55 @@ function fetchAnnouncements_(runId, src) {
     };
   });
   var added = appendNewRaw_('raw_announcements', rows);
+  annRetryRemove_(src);
   return { rows_in: data.length, rows_out: added, note: '三產業 ' + rows.length + ' 則，新增 ' + added };
+}
+
+function annRetryState_() {
+  var o = null;
+  try { o = JSON.parse(getProp_(ANN_RETRY_KEY, 'null')); } catch (e) {}
+  return o && o.date === todayStr_() ? o : { date: todayStr_(), sources: [], attempts: 0 };
+}
+function annRetryAdd_(src) {
+  var o = annRetryState_();
+  if (o.sources.indexOf(src) < 0) o.sources.push(src);
+  PropertiesService.getScriptProperties().setProperty(ANN_RETRY_KEY, JSON.stringify(o));
+  if (getProp_('ANN_RETRY_SCHEDULED', '') !== todayStr_()) { scheduleContinuation_('retryAnnToday', 5 * 60 * 1000); PropertiesService.getScriptProperties().setProperty('ANN_RETRY_SCHEDULED', todayStr_()); }
+}
+function annRetryRemove_(src) {
+  var raw = getProp_(ANN_RETRY_KEY, '');
+  if (!raw) return;
+  var o = annRetryState_();
+  o.sources = o.sources.filter(function (x) { return x !== src; });
+  PropertiesService.getScriptProperties().setProperty(ANN_RETRY_KEY, JSON.stringify(o));
+}
+
+/** 一次性接續觸發器：只重抓今天失敗的重訊來源（OpenAPI 只給當日）；仍失敗就 30 分鐘後再試，直到 23:59。 */
+function retryAnnToday() {
+  var props = PropertiesService.getScriptProperties();
+  props.deleteProperty('ANN_RETRY_SCHEDULED');
+  clearContinuation_('retryAnnToday');
+  var o = annRetryState_();
+  if (!o.sources.length) { props.deleteProperty(ANN_RETRY_KEY); return; }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30 * 1000)) { // 每日排程執行中：5 分鐘後再試
+    scheduleContinuation_('retryAnnToday', 5 * 60 * 1000); props.setProperty('ANN_RETRY_SCHEDULED', todayStr_()); return;
+  }
+  try {
+    o.attempts++;
+    props.setProperty(ANN_RETRY_KEY, JSON.stringify(o));
+    var runId = todayStr_() + '-daily';
+    o.sources.slice().forEach(function (src) {
+      runStep_(runId, 'ann:' + src, function () { return fetchAnnouncements_(runId, src, true); });
+    });
+  } finally { lock.releaseLock(); }
+  var left = annRetryState_();
+  var end = new Date(); end.setHours(23, 59, 0, 0);
+  if (left.sources.length && Date.now() + 30 * 60 * 1000 < end.getTime()) {
+    scheduleContinuation_('retryAnnToday', 30 * 60 * 1000); props.setProperty('ANN_RETRY_SCHEDULED', todayStr_());
+  } else if (!left.sources.length) {
+    props.deleteProperty(ANN_RETRY_KEY);
+  }
 }
 
 /** 上市/上櫃、日期、時間、主旨（去空白）→ raw_id；OpenAPI 與 MOPS 歷史回補共用，跨來源去重。 */
@@ -57,19 +125,39 @@ var ANN_HIST_DAYS = 365, ANN_HIST_CHUNK = 1, ANN_HIST_PER_RUN = 90;
  * 存在 Script Property ANN_HIST（{start, end, done:{yyyyMMdd:true}}），之後每週只列出還沒完成的區段。
  * 結束日之後的重訊由每日排程（OpenAPI）負責。
  */
+var ANN_HIST_RECENT = 7; // 07 F4：每次都重抓最近 7 天（昨天往前），補上 OpenAPI 只給當日而漏掉的日子；以 raw_id 去重，不會重複寫入
+
 function annHistTasks_() {
   var props = PropertiesService.getScriptProperties();
   var st = JSON.parse(props.getProperty('ANN_HIST') || 'null');
-  if (!st) {
-    st = { start: Date.now() - ANN_HIST_DAYS * 864e5, end: Date.now(), done: {} };
-    props.setProperty('ANN_HIST', JSON.stringify(st));
+  if (!st) st = { start: Date.now() - ANN_HIST_DAYS * 864e5, end: Date.now(), done: {} };
+  st.end = Date.now(); // 07 F4：結束日每次更新為今天（原本第一次執行後就固定）
+  props.setProperty('ANN_HIST', JSON.stringify(st));
+  var tasks = [], seen = {};
+  for (var d = 1; d <= ANN_HIST_RECENT; d++) {
+    var rk = Utilities.formatDate(new Date(st.end - d * 864e5), TZ, 'yyyyMMdd');
+    tasks.push('annhist:' + rk); seen[rk] = true;
   }
-  var tasks = [];
-  for (var t = st.end; t >= st.start && tasks.length < ANN_HIST_PER_RUN; t -= ANN_HIST_CHUNK * 864e5) {
+  for (var t = st.end - 864e5; t >= st.start && tasks.length < ANN_HIST_PER_RUN; t -= ANN_HIST_CHUNK * 864e5) {
     var key = Utilities.formatDate(new Date(t), TZ, 'yyyyMMdd');
-    if (!st.done[key]) tasks.push('annhist:' + key);
+    if (!st.done[key] && !seen[key]) tasks.push('annhist:' + key);
   }
   return tasks;
+}
+
+/** 07 F4 一次性補洞（手動執行）：立即補抓指定區間（預設 2026-10-12～昨天）的重訊，含上櫃。 */
+function backfillRecentAnnouncements(fromKey) {
+  var from = fromKey || '20261012';
+  var st = JSON.parse(getProp_('ANN_HIST', 'null') || 'null') || { start: Date.now() - ANN_HIST_DAYS * 864e5, done: {} };
+  st.end = Date.now();
+  PropertiesService.getScriptProperties().setProperty('ANN_HIST', JSON.stringify(st));
+  var runId = todayStr_() + '-backfill';
+  for (var t = Date.now() - 864e5; ; t -= 864e5) {
+    var key = Utilities.formatDate(new Date(t), TZ, 'yyyyMMdd');
+    if (key < from) break;
+    runStep_(runId, 'annhist:' + key, function (step) { return fetchAnnHistory_(runId, step.split(':')[1]); });
+  }
+  Logger.log(JSON.stringify(readTable_('run_log').filter(function (r) { return r.run_id === runId; })));
 }
 
 function fetchAnnHistory_(runId, startKey) {

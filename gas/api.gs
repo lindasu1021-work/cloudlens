@@ -21,6 +21,9 @@ function doGet(e) {
     else if (action === 'accounts') data = apiAccounts_(runId, p);
     else if (action === 'methodology') data = apiMethodology_(runId);
     else if (action === 'phase0') data = readPhase0_();
+    else if (action === 'gcis_probe') data = apiGcisProbe_();
+    else if (action === 'lookup') data = apiLookup_(p.q, p.alias);
+    else if (action === 'lookup_config') data = apiLookupConfig_();
     else return jsonOut_({ ok: false, error: 'unknown action: ' + action, run_id: runId });
     return jsonOut_({ ok: true, data: data, run_id: runId });
   } catch (err) {
@@ -75,13 +78,19 @@ function apiStatus_() {
   };
   return { cards: cards.cards, week_labels: cards.week_labels, recent_errors: cards.recent_errors,
            sources: Object.keys(sources).sort().map(function (k) { return sources[k]; }), tables: tables, jobs: jobs, backfill: backfill,
-           schedule: ['每日 22:00–23:00 重大訊息', '每週一 05:00–06:00 新聞・ESG・訊號・計分', '每月 15 日 05:00–06:00 公司主檔・月營收'],
+           schedule: ['每日 22:00–23:00 重大訊息＋訊號與計分', '每週一 05:00–06:00 新聞・ESG・重訊回補・訊號・計分', '每月 15 日 05:00–06:00 公司主檔・月營收'],
            server_time: nowIso_(),
            ai_recent: readTable_('ai_log').slice(-10).reverse().map(function (r) {
              return { ts: String(r.ts), code: String(r.stock_code), action: r.action, mode: r.mode, success: r.success,
                       error: String(r.error).slice(0, 400), est_tokens: r.est_tokens };
            }),
            ai_today: Number(getProp_(quotaKey_(), 0)),
+           precompute_today: precomputeUsedToday_(),
+           settings: { gemini_model: setting_('gemini_model', ''), rule_version: setting_('rule_version', ''),
+                       copilot_precompute_daily: setting_('copilot_precompute_daily', ''), settings_applied: getProp_('SETTINGS_APPLIED', '') },
+           gemini_daily_off: geminiDailyOff_(),
+           gemini_models: geminiModelsCached_(),
+           ann_retry: JSON.parse(getProp_('ANN_RETRY', 'null') || 'null'),
            triggers: ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); }) };
 }
 
@@ -107,7 +116,7 @@ var STATUS_GROUPS = [
   { key: 'annhist', name: '重大訊息（歷史回補）', src: '公開資訊觀測站', prefixes: ['annhist'], days: 7, unit: '本週新增' },
   { key: 'news', name: '新聞', src: 'Google News', prefixes: ['news'], days: 7, unit: '本週新增' },
   { key: 'esg', name: 'ESG 資訊安全', src: '證交所 OpenAPI', prefixes: ['esg'], days: 7, unit: '本週新增' },
-  { key: 'scoring', name: '訊號與計分', src: '規則引擎（Apps Script）', prefixes: ['signals', 'scores'], days: 7, unit: '本週產生' },
+  { key: 'scoring', name: '訊號與計分（每日）', src: '規則引擎（Apps Script）', prefixes: ['signals', 'scores'], days: 1, unit: '本週產生' },
   { key: 'copilot', name: 'Copilot 預生成', src: 'Gemini API', prefixes: ['copilot'], days: 7, unit: '本週新增' }
 ];
 

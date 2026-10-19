@@ -14,7 +14,8 @@ function dailyJob() {
     // 主檔還沒建立時先抓（第一次部署）
     if (readColumn_('companies', 'stock_code').length === 0) tasks.push('companies:twse', 'companies:tpex', 'aliases_universe');
     // Copilot 預生成：每週一次做不完（Gemini 免費層額度有限），每天接著補；已生成的沿用快取
-    return tasks.concat(['ann:twse', 'ann:tpex'], retryFailedTasks_(tasks), ['weekly_check'], copilotTasks_());
+    // 07 F2：重訊之後重算當週訊號與分數（run_id 沿用當週），新觸發事件隔天就反映在 Timing 與 Tier
+    return ['apply_settings'].concat(tasks, ['ann:twse', 'ann:tpex', 'signals:week', 'scores:week'], retryFailedTasks_(tasks), ['weekly_check'], copilotTasks_());
   }, 'continueDailyJob');
 }
 
@@ -39,7 +40,7 @@ function retryFailedTasks_(exclude) {
 
 function weeklyJob() {
   runJob_('weekly', function () { return weeklyRunId_(); }, function () {
-    return ['esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores', 'digest'], copilotTasks_());
+    return ['apply_settings', 'esg'].concat(annHistTasks_(), newsTasks_(), ['signals', 'scores', 'digest'], copilotTasks_());
   }, 'continueWeeklyJob');
 }
 
@@ -62,8 +63,10 @@ function runTask_(key, runId) {
     case 'esg': return fetchEsg_(runId);
     case 'news': return fetchNewsBatch_(runId, p[1], p[2]);
     case 'annhist': return fetchAnnHistory_(runId, p[1]);
-    case 'signals': return buildSignals_(runId);
-    case 'scores': return computeScores_(runId);
+    // signals:week／scores:week（每日排程）寫入當週 run_id；同一週內每天覆寫，「分數變化」仍與上週 run 比較
+    case 'signals': return buildSignals_(p[1] === 'week' ? weeklyRunId_() : runId);
+    case 'scores': return computeScores_(p[1] === 'week' ? weeklyRunId_() : runId);
+    case 'apply_settings': return applySettings_();
     case 'digest': return sendWeeklyDigest_(runId);
     case 'copilot': return precomputeCopilot_(runId, p[1]);
   }
@@ -85,27 +88,28 @@ function runJob_(job, makeRunId, makeTasks, continueHandler) {
     if (st && Date.now() - st.saved > 864e5) st = null; // 超過一天的斷點視為過期
     var runId = st ? st.run_id : makeRunId();
     var tasks = st ? st.tasks : makeTasks();
-    var failures = st ? st.failures : [];
+    var failures = st ? st.failures : [], aiFailures = st ? (st.aiFailures || []) : [];
     // 保險：先排一個 7 分鐘後的接續。若這次執行被 GAS 6 分鐘上限強制終止，會從最後存的斷點繼續
     scheduleContinuation_(continueHandler, 7 * 60 * 1000);
     for (var i = st ? st.idx : 0; i < tasks.length; i++) {
-      var save = { run_id: runId, tasks: tasks, idx: i, failures: failures, saved: Date.now() };
+      var save = { run_id: runId, tasks: tasks, idx: i, failures: failures, aiFailures: aiFailures, saved: Date.now() };
       props.setProperty(stateKey, JSON.stringify(save));
       if (Date.now() - t0 > BUDGET_MS) {
         scheduleContinuation_(continueHandler);
         Logger.log(job + '：時間預算用完，停在 ' + i + '/' + tasks.length + '，1 分鐘後接續');
         return;
       }
-      if (!runStep_(runId, tasks[i], runTask_)) failures.push(tasks[i]);
+      // 07 F5：Copilot 預生成失敗不算排程失敗（不寄失敗信，只在每週摘要彙總）
+      if (!runStep_(runId, tasks[i], runTask_)) (String(tasks[i]).indexOf('copilot') === 0 ? aiFailures : failures).push(tasks[i]);
     }
     props.deleteProperty(stateKey);
     clearContinuation_(continueHandler);
     appendObjects_('run_log', [{ run_id: runId, step: job + '_done', started_at: nowIso_(), ended_at: nowIso_(),
       rows_in: tasks.length, rows_out: tasks.length - failures.length,
-      status: failures.length ? 'partial' : 'success', error: failures.join(', ') }]);
+      status: failures.length ? 'partial' : 'success',
+      error: failures.join(', ') + (aiFailures.length ? (failures.length ? '；' : '') + 'Copilot 預生成失敗（不計入）：' + aiFailures.join(', ') : '') }]);
     if (failures.length) {
-      sendAlert_(runId, job + '_failure', '[企業雲端商機洞察平台] ' + job + ' 排程有 ' + failures.length + ' 個步驟失敗',
-        '失敗步驟：\n' + failures.join('\n') + '\n\n詳細錯誤請看 Sheets 的 run_log 分頁（run_id = ' + runId + '）。');
+      sendAlert_(runId, job + '_failure', '[企業雲端商機洞察平台] ' + job + ' 排程：資料來源失敗 ' + failures.length + ' 個步驟', failureMailBody_(runId, failures, aiFailures));
     }
     Logger.log(job + ' 完成：' + (tasks.length - failures.length) + '/' + tasks.length + ' 成功');
   } finally {
@@ -143,4 +147,31 @@ function checkWeeklyFreshness_(runId) {
     return { status: 'warning', note: '每週排程 ' + Math.floor(days) + ' 天未成功' };
   }
   return { status: 'success', note: '最後成功 ' + last };
+}
+
+/** 07 F5：失敗通知內容，區分「資料來源失敗」與「Copilot 預生成失敗」，並寫出建議處置。 */
+var FAILURE_ADVICE = {
+  ann: '證交所／櫃買 OpenAPI 偶發拒絕（403/429）：系統已在同次執行等 2 分鐘重試，並排了接續觸發器 retryAnnToday 自動補抓到 23:59；漏掉的日子也會由每週一的重訊歷史回補（最近 7 天）補回。通常無需處理。',
+  annhist: '公開資訊觀測站歷史查詢失敗：下次每週排程會自動重抓（最近 7 天每週都會重抓）。無需處理。',
+  news: 'Google News 抓取失敗：隔天每日排程會自動重試（每天最多重試 5 個失敗步驟）。',
+  esg: 'ESG 資料抓取失敗：隔天每日排程會自動重試。',
+  companies: '公司主檔抓取失敗：隔天每日排程會自動重試；若連續失敗請檢查來源網址。',
+  revenue: '月營收抓取失敗：隔天每日排程會自動重試。',
+  signals: '訊號計算失敗：請看 run_log 錯誤訊息；修正後可手動執行 rescoreNow()。',
+  scores: '計分失敗：網站仍顯示上一次成功的分數；請看 run_log 錯誤訊息，修正後可手動執行 rescoreNow()。',
+  apply_settings: '設定套用失敗：請看 run_log 錯誤訊息，可手動執行 applyPendingSettings()。'
+};
+function failureMailBody_(runId, failures, aiFailures) {
+  var L = ['■ 資料來源失敗（' + failures.length + '）'];
+  failures.forEach(function (f) {
+    L.push('・' + f);
+    var adv = FAILURE_ADVICE[String(f).split(':')[0]];
+    if (adv) L.push('　建議處置：' + adv);
+  });
+  if (aiFailures && aiFailures.length) {
+    L.push('', '■ Copilot 預生成失敗（' + aiFailures.length + '，不計入排程失敗）', '・' + aiFailures.join('、'),
+           '　建議處置：多為 Gemini 免費額度用完或模型忙碌，明天自動續跑，無需處理（每週摘要信會彙總）。');
+  }
+  L.push('', '詳細錯誤請看 Sheets 的 run_log 分頁（run_id = ' + runId + '）。');
+  return L.join('\n');
 }
